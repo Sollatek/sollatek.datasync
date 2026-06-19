@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.5.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Sollatek.DataSync.Abstractions\Sollatek.DataSync.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Sollatek.DataSync.Export\Sollatek.DataSync.Export.csproj" />
+    <ProjectReference Include="..\..\Stores\Sollatek.DataSync.Filesystem\Sollatek.DataSync.Filesystem.csproj" />
+    <ProjectReference Include="..\..\Sollatek.DataSync\Sollatek.DataSync.csproj" />
+    <ProjectReference Include="..\..\Monitoring\Sollatek.DataSync.Monitoring.AzureMonitor\Sollatek.DataSync.Monitoring.AzureMonitor.csproj" />
+    <ProjectReference Include="..\..\Monitoring\Sollatek.DataSync.Monitoring.Otlp\Sollatek.DataSync.Monitoring.Otlp.csproj" />
+    <ProjectReference Include="..\..\Monitoring\Sollatek.DataSync.Monitoring.StatusEndpoint\Sollatek.DataSync.Monitoring.StatusEndpoint.csproj" />
+    <ProjectReference Include="..\..\Stores\Sollatek.DataSync.Mongo\Sollatek.DataSync.Mongo.csproj" />
+    <ProjectReference Include="..\..\Stores\Sollatek.DataSync.Sql\Sollatek.DataSync.Sql.csproj" />
+  </ItemGroup>
+
+</Project>

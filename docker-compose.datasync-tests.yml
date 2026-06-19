@@ -1,0 +1,52 @@
+name: sollatek-datasync-tests
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${DATASYNC_SQLSERVER_PASSWORD:-DataSync_Local_12345}
+    ports:
+      - "${DATASYNC_SQLSERVER_PORT:-14333}:1433"
+    volumes:
+      - datasync-sqlserver:/var/opt/mssql
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${DATASYNC_POSTGRES_DB:-sollatek_datasync}
+      POSTGRES_USER: ${DATASYNC_POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${DATASYNC_POSTGRES_PASSWORD:-datasync}
+    ports:
+      - "${DATASYNC_POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - datasync-postgres:/var/lib/postgresql/data
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${DATASYNC_MYSQL_DATABASE:-sollatek_datasync}
+      MYSQL_USER: ${DATASYNC_MYSQL_USER:-datasync}
+      MYSQL_PASSWORD: ${DATASYNC_MYSQL_PASSWORD:-datasync}
+      MYSQL_ROOT_PASSWORD: ${DATASYNC_MYSQL_ROOT_PASSWORD:-datasync_root}
+    ports:
+      - "${DATASYNC_MYSQL_PORT:-3307}:3306"
+    volumes:
+      - datasync-mysql:/var/lib/mysql
+
+  mongo:
+    image: mongo:8
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DATASYNC_MONGO_ROOT_USER:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${DATASYNC_MONGO_ROOT_PASSWORD:-datasync_root}
+      MONGO_INITDB_DATABASE: ${DATASYNC_MONGO_DATABASE:-sollatek_datasync}
+    ports:
+      - "${DATASYNC_MONGO_PORT:-27018}:27017"
+    volumes:
+      - datasync-mongo:/data/db
+
+volumes:
+  datasync-sqlserver:
+  datasync-postgres:
+  datasync-mysql:
+  datasync-mongo:

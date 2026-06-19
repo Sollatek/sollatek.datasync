@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
+    <PackageReference Include="Parquet.Net" Version="6.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Platform.ApiClient\Platform.ApiClient.csproj" />
+    <ProjectReference Include="..\..\Sollatek.DataSync.Abstractions\Sollatek.DataSync.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Sollatek.DataSync.Export\Sollatek.DataSync.Export.csproj" />
+  </ItemGroup>
+
+</Project>

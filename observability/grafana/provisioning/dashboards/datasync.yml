@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: DataSync
+    orgId: 1
+    folder: DataSync
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

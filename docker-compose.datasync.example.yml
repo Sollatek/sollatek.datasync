@@ -1,0 +1,16 @@
+name: sollatek-datasync-runtime
+
+services:
+  datasync:
+    image: sollatek-datasync:local
+    restart: unless-stopped
+    environment:
+      SOL_Storage__provider: filesystem
+      SOL_SyncPlan__entities: assets
+      SOL_FileExport__rootPath: /app/volumes/webapi/exports
+      SOL_Monitoring__otlp__enabled: "false"
+    volumes:
+      - datasync-exports:/app/volumes/webapi/exports
+
+volumes:
+  datasync-exports:

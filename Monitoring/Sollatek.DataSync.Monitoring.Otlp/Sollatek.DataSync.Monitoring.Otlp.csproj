@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Sollatek.DataSync.Abstractions\Sollatek.DataSync.Abstractions.csproj" />
+    <ProjectReference Include="..\Sollatek.DataSync.Monitoring.OpenTelemetry\Sollatek.DataSync.Monitoring.OpenTelemetry.csproj" />
+  </ItemGroup>
+
+</Project>
