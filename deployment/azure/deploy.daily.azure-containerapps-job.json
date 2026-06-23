@@ -1,0 +1,151 @@
+{
+  "subscription": "<subscription-id-or-name>",
+  "location": "westeurope",
+  "resourceGroup": "rg-sollatek-datasync-prod",
+  "tags": {
+    "app": "sollatek-datasync",
+    "component": "datasync",
+    "workload": "daily-export"
+  },
+  "containerRegistry": {
+    "name": "acrsollatekdatasync001",
+    "sku": "Basic"
+  },
+  "image": {
+    "name": "sollatek-datasync",
+    "tag": "2026-06-23.1",
+    "dockerfile": "Sollatek.DataSync/Dockerfile",
+    "provider": "all",
+    "monitoringProvider": "none"
+  },
+  "storage": {
+    "accountName": "stsollatekdsync001",
+    "containerName": "sollatek-datasync",
+    "sku": "Standard_LRS",
+    "kind": "StorageV2",
+    "containerSetupAuth": "key"
+  },
+  "containerApps": {
+    "environmentName": "cae-sollatek-datasync-prod",
+    "jobName": "sollatek-datasync-daily",
+    "cronExpression": "0 1 * * *",
+    "replicaTimeout": 82800,
+    "replicaRetryLimit": 0,
+    "parallelism": 1,
+    "replicaCompletionCount": 1,
+    "cpu": "1",
+    "memory": "2Gi",
+    "runNow": false
+  },
+  "secrets": {
+    "platform-key": {
+      "environmentVariable": "DATASYNC_PLATFORM_CLIENT_KEY"
+    },
+    "platform-secret": {
+      "environmentVariable": "DATASYNC_PLATFORM_CLIENT_SECRET"
+    }
+  },
+  "environmentVariables": {
+    "DOTNET_ENVIRONMENT": "Production",
+    "SOL_Settings__clientKey": {
+      "secretRef": "platform-key"
+    },
+    "SOL_Settings__clientSecret": {
+      "secretRef": "platform-secret"
+    },
+    "SOL_Storage__provider": "azureBlobStorage",
+    "SOL_Storage__authentication": "defaultAzureCredential",
+    "SOL_Storage__accountName": "stsollatekdsync001",
+    "SOL_Storage__containerName": "sollatek-datasync",
+    "SOL_State__provider": "azureBlobStorage",
+    "SOL_State__rootPath": "_state",
+    "SOL_Sync__runOnStartup": "historicalOnly",
+    "SOL_Sync__stopWhenFinished": "true",
+    "SOL_Sync__schedule__mode": "daily",
+    "SOL_Sync__schedule__time": "01:00:00",
+    "SOL_Sync__startFrom": "2025-01-01T00:00:00Z",
+    "SOL_Sync__transferMode": "asyncExport",
+    "SOL_FileExport__rootPath": "daily-exports",
+    "SOL_FileExport__folderFormat": "yyyyMM",
+    "SOL_FileExport__fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}",
+    "SOL_FileExport__format": "parquet",
+    "SOL_AsyncExport__maxSubmissions": "60",
+    "SOL_AsyncExport__submissionWindow": "00:05:00",
+    "SOL_AsyncExport__maxParallelRequests": "10"
+  },
+  "appsettings": {
+    "Settings": {
+      "oauthUrl": "https://id.sollatek.io/",
+      "apiUrl": "https://api.sollatek.io/"
+    },
+    "Sync": {
+      "runOnStartup": "historicalOnly",
+      "stopWhenFinished": true,
+      "runInterval": "06:00:00",
+      "schedule": {
+        "mode": "daily",
+        "time": "01:00:00"
+      },
+      "maxPageSize": 500,
+      "startFrom": "2025-01-01T00:00:00Z",
+      "initial": "differential",
+      "transferMode": "asyncExport",
+      "apiRequestTimeout": "00:10:00",
+      "maxRetries": 3,
+      "retryDelay": "00:05:00"
+    },
+    "Storage": {
+      "provider": "azureBlobStorage",
+      "authentication": "defaultAzureCredential",
+      "accountName": "stsollatekdsync001",
+      "containerName": "sollatek-datasync"
+    },
+    "State": {
+      "provider": "azureBlobStorage",
+      "rootPath": "_state"
+    },
+    "SyncPlan": [
+      {
+        "assets": {
+          "initial": "full",
+          "dataMode": "full",
+          "outputName": "Assets"
+        }
+      },
+      {
+        "rawDataTemperaturedata": {
+          "initial": "differential",
+          "dataMode": "differential",
+          "outputName": "Temperature"
+        }
+      },
+      {
+        "rawDataDooropeningdata": {
+          "initial": "differential",
+          "dataMode": "differential",
+          "outputName": "DoorOpening"
+        }
+      }
+    ],
+    "FileExport": {
+      "rootPath": "daily-exports",
+      "statePath": "_state/sync-state.json",
+      "folderFormat": "yyyyMM",
+      "fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}",
+      "format": "parquet"
+    },
+    "AsyncExport": {
+      "maxSubmissions": 60,
+      "submissionWindow": "00:05:00",
+      "maxParallelRequests": 10,
+      "pollInterval": "00:01:00",
+      "rateLimitRetryDelay": "00:05:00",
+      "statePath": "_state/async-exports"
+    },
+    "Notifications": {
+      "failureEmail": {
+        "enabled": false
+      }
+    }
+  }
+}

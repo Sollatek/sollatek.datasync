@@ -1,13 +1,13 @@
 # Deploy DataSync As An Azure Container Apps Daily Blob Job
 
-This example deploys DataSync as an Azure Container Apps Job that starts every day at 02:00 UTC, exports completed daily windows to Azure Blob Storage, then stops. It uses Azure Blob Storage for both exported files and DataSync state, so the next execution continues from the last completed window.
+This example deploys DataSync as an Azure Container Apps Job that starts every day at 01:00 UTC, exports completed daily windows to Azure Blob Storage, then stops. It uses Azure Blob Storage for both exported files and DataSync state, so the next execution continues from the last completed window.
 
 Use this pattern when the host should be offline between runs. Use a normal Container App or VM service instead when DataSync should stay alive and schedule its own loop.
 
 ## Target Result
 
 - One Azure Container Apps Job.
-- Schedule trigger: `0 2 * * *` in UTC.
+- Schedule trigger: `0 1 * * *` in UTC.
 - One replica per execution.
 - Azure Blob export layout:
 
@@ -26,9 +26,24 @@ _state/sync-state.json
 ## Prerequisites
 
 - Azure subscription access with permission to create resource groups, storage accounts, Container Apps environments, Container Apps Jobs, role assignments, and optional Application Insights resources.
-- A DataSync container image pushed to Azure Container Registry or another registry accessible by Azure Container Apps.
+- Azure CLI access through Azure Cloud Shell or a local Azure CLI installation. The image build step uses Azure Container Registry Tasks, so local Docker is not required.
 - Platform API credentials for `Settings:clientKey` and `Settings:clientSecret`.
 - The DataSync image must include the Azure Blob storage provider. The default Docker image includes all storage providers.
+
+## Deployment Components
+
+Create these Azure resources for the daily job deployment:
+
+| Resource | Purpose |
+| --- | --- |
+| Resource group | Holds the deployment resources. |
+| Azure Storage account | Stores exported blobs and blob-backed DataSync state. |
+| Blob container | Holds the `daily/` export prefix and `_state/` state prefix. |
+| Azure Container Registry | Stores the DataSync container image. |
+| Container Apps environment | Runtime boundary for the Container Apps Job and logs. |
+| Container Apps Job | Runs the DataSync container daily at 01:00 UTC and exits. |
+| Managed identity | Lets the job pull from ACR and read/write Azure Blob Storage without storing Azure keys. |
+| Optional Application Insights | Receives logs/metrics when the image is built with Azure Monitor support. |
 
 ## Recommended Configuration Strategy
 
@@ -53,7 +68,7 @@ Put this file in the image or equivalent deployment-specific configuration sourc
     "stopWhenFinished": true,
     "schedule": {
       "mode": "daily",
-      "time": "02:00:00"
+      "time": "01:00:00"
     },
     "startFrom": "2025-01-01T00:00:00Z",
     "initial": "differential",
@@ -120,16 +135,109 @@ Put this file in the image or equivalent deployment-specific configuration sourc
 
 ## Azure Portal Steps
 
+Container Apps Jobs run container images. This guide creates a private Azure Container Registry and uses that registry as the job image source.
+
+## Deployment Script
+
+For repeatable deployments, use the idempotent Azure CLI wrapper script:
+
+```powershell
+$env:DATASYNC_PLATFORM_CLIENT_KEY = "<platform-client-key>"
+$env:DATASYNC_PLATFORM_CLIENT_SECRET = "<platform-client-secret>"
+
+.\deployment\azure\deploy-containerapps-job.ps1 `
+  -ConfigPath .\deployment\azure\deploy.daily.azure-containerapps-job.json
+```
+
+Use `-PlanOnly` to validate and print the resolved resource names without changing Azure:
+
+```powershell
+.\deployment\azure\deploy-containerapps-job.ps1 `
+  -ConfigPath .\deployment\azure\deploy.daily.azure-containerapps-job.json `
+  -PlanOnly
+```
+
+The script creates or updates:
+
+- Resource group.
+- Azure Container Registry.
+- ACR-built DataSync image.
+- Storage account and private blob container.
+- Container Apps environment.
+- Scheduled Container Apps Job.
+- System managed identity.
+- `AcrPull` and `Storage Blob Data Contributor` role assignments.
+- Job secrets and environment variables.
+
+Secrets are read from environment variables or Key Vault references defined in the JSON config. Keep API client secrets out of source-controlled JSON files. Container Apps Job secret names must be 20 characters or shorter.
+
+The included `deploy.daily.azure-containerapps-job.json` uses `0 1 * * *` and `Sync:schedule:time=01:00:00`. Change both values together if the deployment should run at a different UTC time, for example `0 2 * * *` and `02:00:00`.
+
 ### 1. Create The Resource Group
 
 1. Open the Azure portal.
 2. Search for **Resource groups**.
 3. Select **Create**.
 4. Choose the subscription and region.
-5. Name it, for example `rg-datasync-prod`.
+5. Name it, for example `rg-sollatek-datasync-prod`.
 6. Select **Review + create**, then **Create**.
 
-### 2. Create The Storage Account
+### 2. Create The Azure Container Registry
+
+1. Search for **Container registries**.
+2. Select **Create**.
+3. Use the DataSync resource group and the same region as the Container Apps Job.
+4. Enter a globally unique registry name, for example `acrsollatekdatasync001`.
+5. Choose **Basic** for the smallest production-ready registry unless the deployment needs Premium networking features such as private endpoints.
+6. Keep public network access according to the client's network policy. For a first deployment, public access with RBAC is the simplest path.
+7. Select **Review + create**, then **Create**.
+8. After deployment, open the registry and copy **Login server**, for example `acrsollatekdatasync001.azurecr.io`.
+
+Registry names must be lowercase alphanumeric and unique across Azure. The login server is the value used by the Container Apps Job image reference.
+
+### 3. Build And Push The DataSync Image
+
+Use Azure Container Registry Tasks to build the image in Azure and push it into the registry. This avoids requiring Docker on the operator's machine.
+
+Run these commands from the DataSync repository root, the folder that contains `Sollatek.DataSync.sln` and `Sollatek.DataSync/Dockerfile`:
+
+```powershell
+az login
+az account set --subscription "<subscription-id-or-name>"
+
+$resourceGroup = "rg-sollatek-datasync-prod"
+$registryName = "acrsollatekdatasync001"
+$imageName = "sollatek-datasync"
+$imageTag = "2026-06-23.1"
+
+az acr build `
+  --resource-group $resourceGroup `
+  --registry $registryName `
+  --image "${imageName}:${imageTag}" `
+  --file Sollatek.DataSync/Dockerfile `
+  --build-arg DATASYNC_PROVIDER=all `
+  --build-arg DATASYNC_MONITORING_PROVIDER=none `
+  .
+
+$image = "$registryName.azurecr.io/${imageName}:${imageTag}"
+$image
+```
+
+Use a unique immutable tag for each release. A date/build number or Git commit is better than `latest` because it makes job executions auditable.
+
+Monitoring build options:
+
+- Default/no external monitoring: `DATASYNC_MONITORING_PROVIDER=none`.
+- Azure Monitor metrics/logs: `DATASYNC_MONITORING_PROVIDER=azuremonitor`.
+- HTTP status endpoint plus Azure Monitor: add `--build-arg DATASYNC_MONITORING_PROVIDER=azuremonitor-status --build-arg DOTNET_RUNTIME_IMAGE=aspnet`.
+
+The image reference used later by the job is:
+
+```text
+<registry-name>.azurecr.io/datasync:<tag>
+```
+
+### 4. Create The Storage Account
 
 1. Search for **Storage accounts**.
 2. Select **Create**.
@@ -139,7 +247,7 @@ Put this file in the image or equivalent deployment-specific configuration sourc
 6. For redundancy, choose the level required by the deployment. `LRS` is the simplest low-cost option; production may require `ZRS` or `GRS`.
 7. Select **Review + create**, then **Create**.
 
-### 3. Create The Blob Container
+### 5. Create The Blob Container
 
 1. Open the storage account.
 2. Go to **Data storage** > **Containers**.
@@ -148,23 +256,7 @@ Put this file in the image or equivalent deployment-specific configuration sourc
 5. Keep public access disabled.
 6. Select **Create**.
 
-### 4. Prepare The Container Image
-
-Create or reuse an Azure Container Registry, then push a DataSync image.
-
-Recommended image properties:
-
-- Use a unique immutable tag for each release, for example `datasync:2026-06-23.1`.
-- Avoid `latest` for production jobs because it makes executions harder to audit.
-- Include `DATASYNC_MONITORING_PROVIDER=azuremonitor` or `azuremonitor-status` at build time only if Azure Monitor export or the HTTP status endpoint is required.
-
-The Azure portal job creation flow needs an image reference similar to:
-
-```text
-<registry-name>.azurecr.io/datasync:2026-06-23.1
-```
-
-### 5. Create A Container Apps Environment
+### 6. Create A Container Apps Environment
 
 1. Search for **Container Apps Environments**.
 2. Select **Create**.
@@ -172,31 +264,66 @@ The Azure portal job creation flow needs an image reference similar to:
 4. Create or select a Log Analytics workspace. Keep logs enabled for job troubleshooting.
 5. Select **Review + create**, then **Create**.
 
-### 6. Create The Scheduled Container Apps Job
+### 7. Create The Scheduled Container Apps Job
 
 1. Search for **Container App Jobs**.
 2. Select **Create**.
 3. On **Basics**:
    - Resource group: the DataSync resource group.
-   - Container Apps environment: the environment from step 5.
-   - Job name: for example `datasync-daily`.
+   - Container Apps environment: the environment from step 6.
+   - Job name: for example `sollatek-datasync-daily`.
    - Trigger type: **Schedule**.
-   - Cron expression: `0 2 * * *`.
+   - Cron expression: `0 1 * * *`.
 4. On **Container**:
-   - Image source: your registry.
-   - Image: the immutable DataSync image tag.
+   - Image source: Azure Container Registry or other private registry.
+   - Registry: the ACR created in step 2.
+   - Image: the immutable DataSync image tag from step 3.
    - CPU and memory: start with `1 vCPU` and `2 Gi`.
    - Command and arguments: leave empty unless the image requires an override.
 5. On **Scale** or **Job settings**:
    - Parallelism: `1`.
    - Replica completion count: `1`.
    - Replica retry limit: `0` or `1`. Prefer DataSync retries for API failures; use platform retry only for host-level failures.
-   - Replica timeout: set high enough for the largest expected catch-up run, for example `21600` seconds for 6 hours.
+   - Replica timeout: `82800` seconds. This allows a 23-hour run and leaves one hour before the next daily trigger.
 6. Select **Review + create**, then **Create**.
 
-Azure evaluates the schedule cron expression in UTC. `0 2 * * *` means 02:00 UTC every day.
+Azure evaluates the schedule cron expression in UTC. `0 1 * * *` means 01:00 UTC every day.
 
-### 7. Enable Managed Identity On The Job
+If the portal flow does not let you set managed identity and private ACR image pull in one pass, create the job from Azure Cloud Shell instead:
+
+```powershell
+az extension add --name containerapp --upgrade
+
+$resourceGroup = "rg-sollatek-datasync-prod"
+$location = "westeurope"
+$containerAppsEnvironment = "cae-sollatek-datasync-prod"
+$registryName = "acrsollatekdatasync001"
+$imageName = "sollatek-datasync"
+$imageTag = "2026-06-23.1"
+$jobName = "sollatek-datasync-daily"
+$image = "$registryName.azurecr.io/${imageName}:${imageTag}"
+
+az containerapp job create `
+  --name $jobName `
+  --resource-group $resourceGroup `
+  --environment $containerAppsEnvironment `
+  --trigger-type Schedule `
+  --cron-expression "0 1 * * *" `
+  --replica-timeout 82800 `
+  --replica-retry-limit 0 `
+  --parallelism 1 `
+  --replica-completion-count 1 `
+  --image $image `
+  --cpu 1 `
+  --memory 2Gi `
+  --mi-system-assigned `
+  --registry-server "$registryName.azurecr.io" `
+  --registry-identity system
+```
+
+The CLI can assign the system identity and configure ACR image pull during job creation. Step 9 verifies or adds the `AcrPull` role assignment explicitly.
+
+### 8. Enable Managed Identity On The Job
 
 1. Open the created Container Apps Job.
 2. Go to **Settings** > **Identity**.
@@ -206,7 +333,46 @@ Azure evaluates the schedule cron expression in UTC. `0 2 * * *` means 02:00 UTC
 
 Use a user-assigned managed identity instead if your organization wants the identity to survive job deletion or be shared by multiple jobs.
 
-### 8. Grant Blob Access
+### 9. Grant ACR Pull Access
+
+The job identity needs `AcrPull` on the Azure Container Registry. The CLI job creation command may add this automatically when permissions allow it, but verify the role assignment.
+
+Portal:
+
+1. Open the Azure Container Registry.
+2. Go to **Access control (IAM)**.
+3. Select **Add** > **Add role assignment**.
+4. Role: **AcrPull**.
+5. Members: select the Container Apps Job managed identity.
+6. Select **Review + assign**.
+
+Azure CLI:
+
+```powershell
+$resourceGroup = "rg-sollatek-datasync-prod"
+$registryName = "acrsollatekdatasync001"
+$jobName = "sollatek-datasync-daily"
+
+$acrId = az acr show `
+  --resource-group $resourceGroup `
+  --name $registryName `
+  --query id `
+  --output tsv
+
+$principalId = az containerapp job show `
+  --resource-group $resourceGroup `
+  --name $jobName `
+  --query identity.principalId `
+  --output tsv
+
+az role assignment create `
+  --assignee-object-id $principalId `
+  --assignee-principal-type ServicePrincipal `
+  --role AcrPull `
+  --scope $acrId
+```
+
+### 10. Grant Blob Access
 
 1. Open the storage account or the specific blob container.
 2. Go to **Access control (IAM)**.
@@ -218,28 +384,28 @@ Use a user-assigned managed identity instead if your organization wants the iden
 
 RBAC changes can take several minutes to take effect. If the first manual run fails with authorization errors, wait and run it again after confirming the role assignment.
 
-### 9. Add Job Secrets
+### 11. Add Job Secrets
 
 Open the Container Apps Job and add secrets for sensitive values:
 
 | Secret name | Value |
 | --- | --- |
-| `platform-client-key` | Platform API client key |
-| `platform-client-secret` | Platform API client secret |
+| `platform-key` | Platform API client key |
+| `platform-secret` | Platform API client secret |
 | `smtp-password` | Optional SMTP password |
-| `appinsights-connection-string` | Optional Application Insights connection string |
+| `appinsights-conn` | Optional Application Insights connection string |
 
 Do not put API client secrets, SMTP passwords, storage account keys, or SAS tokens into source-controlled settings files.
 
-### 10. Add Environment Variables
+### 12. Add Environment Variables
 
 Set these variables on the job container. For secret values, reference the job secret instead of pasting the value directly.
 
 | Name | Value |
 | --- | --- |
 | `DOTNET_ENVIRONMENT` | `Production` |
-| `SOL_Settings__clientKey` | secret reference: `platform-client-key` |
-| `SOL_Settings__clientSecret` | secret reference: `platform-client-secret` |
+| `SOL_Settings__clientKey` | secret reference: `platform-key` |
+| `SOL_Settings__clientSecret` | secret reference: `platform-secret` |
 | `SOL_Storage__provider` | `azureBlobStorage` |
 | `SOL_Storage__authentication` | `defaultAzureCredential` |
 | `SOL_Storage__accountName` | `<storage-account-name>` |
@@ -249,7 +415,7 @@ Set these variables on the job container. For secret values, reference the job s
 | `SOL_Sync__runOnStartup` | `historicalOnly` |
 | `SOL_Sync__stopWhenFinished` | `true` |
 | `SOL_Sync__schedule__mode` | `daily` |
-| `SOL_Sync__schedule__time` | `02:00:00` |
+| `SOL_Sync__schedule__time` | `01:00:00` |
 | `SOL_Sync__startFrom` | `2025-01-01T00:00:00Z` |
 | `SOL_Sync__transferMode` | `asyncExport` |
 | `SOL_FileExport__rootPath` | `daily` |
@@ -262,7 +428,7 @@ Set these variables on the job container. For secret values, reference the job s
 
 If you cannot package `SyncPlan` into the image, ensure the image does not contain unwanted default `SyncPlan` entries before using environment-variable array overrides.
 
-### 11. Optional Failure Email
+### 13. Optional Failure Email
 
 If SMTP failure notifications are required, add these environment variables and secrets:
 
@@ -280,7 +446,7 @@ If SMTP failure notifications are required, add these environment variables and 
 
 Leave `failureEmail:enabled` false or omit the section when no email should be sent.
 
-### 12. Optional Azure Monitor
+### 14. Optional Azure Monitor
 
 If the image was built with an Azure Monitor-capable monitoring provider, add:
 
@@ -289,11 +455,11 @@ If the image was built with an Azure Monitor-capable monitoring provider, add:
 | `SOL_Monitoring__azureMonitor__enabled` | `true` |
 | `SOL_Monitoring__azureMonitor__metricsEnabled` | `true` |
 | `SOL_Monitoring__azureMonitor__logsEnabled` | `true` |
-| `APPLICATIONINSIGHTS_CONNECTION_STRING` | secret reference: `appinsights-connection-string` |
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | secret reference: `appinsights-conn` |
 
 If the image was not built with Azure Monitor support, leave these unset. Console logs are still available through the Container Apps environment logs.
 
-### 13. Run A Manual Validation Execution
+### 15. Run A Manual Validation Execution
 
 1. Open the Container Apps Job.
 2. Select **Run now**.
@@ -310,12 +476,12 @@ _state/sync-state.json
 
 If the first run has a large historical backlog, it may create many daily files before reaching the latest completed day.
 
-### 14. Verify Normal Daily Behavior
+### 16. Verify Normal Daily Behavior
 
 After the first successful catch-up:
 
 1. Leave the scheduled trigger enabled.
-2. The next 02:00 UTC execution should read `_state/sync-state.json`.
+2. The next 01:00 UTC execution should read `_state/sync-state.json`.
 3. It should export only missing completed daily windows.
 4. It should stop when finished.
 5. Execution history should show one new execution per day.
@@ -335,6 +501,7 @@ Store the connection string as a Container Apps Job secret. Keep `State:provider
 ## Operational Notes
 
 - The Container Apps Job schedule controls when the process starts. `Sync:schedule` tells DataSync how to plan completed windows and status/backlog metadata for the run.
+- Keep `replicaTimeout` lower than the schedule interval. The included daily deployment uses `82800` seconds, so a stuck execution is stopped before the next 24-hour trigger.
 - `runOnStartup=historicalOnly` makes a job execution process historical completed windows and exit instead of staying alive for another interval.
 - `stopWhenFinished=true` is required for the process to exit cleanly after catch-up.
 - Blob-backed state is available only with the `azureBlobStorage` storage provider.
@@ -346,6 +513,9 @@ Store the connection string as a Container Apps Job secret. Keep `State:provider
 
 - [Jobs in Azure Container Apps](https://learn.microsoft.com/en-us/azure/container-apps/jobs)
 - [Managed identities in Azure Container Apps](https://learn.microsoft.com/en-us/azure/container-apps/managed-identity)
+- [Azure Container Apps image pull with managed identity](https://learn.microsoft.com/en-us/azure/container-apps/managed-identity-image-pull)
 - [Azure Container Apps job identity CLI reference](https://learn.microsoft.com/en-us/cli/azure/containerapp/job/identity)
 - [Assign an Azure role for blob data access](https://learn.microsoft.com/en-us/azure/storage/blobs/assign-azure-role-data-access)
 - [Containers in Azure Container Apps](https://learn.microsoft.com/en-us/azure/container-apps/containers)
+- [Create an Azure Container Registry in the portal](https://learn.microsoft.com/en-us/azure/container-registry/container-registry-get-started-portal)
+- [Build a container image with Azure Container Registry Tasks](https://learn.microsoft.com/en-us/azure/container-registry/container-registry-quickstart-task-cli)
