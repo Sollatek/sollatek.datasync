@@ -13,7 +13,7 @@ public sealed class RelationalUpsertCommandBuilderTests
             AssetTable(),
             AssetRow());
 
-        Assert.Equal(
+        SqlAssert.Equal(
             """
             INSERT INTO "assets" ("id", "owner_customer_id")
             VALUES ($1, $2)
@@ -32,7 +32,7 @@ public sealed class RelationalUpsertCommandBuilderTests
             AssetTable(),
             AssetRow());
 
-        Assert.Equal(
+        SqlAssert.Equal(
             """
             INSERT INTO `assets` (`id`, `owner_customer_id`)
             VALUES (@p0, @p1)
@@ -51,7 +51,7 @@ public sealed class RelationalUpsertCommandBuilderTests
             AssetTable(),
             AssetRow());
 
-        Assert.Equal(
+        SqlAssert.Equal(
             """
             MERGE INTO [assets] AS target
             USING (SELECT @p0 AS [id], @p1 AS [owner_customer_id]) AS source
@@ -72,7 +72,7 @@ public sealed class RelationalUpsertCommandBuilderTests
             AssetTable(),
             [AssetRow(), AssetRow("43", "customer-2")]);
 
-        Assert.Equal(
+        SqlAssert.Equal(
             """
             INSERT INTO "assets" ("id", "owner_customer_id")
             VALUES ($1, $2), ($3, $4)
@@ -91,7 +91,7 @@ public sealed class RelationalUpsertCommandBuilderTests
             AssetTable(),
             [AssetRow(), AssetRow("43", "customer-2")]);
 
-        Assert.Equal(
+        SqlAssert.Equal(
             """
             INSERT INTO `assets` (`id`, `owner_customer_id`)
             VALUES (@p0, @p1), (@p2, @p3)
@@ -110,7 +110,7 @@ public sealed class RelationalUpsertCommandBuilderTests
             AssetTable(),
             [AssetRow(), AssetRow("43", "customer-2")]);
 
-        Assert.Equal(
+        SqlAssert.Equal(
             """
             MERGE INTO [assets] AS target
             USING (VALUES (@p0, @p1), (@p2, @p3)) AS source ([id], [owner_customer_id])
@@ -139,7 +139,7 @@ public sealed class RelationalUpsertCommandBuilderTests
 
         var command = RelationalUpsertCommandBuilder.BuildUpsert(StorageProvider.Postgres, table, row);
 
-        Assert.Equal(
+        SqlAssert.Equal(
             """
             INSERT INTO "customers" ("id")
             VALUES ($1)

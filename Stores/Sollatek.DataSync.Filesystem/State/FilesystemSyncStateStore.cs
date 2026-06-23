@@ -18,7 +18,7 @@ public sealed class FilesystemSyncStateStore : ISyncStateStore
     public FilesystemSyncStateStore(FileExportOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
-        _path = Path.Combine(options.RootPath, "_state", "sync-state.json");
+        _path = options.StatePath;
     }
 
     public async Task<DateTimeOffset?> GetLastSuccessfulEndAsync(

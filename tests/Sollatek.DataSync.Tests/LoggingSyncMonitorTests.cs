@@ -84,6 +84,71 @@ public sealed class LoggingSyncMonitorTests
         Assert.Equal(5, status.RecordsProcessed);
         Assert.Equal(1, status.PagesProcessed);
         Assert.Equal(1, status.FilesProcessed);
+        Assert.Equal(5, status.CurrentEntityRecordsProcessed);
+        Assert.Equal(1, status.CurrentEntityPagesProcessed);
+        Assert.Equal(1, status.CurrentEntityFilesProcessed);
+        Assert.True(status.ManagedHeapBytes >= 0);
+        Assert.True(status.TotalAllocatedBytes >= 0);
+        Assert.True(status.WorkingSetBytes > 0);
+        Assert.True(status.PrivateMemoryBytes > 0);
+        Assert.True(status.PeakWorkingSetBytes > 0);
+    }
+
+    [Fact]
+    public void RecordEntityRange_StoresScheduleLagAndRangeStatus()
+    {
+        var monitor = new LoggingSyncMonitor(NullLogger<LoggingSyncMonitor>.Instance);
+        var expectedCompleted = new DateTimeOffset(2026, 6, 23, 0, 0, 0, TimeSpan.Zero);
+
+        monitor.RecordRunStarted("run-1");
+        monitor.RecordRunPlanned(
+            "run-1",
+            scheduleMode: "daily",
+            plannedRangeEndUtc: expectedCompleted,
+            expectedCompletedRangeEndUtc: expectedCompleted,
+            plannedEntityCount: 2);
+        monitor.RecordEntityRange(
+            "run-1",
+            "rawDataTemperaturedata",
+            rangeStartUtc: new DateTimeOffset(2026, 6, 21, 0, 0, 0, TimeSpan.Zero),
+            rangeEndUtc: new DateTimeOffset(2026, 6, 22, 0, 0, 0, TimeSpan.Zero),
+            expectedCompletedRangeEndUtc: expectedCompleted,
+            lagPeriods: 2);
+
+        var status = monitor.Current;
+
+        Assert.Equal("daily", status.ScheduleMode);
+        Assert.Equal(expectedCompleted, status.PlannedRangeEndUtc);
+        Assert.Equal(expectedCompleted, status.ExpectedCompletedRangeEndUtc);
+        Assert.Equal(new DateTimeOffset(2026, 6, 21, 0, 0, 0, TimeSpan.Zero), status.CurrentRangeStartUtc);
+        Assert.Equal(new DateTimeOffset(2026, 6, 22, 0, 0, 0, TimeSpan.Zero), status.CurrentRangeEndUtc);
+        Assert.Equal(new DateTimeOffset(2026, 6, 21, 0, 0, 0, TimeSpan.Zero), status.LastCompletedRangeEndUtc);
+        Assert.Equal(172800, status.LagSeconds);
+        Assert.Equal(2, status.LagPeriods);
+        Assert.Equal(2, status.PlannedEntityCount);
+    }
+
+    [Fact]
+    public void RecordAsyncExportStatus_StoresQueueCounters()
+    {
+        var monitor = new LoggingSyncMonitor(NullLogger<LoggingSyncMonitor>.Instance);
+
+        monitor.RecordAsyncExportStatus(new AsyncExportStatusSummary(
+            Pending: 1,
+            Polling: 2,
+            Downloaded: 3,
+            Processing: 4,
+            Failed: 5,
+            Expired: 6));
+
+        var status = monitor.Current;
+
+        Assert.Equal(1, status.AsyncExportsPending);
+        Assert.Equal(2, status.AsyncExportsPolling);
+        Assert.Equal(3, status.AsyncExportsDownloaded);
+        Assert.Equal(4, status.AsyncExportsProcessing);
+        Assert.Equal(5, status.AsyncExportsFailed);
+        Assert.Equal(6, status.AsyncExportsExpired);
     }
 
     private sealed class RecordingSyncMetrics : ISyncMetrics

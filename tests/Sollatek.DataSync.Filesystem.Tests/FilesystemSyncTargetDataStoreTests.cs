@@ -45,6 +45,47 @@ public sealed class FilesystemSyncTargetDataStoreTests
         }
     }
 
+    [Fact]
+    public async Task HasStoredDataAsync_ReturnsTrueWhenConfiguredLayoutHasEntityFile()
+    {
+        var directory = CreateTempDirectory();
+        try
+        {
+            var exportDirectory = Path.Combine(directory, "202602");
+            Directory.CreateDirectory(exportDirectory);
+            await File.WriteAllTextAsync(Path.Combine(exportDirectory, "Assets_20260202.parquet"), "data");
+            await File.WriteAllTextAsync(Path.Combine(exportDirectory, "Temperature_20260202.parquet"), "data");
+            var options = new FileExportOptions
+            {
+                RootPath = directory,
+                FolderFormat = "yyyyMM",
+                FileNameFormat = "{entity}_{date:yyyyMMdd}.parquet",
+                Entities = new Dictionary<string, FileExportEntityOptions>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["assets"] = new()
+                    {
+                        OutputName = "Assets"
+                    },
+                    ["rawDataDooropeningdata"] = new()
+                    {
+                        OutputName = "Dooropening"
+                    }
+                }
+            };
+            var store = new FilesystemSyncTargetDataStore(options);
+
+            var assets = await store.HasStoredDataAsync(Metadata("assets"), CancellationToken.None);
+            var doorOpening = await store.HasStoredDataAsync(Metadata("rawDataDooropeningdata"), CancellationToken.None);
+
+            Assert.True(assets);
+            Assert.False(doorOpening);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
     private static string CreateTempDirectory()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"datasync-filesystem-target-{Guid.NewGuid():N}");

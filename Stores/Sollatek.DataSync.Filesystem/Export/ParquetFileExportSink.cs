@@ -1,13 +1,14 @@
 #nullable enable
 
 using System.Globalization;
+using System.Text;
 using Parquet;
 using Parquet.Schema;
 using Sollatek.DataSync.Config;
 
 namespace Sollatek.DataSync.Export;
 
-public sealed class ParquetFileExportSink
+public sealed class ParquetFileExportSink : IFileExportObjectSink
 {
     private readonly FileExportOptions _options;
 
@@ -31,13 +32,29 @@ public sealed class ParquetFileExportSink
             return null;
         }
 
-        var path = DailyExportPath.Build(_options.RootPath, entityKey, day, partNumber);
+        var path = GetOutputPath(entityKey, day, partNumber);
         if (File.Exists(path))
         {
-            throw new InvalidOperationException($"Parquet export file already exists: {path}");
+            throw new InvalidOperationException($"Filesystem export file already exists: {path}");
         }
 
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+
+        var portalFormat = ExportFormatNames.NormalizePortalFormat(
+            _options.Format,
+            "FileExport:format",
+            ExportFormatNames.Parquet);
+        if (string.Equals(portalFormat, ExportFormatNames.Csv, StringComparison.OrdinalIgnoreCase))
+        {
+            await WriteCsvAsync(path, rows, cancellationToken);
+            return path;
+        }
+
+        if (!string.Equals(portalFormat, ExportFormatNames.Parquet, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "Paged filesystem exports can write FileExport:format values parquet and csv. Use asyncExport for portal-native xml and xlsx files.");
+        }
 
         var columns = BuildColumns(rows);
         var schema = new ParquetSchema(columns.Select(x =>
@@ -54,6 +71,56 @@ public sealed class ParquetFileExportSink
         }
 
         return path;
+    }
+
+    public async Task<string> CopyAsync(
+        string entityKey,
+        DateOnly day,
+        string sourcePath,
+        int partNumber,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(entityKey);
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
+
+        var path = GetOutputPath(entityKey, day, partNumber);
+        if (File.Exists(path))
+        {
+            throw new InvalidOperationException($"Filesystem export file already exists: {path}");
+        }
+
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        await using var source = File.OpenRead(sourcePath);
+        await using var destination = File.Create(path);
+        await source.CopyToAsync(destination, cancellationToken);
+        return path;
+    }
+
+    public bool Exists(
+        string entityKey,
+        DateOnly day,
+        int partNumber)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(entityKey);
+        return File.Exists(GetOutputPath(entityKey, day, partNumber));
+    }
+
+    public Task<bool> ExistsAsync(
+        string entityKey,
+        DateOnly day,
+        int partNumber,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult(Exists(entityKey, day, partNumber));
+    }
+
+    private string GetOutputPath(
+        string entityKey,
+        DateOnly day,
+        int partNumber)
+    {
+        return DailyExportPath.Build(_options, entityKey, day, partNumber);
     }
 
     private static IReadOnlyList<ParquetColumn> BuildColumns(
@@ -213,6 +280,44 @@ public sealed class ParquetFileExportSink
             IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
             _ => value.ToString()
         };
+    }
+
+    private static async Task WriteCsvAsync(
+        string path,
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        CancellationToken cancellationToken)
+    {
+        var columns = BuildColumns(rows).Select(x => x.Name).ToArray();
+        await using var stream = File.Create(path);
+        await using var writer = new StreamWriter(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
+        await writer.WriteLineAsync(string.Join(",", columns.Select(EscapeCsv)));
+        foreach (var row in rows)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var values = columns.Select(column =>
+                row.TryGetValue(column, out var value) ? EscapeCsv(ConvertToString(value)) : string.Empty);
+            await writer.WriteLineAsync(string.Join(",", values));
+        }
+    }
+
+    private static string EscapeCsv(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        var mustQuote = value.Contains(',', StringComparison.Ordinal) ||
+            value.Contains('"', StringComparison.Ordinal) ||
+            value.Contains('\r', StringComparison.Ordinal) ||
+            value.Contains('\n', StringComparison.Ordinal);
+        if (!mustQuote)
+        {
+            return value;
+        }
+
+        return $"\"{value.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
     }
 
     private sealed record ParquetColumn(string Name, Type ClrType);

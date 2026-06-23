@@ -8,7 +8,33 @@ public interface ISyncMonitor
 
     void RecordRunStarted(string runId, DateTimeOffset? startedAt = null);
 
+    void RecordRunScheduled(
+        string scheduleMode,
+        DateTimeOffset nextRunAtUtc,
+        DateTimeOffset expectedCompletedRangeEndUtc)
+    {
+    }
+
+    void RecordRunPlanned(
+        string runId,
+        string scheduleMode,
+        DateTimeOffset plannedRangeEndUtc,
+        DateTimeOffset expectedCompletedRangeEndUtc,
+        int plannedEntityCount)
+    {
+    }
+
     void RecordEntityStarted(string runId, string entityKey, DateTimeOffset? startedAt = null);
+
+    void RecordEntityRange(
+        string runId,
+        string entityKey,
+        DateTimeOffset rangeStartUtc,
+        DateTimeOffset rangeEndUtc,
+        DateTimeOffset? expectedCompletedRangeEndUtc = null,
+        int? lagPeriods = null)
+    {
+    }
 
     void RecordProgress(
         string runId,
@@ -26,4 +52,15 @@ public interface ISyncMonitor
         DateTimeOffset? failedAt = null);
 
     void RecordSuccess(string runId, DateTimeOffset finishedAt);
+
+    void RecordRunCompletedRange(
+        DateTimeOffset completedRangeEndUtc,
+        DateTimeOffset expectedCompletedRangeEndUtc,
+        int lagPeriods)
+    {
+    }
+
+    void RecordAsyncExportStatus(AsyncExportStatusSummary summary)
+    {
+    }
 }

@@ -31,8 +31,8 @@ public sealed class SyncJobPlannerTests
             new DateTimeOffset(2026, 6, 20, 8, 0, 0, TimeSpan.Zero));
 
         Assert.Equal(["rawDataLocationdata", "assets"], jobs.Select(x => x.Metadata.Key));
-        Assert.Equal(SyncTransferMode.PagedApi, jobs[0].TransferMode);
-        Assert.Equal(SyncTransferMode.PagedApi, jobs[1].TransferMode);
+        Assert.Equal(SyncTransferMode.AsyncExport, jobs[0].TransferMode);
+        Assert.Equal(SyncTransferMode.AsyncExport, jobs[1].TransferMode);
         Assert.All(jobs, job =>
         {
             Assert.Equal(new DateTimeOffset(2026, 2, 3, 4, 5, 6, TimeSpan.Zero), job.Range.Start);
@@ -97,7 +97,7 @@ public sealed class SyncJobPlannerTests
             new DateTimeOffset(2026, 6, 2, 0, 0, 0, TimeSpan.Zero)));
 
         Assert.Equal("firmwares", job.Metadata.Key);
-        Assert.Equal(SyncTransferMode.PagedApi, job.TransferMode);
+        Assert.Equal(SyncTransferMode.AsyncExport, job.TransferMode);
     }
 
     [Fact]
@@ -136,9 +136,32 @@ public sealed class SyncJobPlannerTests
 
         Assert.True(job.IsInitial);
         Assert.Equal(SyncDataMode.Full, job.DataMode);
-        Assert.Equal(SyncTransferMode.PagedApi, job.TransferMode);
+        Assert.Equal(SyncTransferMode.AsyncExport, job.TransferMode);
         Assert.Equal(startFrom, job.Range.Start);
         Assert.Equal(rangeEnd, job.Range.End);
+    }
+
+    [Fact]
+    public void Plan_UsesPagedTransferModeWhenConfigured()
+    {
+        var registry = SwaggerSyncMetadataRegistry.Load([new SwaggerSyncDocumentSource("data-v1", SwaggerWithSyncMetadata)]);
+        var plan = SwaggerBackedSyncPlanResolver.Resolve(registry, ["assets"]);
+        var options = SyncOptions.FromConfiguration(
+            new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["Sync:startFrom"] = "2026-01-01T00:00:00Z",
+                    ["Sync:transferMode"] = "pagedApi"
+                })
+                .Build(),
+            new DateTimeOffset(2026, 6, 18, 12, 0, 0, TimeSpan.Zero));
+
+        var job = Assert.Single(SyncJobPlanner.Plan(
+            plan,
+            options,
+            new DateTimeOffset(2026, 6, 20, 8, 0, 0, TimeSpan.Zero)));
+
+        Assert.Equal(SyncTransferMode.PagedApi, job.TransferMode);
     }
 
     [Fact]
