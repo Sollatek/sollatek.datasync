@@ -54,6 +54,7 @@ public sealed class MonitoringProviderPackagingTests
     [InlineData("Stores", "Sollatek.DataSync.Sql", "Sollatek.DataSync.Sql.csproj")]
     [InlineData("Stores", "Sollatek.DataSync.Mongo", "Sollatek.DataSync.Mongo.csproj")]
     [InlineData("Stores", "Sollatek.DataSync.Filesystem", "Sollatek.DataSync.Filesystem.csproj")]
+    [InlineData("Stores", "Sollatek.DataSync.AzureBlob", "Sollatek.DataSync.AzureBlob.csproj")]
     [InlineData("Monitoring", "Sollatek.DataSync.Monitoring.OpenTelemetry", "Sollatek.DataSync.Monitoring.OpenTelemetry.csproj")]
     [InlineData("Monitoring", "Sollatek.DataSync.Monitoring.Otlp", "Sollatek.DataSync.Monitoring.Otlp.csproj")]
     [InlineData("Monitoring", "Sollatek.DataSync.Monitoring.AzureMonitor", "Sollatek.DataSync.Monitoring.AzureMonitor.csproj")]
@@ -78,6 +79,7 @@ public sealed class MonitoringProviderPackagingTests
         Assert.Contains("Stores\\Sollatek.DataSync.Sql\\Sollatek.DataSync.Sql.csproj", solution);
         Assert.Contains("Stores\\Sollatek.DataSync.Mongo\\Sollatek.DataSync.Mongo.csproj", solution);
         Assert.Contains("Stores\\Sollatek.DataSync.Filesystem\\Sollatek.DataSync.Filesystem.csproj", solution);
+        Assert.Contains("Stores\\Sollatek.DataSync.AzureBlob\\Sollatek.DataSync.AzureBlob.csproj", solution);
         Assert.Contains(
             "Monitoring\\Sollatek.DataSync.Monitoring.Otlp\\Sollatek.DataSync.Monitoring.Otlp.csproj",
             solution);

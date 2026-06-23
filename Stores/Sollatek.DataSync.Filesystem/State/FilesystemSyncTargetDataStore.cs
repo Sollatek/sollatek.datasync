@@ -1,6 +1,7 @@
 #nullable enable
 
 using Sollatek.DataSync.Config;
+using Sollatek.DataSync.Export;
 using Sollatek.DataSync.Sync.Metadata;
 
 namespace Sollatek.DataSync.State;
@@ -25,9 +26,10 @@ public sealed class FilesystemSyncTargetDataStore : ISyncTargetDataStore
             return Task.FromResult(false);
         }
 
-        var directory = Path.Combine(_options.RootPath, metadata.Key);
-        var hasData = Directory.Exists(directory) &&
-                      Directory.EnumerateFiles(directory, "*.parquet", SearchOption.AllDirectories).Any();
+        var hasData = Directory.Exists(_options.RootPath) &&
+                      Directory
+                          .EnumerateFiles(_options.RootPath, "*.parquet", SearchOption.AllDirectories)
+                          .Any(path => DailyExportPath.IsEntityExportPath(_options, metadata.Key, path));
 
         return Task.FromResult(hasData);
     }

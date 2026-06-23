@@ -67,6 +67,31 @@ public sealed class PagedApiClientTests
         Assert.Contains("Bad filter", exception.Message);
     }
 
+    [Fact]
+    public async Task GetPageAsync_HonorsHttpClientTimeoutWhileReadingContent()
+    {
+        var handler = new RecordingHttpMessageHandler(
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new BlockingContent()
+            });
+        var client = new PagedApiClient(new HttpClient(handler)
+        {
+            BaseAddress = new Uri("https://api.test"),
+            Timeout = TimeSpan.FromMilliseconds(100)
+        });
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            client.GetPageAsync(
+                AssetMetadata(),
+                new SyncDateRange(
+                    new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                    new DateTimeOffset(2026, 1, 2, 0, 0, 0, TimeSpan.Zero)),
+                top: 500,
+                skip: 0,
+                CancellationToken.None));
+    }
+
     private static SwaggerSyncEntityMetadata AssetMetadata()
     {
         return new SwaggerSyncEntityMetadata
@@ -101,6 +126,30 @@ public sealed class PagedApiClientTests
         {
             Requests.Add(request);
             return Task.FromResult(Response);
+        }
+    }
+
+    private sealed class BlockingContent : HttpContent
+    {
+        protected override Task SerializeToStreamAsync(
+            Stream stream,
+            TransportContext? context)
+        {
+            return Task.Delay(TimeSpan.FromSeconds(5));
+        }
+
+        protected override Task SerializeToStreamAsync(
+            Stream stream,
+            TransportContext? context,
+            CancellationToken cancellationToken)
+        {
+            return Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+        }
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = -1;
+            return false;
         }
     }
 }

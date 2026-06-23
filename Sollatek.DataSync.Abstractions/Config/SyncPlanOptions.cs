@@ -9,8 +9,11 @@ public sealed record SyncPlanOptions
 {
     public static SyncPlanOptions Default { get; } = new()
     {
+        DefaultEntityOptions = SyncPlanEntityOptions.Default,
         Entities = new Dictionary<string, SyncPlanEntityOptions>(StringComparer.OrdinalIgnoreCase)
     };
+
+    public SyncPlanEntityOptions DefaultEntityOptions { get; init; } = SyncPlanEntityOptions.Default;
 
     public required IReadOnlyDictionary<string, SyncPlanEntityOptions> Entities { get; init; }
 
@@ -19,7 +22,7 @@ public sealed record SyncPlanOptions
         return SyncEntityOptionMatcher.GetEntityOptions(
             Entities,
             entityKey,
-            SyncPlanEntityOptions.Default,
+            DefaultEntityOptions,
             "SyncPlan options");
     }
 
@@ -28,7 +31,7 @@ public sealed record SyncPlanOptions
         return SyncEntityOptionMatcher.GetEntityOptions(
             Entities,
             metadata,
-            SyncPlanEntityOptions.Default,
+            DefaultEntityOptions,
             "SyncPlan options");
     }
 
@@ -36,6 +39,10 @@ public sealed record SyncPlanOptions
     {
         ArgumentNullException.ThrowIfNull(configuration);
 
+        var defaultEntityOptions = new SyncPlanEntityOptions
+        {
+            Initial = ReadInitialMode(configuration.GetSection("Sync"), defaultValue: SyncInitialDataMode.Differential)
+        };
         var entities = new Dictionary<string, SyncPlanEntityOptions>(StringComparer.OrdinalIgnoreCase);
         foreach (var entry in SyncPlanConfigurationReader.Read(configuration))
         {
@@ -47,19 +54,25 @@ public sealed record SyncPlanOptions
             SyncEntityOptionMatcher.RemoveNormalizedMatch(entities, entry.EntityKey);
             entities[entry.EntityKey] = new SyncPlanEntityOptions
             {
-                Initial = ReadInitialMode(entry.OptionsSection)
+                Initial = ReadInitialMode(entry.OptionsSection, defaultEntityOptions.Initial)
             };
         }
 
-        return new SyncPlanOptions { Entities = entities };
+        return new SyncPlanOptions
+        {
+            DefaultEntityOptions = defaultEntityOptions,
+            Entities = entities
+        };
     }
 
-    private static SyncInitialDataMode ReadInitialMode(IConfiguration configuration)
+    private static SyncInitialDataMode ReadInitialMode(
+        IConfiguration configuration,
+        SyncInitialDataMode defaultValue)
     {
         var configuredValue = configuration.GetValue<string>("initial");
         if (string.IsNullOrWhiteSpace(configuredValue))
         {
-            return SyncInitialDataMode.Differential;
+            return defaultValue;
         }
 
         return configuredValue.Trim().ToLowerInvariant() switch

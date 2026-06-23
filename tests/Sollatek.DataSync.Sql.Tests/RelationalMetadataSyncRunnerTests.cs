@@ -60,6 +60,110 @@ public sealed class RelationalMetadataSyncRunnerTests
     }
 
     [Fact]
+    public async Task RunAsync_UsesAsyncExportRowsWhenConfigured()
+    {
+        var pagedClient = new RecordingPagedApiClient();
+        var asyncExports = new RecordingAsyncExportRowSource(
+            Rows("""[{ "id": 1, "ownerCustomer": { "id": "customer-1" } }]"""));
+        var sink = new RecordingRelationalSyncSink();
+        var monitor = new RecordingSyncMonitor();
+        var runner = new RelationalMetadataSyncRunner(
+            NullLogger<RelationalMetadataSyncRunner>.Instance,
+            pagedClient,
+            asyncExports,
+            sink,
+            new SyncOptions
+            {
+                StartFrom = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                MaxPageSize = 1
+            },
+            new StorageOptions
+            {
+                Provider = StorageProvider.SqlServer
+            },
+            monitor);
+        var job = new SyncJob(
+            AssetMetadata(),
+            new SyncDateRange(
+                new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 1, 2, 0, 0, 0, TimeSpan.Zero)),
+            SyncTransferMode.AsyncExport);
+
+        await runner.RunAsync("run-1", [job], CancellationToken.None);
+
+        Assert.Empty(pagedClient.Requests);
+        var request = Assert.Single(asyncExports.PreparedRequests.Single());
+        Assert.Equal("assets", request.Job.Metadata.Key);
+        Assert.Equal(job.Range, request.Range);
+        Assert.Single(asyncExports.CompletedFiles);
+        var batch = Assert.Single(sink.Batches);
+        Assert.Equal(1L, batch.Rows.Single().Values["id"]);
+        Assert.Equal("customer-1", batch.Rows.Single().Values["owner_customer_id"]);
+        Assert.Equal(1, monitor.Current.RecordsProcessed);
+        Assert.Equal(0, monitor.Current.PagesProcessed);
+        Assert.Equal(1, monitor.Current.FilesProcessed);
+    }
+
+    [Fact]
+    public async Task RunAsync_UsesDailyAsyncExportRequestsForRawDataEntityRange()
+    {
+        var pagedClient = new RecordingPagedApiClient();
+        var asyncExports = new RecordingAsyncExportRowSource(
+            Rows("""[{ "id": 1 }]"""),
+            Rows("""[{ "id": 2 }]"""));
+        var sink = new RecordingRelationalSyncSink();
+        var monitor = new RecordingSyncMonitor();
+        var runner = new RelationalMetadataSyncRunner(
+            NullLogger<RelationalMetadataSyncRunner>.Instance,
+            pagedClient,
+            asyncExports,
+            sink,
+            new SyncOptions
+            {
+                StartFrom = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                MaxPageSize = 1
+            },
+            new StorageOptions
+            {
+                Provider = StorageProvider.SqlServer
+            },
+            monitor);
+        var job = new SyncJob(
+            RawDataMetadata(),
+            new SyncDateRange(
+                new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 1, 3, 0, 0, 0, TimeSpan.Zero)),
+            SyncTransferMode.AsyncExport);
+
+        await runner.RunAsync("run-1", [job], CancellationToken.None);
+
+        Assert.Empty(pagedClient.Requests);
+        var requests = asyncExports.PreparedRequests.Single();
+        Assert.Equal(2, requests.Count);
+        Assert.All(requests, request => Assert.Equal("rawDataLocationdata", request.Job.Metadata.Key));
+        Assert.Equal([0, 1], requests.Select(x => x.Sequence).ToArray());
+        Assert.Equal(
+            [
+                new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 1, 2, 0, 0, 0, TimeSpan.Zero)
+            ],
+            requests.Select(x => x.Range.Start).ToArray());
+        Assert.Equal(
+            [
+                new DateTimeOffset(2026, 1, 2, 0, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 1, 3, 0, 0, 0, TimeSpan.Zero)
+            ],
+            requests.Select(x => x.Range.End).ToArray());
+        Assert.Equal(2, sink.Batches.Count);
+        Assert.Equal([1L, 2L], sink.Batches.Select(x => Assert.IsType<long>(x.Rows.Single().Values["id"])).ToArray());
+        Assert.Equal(2, asyncExports.CompletedFiles.Count);
+        Assert.Equal([0, 1], asyncExports.CompletedFiles.Select(x => x.Request.Sequence).ToArray());
+        Assert.Equal(2, monitor.Current.RecordsProcessed);
+        Assert.Equal(0, monitor.Current.PagesProcessed);
+        Assert.Equal(2, monitor.Current.FilesProcessed);
+    }
+
+    [Fact]
     public async Task RunAsync_UsesUnfilteredPagedRequestsForFullDataMode()
     {
         var pagedClient = new RecordingPagedApiClient(
@@ -94,7 +198,7 @@ public sealed class RelationalMetadataSyncRunnerTests
     }
 
     [Fact]
-    public async Task RunAsync_UsesOpenEndedWatermarkRangeForDifferentialPagedRequests()
+    public async Task RunAsync_UsesBoundedWatermarkRangeForDifferentialPagedRequests()
     {
         var pagedClient = new RecordingPagedApiClient(
             Page("""[{ "id": 1, "ownerCustomer": { "id": "customer-1" }, "modification": { "dateTime": "2026-01-01T00:00:00Z" } }]""", totalPages: 1));
@@ -121,7 +225,89 @@ public sealed class RelationalMetadataSyncRunnerTests
 
         await runner.RunAsync("run-1", [job], CancellationToken.None);
 
-        Assert.False(pagedClient.Requests.Single().IncludeEndFilter);
+        Assert.True(pagedClient.Requests.Single().IncludeEndFilter);
+    }
+
+    [Fact]
+    public async Task RunAsync_KeepsMasterDataDifferentialRequestsInSingleBoundedRange()
+    {
+        var pagedClient = new RecordingPagedApiClient(
+            Page("""[]""", totalPages: 1));
+        var runner = new RelationalMetadataSyncRunner(
+            NullLogger<RelationalMetadataSyncRunner>.Instance,
+            pagedClient,
+            new RecordingRelationalSyncSink(),
+            new SyncOptions
+            {
+                StartFrom = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                MaxPageSize = 500
+            },
+            new StorageOptions
+            {
+                Provider = StorageProvider.SqlServer
+            },
+            new RecordingSyncMonitor());
+        var job = new SyncJob(
+            AssetMetadata(includeWatermark: true),
+            new SyncDateRange(
+                new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 1, 3, 12, 0, 0, TimeSpan.Zero)),
+            SyncTransferMode.PagedApi);
+
+        await runner.RunAsync("run-1", [job], CancellationToken.None);
+
+        var request = Assert.Single(pagedClient.Requests);
+        Assert.Equal(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), request.Start);
+        Assert.Equal(new DateTimeOffset(2026, 1, 3, 12, 0, 0, TimeSpan.Zero), request.End);
+        Assert.True(request.IncludeEndFilter);
+    }
+
+    [Fact]
+    public async Task RunAsync_SplitsRawDataDifferentialRequestsIntoDailyBoundedRanges()
+    {
+        var pagedClient = new RecordingPagedApiClient(
+            Page("""[]""", totalPages: 1),
+            Page("""[]""", totalPages: 1),
+            Page("""[]""", totalPages: 1));
+        var runner = new RelationalMetadataSyncRunner(
+            NullLogger<RelationalMetadataSyncRunner>.Instance,
+            pagedClient,
+            new RecordingRelationalSyncSink(),
+            new SyncOptions
+            {
+                StartFrom = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                MaxPageSize = 500
+            },
+            new StorageOptions
+            {
+                Provider = StorageProvider.SqlServer
+            },
+            new RecordingSyncMonitor());
+        var job = new SyncJob(
+            RawDataMetadata(),
+            new SyncDateRange(
+                new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 1, 3, 12, 0, 0, TimeSpan.Zero)),
+            SyncTransferMode.PagedApi);
+
+        await runner.RunAsync("run-1", [job], CancellationToken.None);
+
+        Assert.Equal(3, pagedClient.Requests.Count);
+        Assert.Equal(
+            [
+                new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 1, 2, 0, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 1, 3, 0, 0, 0, TimeSpan.Zero)
+            ],
+            pagedClient.Requests.Select(x => x.Start).ToArray());
+        Assert.Equal(
+            [
+                new DateTimeOffset(2026, 1, 2, 0, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 1, 3, 0, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 1, 3, 12, 0, 0, TimeSpan.Zero)
+            ],
+            pagedClient.Requests.Select(x => x.End).ToArray());
+        Assert.All(pagedClient.Requests, request => Assert.True(request.IncludeEndFilter));
     }
 
     private static PagedApiPage Page(string json, int totalPages)
@@ -179,11 +365,48 @@ public sealed class RelationalMetadataSyncRunnerTests
         };
     }
 
+    private static SwaggerSyncEntityMetadata RawDataMetadata()
+    {
+        return new SwaggerSyncEntityMetadata
+        {
+            Key = "rawDataLocationdata",
+            Table = "raw_data_locationdata",
+            OperationIds = ["RawData_GetLocationData"],
+            Operations =
+            [
+                new SwaggerSyncOperationMetadata
+                {
+                    OperationId = "RawData_GetLocationData",
+                    Method = "get",
+                    Path = "/api/RawData/LocationData",
+                    DocumentName = "data-v1"
+                }
+            ],
+            PrimaryKey = ["id"],
+            Watermark = new SwaggerSyncWatermarkMetadata
+            {
+                Field = "creationDate",
+                TieBreakers = ["id"]
+            },
+            References = [],
+            DocumentNames = ["data-v1"]
+        };
+    }
+
+    private static async Task WaitUntilAsync(Func<bool> condition)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        while (!condition())
+        {
+            await Task.Delay(25, timeout.Token);
+        }
+    }
+
     private sealed class RecordingPagedApiClient(params PagedApiPage[] pages) : IPagedApiClient
     {
         private readonly Queue<PagedApiPage> _pages = new(pages);
 
-        public List<(string EntityKey, int Top, int Skip, bool HasWatermark, bool IncludeEndFilter)> Requests { get; } = [];
+        public List<(string EntityKey, int Top, int Skip, bool HasWatermark, bool IncludeEndFilter, DateTimeOffset Start, DateTimeOffset End)> Requests { get; } = [];
 
         public Task<PagedApiPage> GetPageAsync(
             SwaggerSyncEntityMetadata metadata,
@@ -192,8 +415,108 @@ public sealed class RelationalMetadataSyncRunnerTests
             int skip,
             CancellationToken cancellationToken)
         {
-            Requests.Add((metadata.Key, top, skip, metadata.Watermark != null, range.IncludeEndFilter));
+            Requests.Add((metadata.Key, top, skip, metadata.Watermark != null, range.IncludeEndFilter, range.Start, range.End));
             return Task.FromResult(_pages.Dequeue());
+        }
+    }
+
+    private sealed class RecordingAsyncExportRowSource(params IReadOnlyList<JsonElement>[] rowSets) : IAsyncExportRowSource
+    {
+        private readonly IReadOnlyList<JsonElement>[] _rowSets = rowSets;
+
+        public List<IReadOnlyList<AsyncExportRequest>> PreparedRequests { get; } = [];
+
+        public List<AsyncExportDownloadedFile> CompletedFiles { get; } = [];
+
+        public Task<IReadOnlyList<AsyncExportDownloadedFile>> PrepareAsync(
+            IReadOnlyList<AsyncExportRequest> requests,
+            CancellationToken cancellationToken)
+        {
+            PreparedRequests.Add(requests);
+            return Task.FromResult<IReadOnlyList<AsyncExportDownloadedFile>>(
+                requests.Select(request => new AsyncExportDownloadedFile(request, $"file-{request.Sequence}.csv")).ToArray());
+        }
+
+        public async IAsyncEnumerable<JsonElement> ReadRowsAsync(
+            AsyncExportDownloadedFile file,
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            foreach (var row in _rowSets[file.Request.Sequence])
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                yield return row.Clone();
+            }
+
+            await Task.CompletedTask;
+        }
+
+        public Task CompleteAsync(
+            AsyncExportDownloadedFile file,
+            CancellationToken cancellationToken)
+        {
+            CompletedFiles.Add(file);
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class GatedOrderedAsyncExportRowSource(params IReadOnlyList<JsonElement>[] rowSets) : IAsyncExportRowSource
+    {
+        private readonly IReadOnlyList<JsonElement>[] _rowSets = rowSets;
+        private readonly TaskCompletionSource _firstFilePrepared = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _releaseRemainingFiles = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task FirstFilePrepared => _firstFilePrepared.Task;
+
+        public List<IReadOnlyList<AsyncExportRequest>> PreparedRequests { get; } = [];
+
+        public List<AsyncExportDownloadedFile> CompletedFiles { get; } = [];
+
+        public Task<IReadOnlyList<AsyncExportDownloadedFile>> PrepareAsync(
+            IReadOnlyList<AsyncExportRequest> requests,
+            CancellationToken cancellationToken)
+        {
+            throw new InvalidOperationException("The runner should stream prepared async export files.");
+        }
+
+        public async IAsyncEnumerable<AsyncExportDownloadedFile> PrepareOrderedAsync(
+            IReadOnlyList<AsyncExportRequest> requests,
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            PreparedRequests.Add(requests);
+            _firstFilePrepared.SetResult();
+            yield return new AsyncExportDownloadedFile(requests[0], "file-0.parquet");
+
+            await _releaseRemainingFiles.Task.WaitAsync(cancellationToken);
+            for (var index = 1; index < requests.Count; index++)
+            {
+                yield return new AsyncExportDownloadedFile(requests[index], $"file-{index}.parquet");
+            }
+        }
+
+        public async IAsyncEnumerable<JsonElement> ReadRowsAsync(
+            AsyncExportDownloadedFile file,
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            foreach (var row in _rowSets[file.Request.Sequence])
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                yield return row.Clone();
+            }
+
+            await Task.CompletedTask;
+        }
+
+        public Task CompleteAsync(
+            AsyncExportDownloadedFile file,
+            CancellationToken cancellationToken)
+        {
+            CompletedFiles.Add(file);
+            return Task.CompletedTask;
+        }
+
+        public void ReleaseRemainingFiles()
+        {
+            _releaseRemainingFiles.SetResult();
         }
     }
 
