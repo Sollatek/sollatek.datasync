@@ -12,7 +12,7 @@ public sealed class RelationalSchemaCommandBuilderTests
             StorageProvider.Postgres,
             AssetTable());
 
-        Assert.Equal(
+        SqlAssert.Equal(
             """
             CREATE TABLE IF NOT EXISTS "assets" (
                 "id" text NOT NULL,
@@ -31,7 +31,7 @@ public sealed class RelationalSchemaCommandBuilderTests
             StorageProvider.MySql,
             AssetTable());
 
-        Assert.Equal(
+        SqlAssert.Equal(
             """
             CREATE TABLE IF NOT EXISTS `assets` (
                 `id` varchar(512) NOT NULL,
@@ -49,7 +49,7 @@ public sealed class RelationalSchemaCommandBuilderTests
             StorageProvider.SqlServer,
             AssetTable());
 
-        Assert.Equal(
+        SqlAssert.Equal(
             """
             IF OBJECT_ID(N'[assets]', N'U') IS NULL
             BEGIN

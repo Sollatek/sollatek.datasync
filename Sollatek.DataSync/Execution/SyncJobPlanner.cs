@@ -88,6 +88,6 @@ public static class SyncJobPlanner
         var dataMode = isInitial && entityOptions.Initial == SyncInitialDataMode.Full
             ? SyncDataMode.Full
             : SyncDataMode.Differential;
-        return new SyncJob(metadata, range, SyncTransferMode.PagedApi, dataMode, isInitial);
+        return new SyncJob(metadata, range, options.TransferMode, dataMode, isInitial);
     }
 }

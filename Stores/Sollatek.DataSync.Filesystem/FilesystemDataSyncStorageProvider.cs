@@ -22,12 +22,13 @@ public sealed class FilesystemDataSyncStorageProvider : IDataSyncStorageProvider
         services.AddSingleton<ParquetFileExportSink>();
         services.AddSingleton<FilesystemSyncStateStore>();
         services.AddSingleton<FilesystemSyncTargetDataStore>();
-        services.AddSingleton<FilesystemExportRunner>();
     }
 
     public ISyncJobRunner ResolveRunner(IServiceProvider services)
     {
-        return services.GetRequiredService<FilesystemExportRunner>();
+        return ActivatorUtilities.CreateInstance<FilesystemExportRunner>(
+            services,
+            services.GetRequiredService<ParquetFileExportSink>());
     }
 
     public ISyncStateStore ResolveStateStore(IServiceProvider services)

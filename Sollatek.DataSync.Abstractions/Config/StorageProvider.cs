@@ -8,5 +8,6 @@ public enum StorageProvider
     Postgres,
     MySql,
     Mongo,
-    Filesystem
+    Filesystem,
+    AzureBlob
 }

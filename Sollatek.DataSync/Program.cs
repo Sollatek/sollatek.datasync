@@ -7,6 +7,9 @@ using Platform.ApiClient;
 using Platform.ApiClient.Base;
 using Platform.ApiClient.Extension;
 using Sollatek.DataSync;
+#if DATASYNC_PROVIDER_AZUREBLOB
+using Sollatek.DataSync.AzureBlob;
+#endif
 using Sollatek.DataSync.Config;
 using Sollatek.DataSync.Execution;
 using Sollatek.DataSync.Fetch;
@@ -14,6 +17,7 @@ using Sollatek.DataSync.Fetch;
 using Sollatek.DataSync.Filesystem;
 #endif
 using Sollatek.DataSync.Monitoring;
+using Sollatek.DataSync.Notifications;
 #if DATASYNC_MONITORING_AZUREMONITOR
 using Sollatek.DataSync.Monitoring.AzureMonitor;
 #endif
@@ -61,12 +65,23 @@ using IHost host = Host.CreateDefaultBuilder(args).ConfigureLogging((context, lo
         var apiUrl = GetRequiredUriSetting(configuration, "Settings:apiUrl");
         var storageOptions = StorageOptions.FromConfiguration(configuration);
         var monitoringOptions = MonitoringOptions.FromConfiguration(configuration);
-        services.AddSingleton(SyncOptions.FromConfiguration(configuration));
+        var syncOptions = SyncOptions.FromConfiguration(configuration);
+        var failureEmailNotificationOptions = FailureEmailNotificationOptions.FromConfiguration(configuration);
+        var fileExportOptions = FileExportOptions.FromConfiguration(configuration);
+        var stateOptions = StateOptions.FromConfiguration(configuration);
+        ValidateStateOptions(storageOptions, stateOptions);
+        var asyncExportFallbackFormat = storageOptions.Provider is StorageProvider.Filesystem or StorageProvider.AzureBlob
+            ? fileExportOptions.Format
+            : null;
+        services.AddSingleton(syncOptions);
+        services.AddSingleton(AsyncExportOptions.FromConfiguration(configuration, asyncExportFallbackFormat));
         services.AddSingleton(SyncPlanOptions.FromConfiguration(configuration));
         services.AddSingleton(RetryOptions.FromConfiguration(configuration));
+        services.AddSingleton(failureEmailNotificationOptions);
         services.AddSingleton(monitoringOptions);
         services.AddSingleton(storageOptions);
-        services.AddSingleton(FileExportOptions.FromConfiguration(configuration));
+        services.AddSingleton(fileExportOptions);
+        services.AddSingleton(stateOptions);
         services.AddSingleton<ISyncMetrics>(sp =>
         {
             var options = sp.GetRequiredService<MonitoringOptions>();
@@ -76,6 +91,12 @@ using IHost host = Host.CreateDefaultBuilder(args).ConfigureLogging((context, lo
         });
         services.AddSingleton<LoggingSyncMonitor>();
         services.AddSingleton<ISyncMonitor>(sp => sp.GetRequiredService<LoggingSyncMonitor>());
+        services.AddSingleton<IFailureNotificationSender>(sp =>
+            failureEmailNotificationOptions.Enabled
+                ? new SmtpFailureNotificationSender(
+                    failureEmailNotificationOptions,
+                    sp.GetRequiredService<ILogger<SmtpFailureNotificationSender>>())
+                : NoopFailureNotificationSender.Instance);
         new DataSyncMonitoringProviderRegistry(CreateMonitoringProviders())
             .AddServices(services, monitoringOptions);
 
@@ -88,6 +109,9 @@ using IHost host = Host.CreateDefaultBuilder(args).ConfigureLogging((context, lo
 #endif
 #if DATASYNC_PROVIDER_FILESYSTEM
         storageProviders.Add(new FilesystemDataSyncStorageProvider());
+#endif
+#if DATASYNC_PROVIDER_AZUREBLOB
+        storageProviders.Add(new AzureBlobDataSyncStorageProvider());
 #endif
         foreach (var provider in storageProviders)
         {
@@ -113,11 +137,32 @@ using IHost host = Host.CreateDefaultBuilder(args).ConfigureLogging((context, lo
             var registry = sp.GetRequiredService<DataSyncStorageProviderRegistry>();
             return registry.GetRequired(provider).ResolveTargetDataStore(sp);
         });
+        services.AddSingleton<FilesystemAsyncExportStateStore>();
+        services.AddSingleton<IAsyncExportStateStore>(sp =>
+        {
+            var stateProvider = sp.GetRequiredService<StateOptions>().Provider;
+            if (stateProvider == StateProvider.Filesystem)
+            {
+                return sp.GetRequiredService<FilesystemAsyncExportStateStore>();
+            }
+
+#if DATASYNC_PROVIDER_AZUREBLOB
+            return sp.GetRequiredService<AzureBlobAsyncExportStateStore>();
+#else
+            throw new InvalidOperationException(
+                "State:provider=azureBlobStorage requires the Azure Blob storage provider build.");
+#endif
+        });
         services.AddHttpClient();
         services.AddApiClients(apiUrl, oauthUrl, clientKey, clientSecret);
-        services.AddHttpClient<PagedApiClient>(client => ConfigurePlatformHttpClient(client, apiUrl))
+        services.AddHttpClient<PagedApiClient>(client =>
+                ConfigurePlatformHttpClient(client, apiUrl, syncOptions.ApiRequestTimeout))
             .AddHttpMessageHandler<ProtectedApiBearerTokenHandler>();
         services.AddTransient<IPagedApiClient>(sp => sp.GetRequiredService<PagedApiClient>());
+        services.AddHttpClient<HttpAsyncExportRowSource>(client =>
+                ConfigurePlatformHttpClient(client, apiUrl, syncOptions.ApiRequestTimeout))
+            .AddHttpMessageHandler<ProtectedApiBearerTokenHandler>();
+        services.AddTransient<IAsyncExportRowSource>(sp => sp.GetRequiredService<HttpAsyncExportRowSource>());
         services.AddHostedService<TimedHostedService>();
     })
     .Build();
@@ -129,6 +174,9 @@ using (var scope = host.Services.CreateScope())
     {
         case StorageProvider.Filesystem:
             l.LogInformation("Skipping database migrations for filesystem export storage.");
+            break;
+        case StorageProvider.AzureBlob:
+            l.LogInformation("Skipping database migrations for Azure Blob export storage.");
             break;
         case StorageProvider.SqlServer:
         case StorageProvider.Postgres:
@@ -146,9 +194,10 @@ using (var scope = host.Services.CreateScope())
 
 await host.RunAsync();
 
-static void ConfigurePlatformHttpClient(HttpClient client, string apiUrl)
+static void ConfigurePlatformHttpClient(HttpClient client, string apiUrl, TimeSpan timeout)
 {
     client.BaseAddress = new Uri(apiUrl);
+    client.Timeout = timeout;
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 }
 
@@ -172,6 +221,18 @@ static string GetRequiredUriSetting(IConfiguration configuration, string key)
     }
 
     return value;
+}
+
+static void ValidateStateOptions(
+    StorageOptions storageOptions,
+    StateOptions stateOptions)
+{
+    if (stateOptions.Provider == StateProvider.AzureBlob &&
+        storageOptions.Provider != StorageProvider.AzureBlob)
+    {
+        throw new InvalidOperationException(
+            "State:provider=azureBlobStorage is available only when Storage:provider is azureBlobStorage.");
+    }
 }
 
 static IReadOnlyList<IDataSyncMonitoringProvider> CreateMonitoringProviders()

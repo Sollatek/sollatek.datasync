@@ -32,7 +32,7 @@ public sealed class PagedApiClient : IPagedApiClient
             cancellationToken);
         var responseBody = response.Content == null
             ? string.Empty
-            : await response.Content.ReadAsStringAsync(cancellationToken);
+            : await ReadAsStringWithTimeoutAsync(response.Content, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -72,6 +72,19 @@ public sealed class PagedApiClient : IPagedApiClient
         }
 
         return new Pagination(rowCount, rowCount, CurrentPage: 1, TotalPages: 1);
+    }
+
+    private async Task<string> ReadAsStringWithTimeoutAsync(
+        HttpContent content,
+        CancellationToken cancellationToken)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        if (_httpClient.Timeout != Timeout.InfiniteTimeSpan)
+        {
+            timeout.CancelAfter(_httpClient.Timeout);
+        }
+
+        return await content.ReadAsStringAsync(timeout.Token);
     }
 
     private sealed record Pagination(

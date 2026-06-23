@@ -66,6 +66,86 @@ public sealed class MeterSyncMetrics : ISyncMetrics, IDisposable
             ObserveFilesProcessed,
             unit: "files",
             description: "Files processed in the current DataSync status.");
+        _meter.CreateObservableGauge(
+            "datasync.entity.records.processed",
+            ObserveCurrentEntityRecordsProcessed,
+            unit: "records",
+            description: "Records processed for the active DataSync entity.");
+        _meter.CreateObservableGauge(
+            "datasync.entity.pages.processed",
+            ObserveCurrentEntityPagesProcessed,
+            unit: "pages",
+            description: "Pages processed for the active DataSync entity.");
+        _meter.CreateObservableGauge(
+            "datasync.entity.files.processed",
+            ObserveCurrentEntityFilesProcessed,
+            unit: "files",
+            description: "Files processed for the active DataSync entity.");
+        _meter.CreateObservableGauge(
+            "datasync.memory.managed_heap",
+            ObserveManagedHeapBytes,
+            unit: "By",
+            description: "Current managed heap size sampled from the DataSync worker process.");
+        _meter.CreateObservableGauge(
+            "datasync.memory.total_allocated",
+            ObserveTotalAllocatedBytes,
+            unit: "By",
+            description: "Total allocated bytes sampled from the DataSync worker process.");
+        _meter.CreateObservableGauge(
+            "datasync.memory.working_set",
+            ObserveWorkingSetBytes,
+            unit: "By",
+            description: "Current working set sampled from the DataSync worker process.");
+        _meter.CreateObservableGauge(
+            "datasync.memory.private",
+            ObservePrivateMemoryBytes,
+            unit: "By",
+            description: "Current private memory sampled from the DataSync worker process.");
+        _meter.CreateObservableGauge(
+            "datasync.memory.peak_working_set",
+            ObservePeakWorkingSetBytes,
+            unit: "By",
+            description: "Peak working set sampled from the DataSync worker process.");
+        _meter.CreateObservableGauge(
+            "datasync.lag.seconds",
+            ObserveLagSeconds,
+            unit: "s",
+            description: "Seconds between the latest completed range and the expected completed schedule boundary.");
+        _meter.CreateObservableGauge(
+            "datasync.lag.periods",
+            ObserveLagPeriods,
+            unit: "periods",
+            description: "Schedule periods between the latest completed range and the expected completed schedule boundary.");
+        _meter.CreateObservableGauge(
+            "datasync.async_exports.pending",
+            ObserveAsyncExportsPending,
+            unit: "requests",
+            description: "Async export requests currently pending local submission/polling.");
+        _meter.CreateObservableGauge(
+            "datasync.async_exports.polling",
+            ObserveAsyncExportsPolling,
+            unit: "requests",
+            description: "Async export requests currently waiting for portal completion.");
+        _meter.CreateObservableGauge(
+            "datasync.async_exports.downloaded",
+            ObserveAsyncExportsDownloaded,
+            unit: "requests",
+            description: "Async export requests downloaded and waiting for local processing.");
+        _meter.CreateObservableGauge(
+            "datasync.async_exports.processing",
+            ObserveAsyncExportsProcessing,
+            unit: "requests",
+            description: "Async export requests currently being read into the target.");
+        _meter.CreateObservableGauge(
+            "datasync.async_exports.failed",
+            ObserveAsyncExportsFailed,
+            unit: "requests",
+            description: "Async export requests in failed local state.");
+        _meter.CreateObservableGauge(
+            "datasync.async_exports.expired",
+            ObserveAsyncExportsExpired,
+            unit: "requests",
+            description: "Async export requests in expired local state.");
     }
 
     public void Record(
@@ -143,6 +223,102 @@ public sealed class MeterSyncMetrics : ISyncMetrics, IDisposable
     {
         var status = Current;
         return new Measurement<long>(status.FilesProcessed, Tags(status));
+    }
+
+    private Measurement<long> ObserveCurrentEntityRecordsProcessed()
+    {
+        var status = Current;
+        return new Measurement<long>(status.CurrentEntityRecordsProcessed, Tags(status));
+    }
+
+    private Measurement<long> ObserveCurrentEntityPagesProcessed()
+    {
+        var status = Current;
+        return new Measurement<long>(status.CurrentEntityPagesProcessed, Tags(status));
+    }
+
+    private Measurement<long> ObserveCurrentEntityFilesProcessed()
+    {
+        var status = Current;
+        return new Measurement<long>(status.CurrentEntityFilesProcessed, Tags(status));
+    }
+
+    private Measurement<long> ObserveManagedHeapBytes()
+    {
+        var status = Current;
+        return new Measurement<long>(status.ManagedHeapBytes ?? 0, Tags(status));
+    }
+
+    private Measurement<long> ObserveTotalAllocatedBytes()
+    {
+        var status = Current;
+        return new Measurement<long>(status.TotalAllocatedBytes ?? 0, Tags(status));
+    }
+
+    private Measurement<long> ObserveWorkingSetBytes()
+    {
+        var status = Current;
+        return new Measurement<long>(status.WorkingSetBytes ?? 0, Tags(status));
+    }
+
+    private Measurement<long> ObservePrivateMemoryBytes()
+    {
+        var status = Current;
+        return new Measurement<long>(status.PrivateMemoryBytes ?? 0, Tags(status));
+    }
+
+    private Measurement<long> ObservePeakWorkingSetBytes()
+    {
+        var status = Current;
+        return new Measurement<long>(status.PeakWorkingSetBytes ?? 0, Tags(status));
+    }
+
+    private Measurement<long> ObserveLagSeconds()
+    {
+        var status = Current;
+        return new Measurement<long>(status.LagSeconds ?? 0, Tags(status));
+    }
+
+    private Measurement<int> ObserveLagPeriods()
+    {
+        var status = Current;
+        return new Measurement<int>(status.LagPeriods ?? 0, Tags(status));
+    }
+
+    private Measurement<int> ObserveAsyncExportsPending()
+    {
+        var status = Current;
+        return new Measurement<int>(status.AsyncExportsPending, Tags(status));
+    }
+
+    private Measurement<int> ObserveAsyncExportsPolling()
+    {
+        var status = Current;
+        return new Measurement<int>(status.AsyncExportsPolling, Tags(status));
+    }
+
+    private Measurement<int> ObserveAsyncExportsDownloaded()
+    {
+        var status = Current;
+        return new Measurement<int>(status.AsyncExportsDownloaded, Tags(status));
+    }
+
+    private Measurement<int> ObserveAsyncExportsProcessing()
+    {
+        var status = Current;
+        return new Measurement<int>(status.AsyncExportsProcessing, Tags(status));
+    }
+
+    private Measurement<int> ObserveAsyncExportsFailed()
+    {
+        var status = Current;
+        return new Measurement<int>(status.AsyncExportsFailed, Tags(status));
+    }
+
+    private Measurement<int> ObserveAsyncExportsExpired()
+    {
+        var status = Current;
+        return new Measurement<int>(status.AsyncExportsExpired, Tags(status));
     }
 
     private SyncRunStatus Current

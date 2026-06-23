@@ -9,7 +9,9 @@ public sealed record SyncJob(
     SyncDateRange Range,
     SyncTransferMode TransferMode,
     SyncDataMode DataMode = SyncDataMode.Differential,
-    bool IsInitial = false);
+    bool IsInitial = false,
+    DateTimeOffset? ExpectedCompletedRangeEndUtc = null,
+    int? LagPeriods = null);
 
 public enum SyncDataMode
 {
