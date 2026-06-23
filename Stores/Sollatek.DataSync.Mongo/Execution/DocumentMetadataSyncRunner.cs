@@ -14,8 +14,11 @@ namespace Sollatek.DataSync.Execution;
 
 public sealed class DocumentMetadataSyncRunner : ISyncJobRunner
 {
+    private static readonly TimeSpan MaxDifferentialRequestRange = TimeSpan.FromDays(1);
+
     private readonly ILogger<DocumentMetadataSyncRunner> _logger;
     private readonly IPagedApiClient _pagedApiClient;
+    private readonly IAsyncExportRowSource _asyncExportRowSource;
     private readonly IDocumentSyncSink _sink;
     private readonly SyncOptions _syncOptions;
     private readonly StorageOptions _storageOptions;
@@ -28,9 +31,29 @@ public sealed class DocumentMetadataSyncRunner : ISyncJobRunner
         SyncOptions syncOptions,
         StorageOptions storageOptions,
         ISyncMonitor monitor)
+        : this(
+            logger,
+            pagedApiClient,
+            UnconfiguredAsyncExportRowSource.Instance,
+            sink,
+            syncOptions,
+            storageOptions,
+            monitor)
+    {
+    }
+
+    public DocumentMetadataSyncRunner(
+        ILogger<DocumentMetadataSyncRunner> logger,
+        IPagedApiClient pagedApiClient,
+        IAsyncExportRowSource asyncExportRowSource,
+        IDocumentSyncSink sink,
+        SyncOptions syncOptions,
+        StorageOptions storageOptions,
+        ISyncMonitor monitor)
     {
         _logger = logger;
         _pagedApiClient = pagedApiClient;
+        _asyncExportRowSource = asyncExportRowSource;
         _sink = sink;
         _syncOptions = syncOptions;
         _storageOptions = storageOptions;
@@ -64,13 +87,78 @@ public sealed class DocumentMetadataSyncRunner : ISyncJobRunner
     {
         var entityKey = job.Metadata.Key;
         _monitor.RecordEntityStarted(runId, entityKey);
+        _monitor.RecordEntityRange(
+            runId,
+            entityKey,
+            job.Range.Start,
+            job.Range.End,
+            job.ExpectedCompletedRangeEndUtc,
+            job.LagPeriods);
         _logger.LogInformation(
             "Starting metadata-backed document sync for {EntityKey}.",
             entityKey);
 
-        var skip = 0;
         var requestMetadata = GetRequestMetadata(job);
-        var requestRange = GetRequestRange(job);
+        if (job.TransferMode == SyncTransferMode.AsyncExport)
+        {
+            await SyncAsyncExportAsync(
+                runId,
+                entityKey,
+                job,
+                requestMetadata,
+                cancellationToken);
+            return;
+        }
+
+        foreach (var requestRange in GetRequestRanges(job))
+        {
+            await SyncRangeAsync(
+                runId,
+                entityKey,
+                requestMetadata,
+                requestRange,
+                cancellationToken);
+        }
+    }
+
+    private async Task SyncAsyncExportAsync(
+        string runId,
+        string entityKey,
+        SyncJob job,
+        SwaggerSyncEntityMetadata requestMetadata,
+        CancellationToken cancellationToken)
+    {
+        var requests = GetRequestRanges(job)
+            .Select((range, index) => new AsyncExportRequest(index, job, requestMetadata, range))
+            .ToArray();
+
+        await foreach (var file in _asyncExportRowSource.PrepareOrderedAsync(requests, cancellationToken))
+        {
+            long rowsProcessed = 0;
+            await _sink.WriteAsync(
+                requestMetadata,
+                CountRows(
+                    _asyncExportRowSource.ReadRowsAsync(file, cancellationToken),
+                    () => rowsProcessed++,
+                    cancellationToken),
+                cancellationToken);
+            await _asyncExportRowSource.CompleteAsync(file, cancellationToken);
+            _monitor.RecordProgress(
+                runId,
+                entityKey,
+                recordsProcessed: rowsProcessed,
+                filesProcessed: 1);
+        }
+    }
+
+    private async Task SyncRangeAsync(
+        string runId,
+        string entityKey,
+        SwaggerSyncEntityMetadata requestMetadata,
+        SyncDateRange requestRange,
+        CancellationToken cancellationToken)
+    {
+        var skip = 0;
         while (!cancellationToken.IsCancellationRequested)
         {
             var page = await _pagedApiClient.GetPageAsync(
@@ -86,7 +174,7 @@ public sealed class DocumentMetadataSyncRunner : ISyncJobRunner
             }
 
             await _sink.WriteAsync(
-                job.Metadata,
+                requestMetadata,
                 AsAsyncRows(page.Rows, cancellationToken),
                 cancellationToken);
             _monitor.RecordProgress(
@@ -112,11 +200,28 @@ public sealed class DocumentMetadataSyncRunner : ISyncJobRunner
             : job.Metadata;
     }
 
-    private static SyncDateRange GetRequestRange(SyncJob job)
+    private static IReadOnlyList<SyncDateRange> GetRequestRanges(SyncJob job)
     {
-        return job.DataMode == SyncDataMode.Full
-            ? job.Range
-            : new SyncDateRange(job.Range.Start, job.Range.End, IncludeEndFilter: false);
+        if (job.DataMode == SyncDataMode.Full ||
+            job.Metadata.Watermark == null)
+        {
+            return [job.Range];
+        }
+
+        if (!IsRawDataEndpoint(job.Metadata))
+        {
+            return [new SyncDateRange(job.Range.Start, job.Range.End)];
+        }
+
+        return SyncDateRangeSplitter.Split(job.Range, MaxDifferentialRequestRange);
+    }
+
+    private static bool IsRawDataEndpoint(SwaggerSyncEntityMetadata metadata)
+    {
+        return metadata.Operations.Any(operation =>
+                   operation.Path.Contains("/RawData/", StringComparison.OrdinalIgnoreCase)) ||
+               (metadata.Table?.StartsWith("raw_data_", StringComparison.OrdinalIgnoreCase) ?? false) ||
+               (metadata.Collection?.StartsWith("raw_data_", StringComparison.OrdinalIgnoreCase) ?? false);
     }
 
     private static async IAsyncEnumerable<JsonElement> AsAsyncRows(
@@ -130,5 +235,18 @@ public sealed class DocumentMetadataSyncRunner : ISyncJobRunner
         }
 
         await Task.CompletedTask;
+    }
+
+    private static async IAsyncEnumerable<JsonElement> CountRows(
+        IAsyncEnumerable<JsonElement> rows,
+        Action onRowRead,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        await foreach (var row in rows.WithCancellation(cancellationToken))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            onRowRead();
+            yield return row;
+        }
     }
 }

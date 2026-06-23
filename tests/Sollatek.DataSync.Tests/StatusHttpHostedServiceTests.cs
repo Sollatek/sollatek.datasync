@@ -17,6 +17,24 @@ public sealed class StatusHttpHostedServiceTests
         var monitor = new LoggingSyncMonitor(NullLogger<LoggingSyncMonitor>.Instance);
         monitor.RecordRunStarted("run-1", new DateTimeOffset(2026, 6, 19, 12, 0, 0, TimeSpan.Zero));
         monitor.RecordEntityStarted("run-1", "assets", new DateTimeOffset(2026, 6, 19, 12, 1, 0, TimeSpan.Zero));
+        monitor.RecordRunScheduled(
+            scheduleMode: "daily",
+            nextRunAtUtc: new DateTimeOffset(2026, 6, 20, 1, 0, 0, TimeSpan.Zero),
+            expectedCompletedRangeEndUtc: new DateTimeOffset(2026, 6, 19, 0, 0, 0, TimeSpan.Zero));
+        monitor.RecordEntityRange(
+            "run-1",
+            "assets",
+            rangeStartUtc: new DateTimeOffset(2026, 6, 18, 0, 0, 0, TimeSpan.Zero),
+            rangeEndUtc: new DateTimeOffset(2026, 6, 19, 0, 0, 0, TimeSpan.Zero),
+            expectedCompletedRangeEndUtc: new DateTimeOffset(2026, 6, 20, 0, 0, 0, TimeSpan.Zero),
+            lagPeriods: 2);
+        monitor.RecordAsyncExportStatus(new AsyncExportStatusSummary(
+            Pending: 0,
+            Polling: 7,
+            Downloaded: 3,
+            Processing: 1,
+            Failed: 0,
+            Expired: 0));
         var options = MonitoringOptions.Default with
         {
             StatusEndpoint = new MonitoringStatusEndpointOptions
@@ -44,6 +62,14 @@ public sealed class StatusHttpHostedServiceTests
             Assert.Equal("ProcessingEntity", document.RootElement.GetProperty("state").GetString());
             Assert.Equal("run-1", document.RootElement.GetProperty("runId").GetString());
             Assert.Equal("assets", document.RootElement.GetProperty("currentEntity").GetString());
+            Assert.Equal("daily", document.RootElement.GetProperty("scheduleMode").GetString());
+            Assert.Equal(2, document.RootElement.GetProperty("lagPeriods").GetInt32());
+            Assert.Equal(172800, document.RootElement.GetProperty("lagSeconds").GetInt64());
+            Assert.Equal(7, document.RootElement.GetProperty("asyncExportsPolling").GetInt32());
+            Assert.Equal(3, document.RootElement.GetProperty("asyncExportsDownloaded").GetInt32());
+            Assert.True(document.RootElement.GetProperty("workingSetBytes").GetInt64() > 0);
+            Assert.True(document.RootElement.GetProperty("managedHeapBytes").GetInt64() >= 0);
+            Assert.True(document.RootElement.GetProperty("peakWorkingSetBytes").GetInt64() > 0);
 
             var health = await client.GetStringAsync(
                 $"http://127.0.0.1:{port}/health",

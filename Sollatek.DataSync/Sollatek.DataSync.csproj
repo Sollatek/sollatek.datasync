@@ -13,6 +13,7 @@
         <IsDataSyncSqlProvider Condition="'$(DataSyncProvider)' == 'all' Or '$(DataSyncProvider)' == 'sql' Or '$(DataSyncProvider)' == 'sqlserver' Or '$(DataSyncProvider)' == 'mssql' Or '$(DataSyncProvider)' == 'postgres' Or '$(DataSyncProvider)' == 'mysql'">true</IsDataSyncSqlProvider>
         <IsDataSyncMongoProvider Condition="'$(DataSyncProvider)' == 'all' Or '$(DataSyncProvider)' == 'mongo' Or '$(DataSyncProvider)' == 'mongodb'">true</IsDataSyncMongoProvider>
         <IsDataSyncFilesystemProvider Condition="'$(DataSyncProvider)' == 'all' Or '$(DataSyncProvider)' == 'filesystem' Or '$(DataSyncProvider)' == 'files'">true</IsDataSyncFilesystemProvider>
+        <IsDataSyncAzureBlobProvider Condition="'$(DataSyncProvider)' == 'all' Or '$(DataSyncProvider)' == 'azureblob' Or '$(DataSyncProvider)' == 'azureblobstorage' Or '$(DataSyncProvider)' == 'blob'">true</IsDataSyncAzureBlobProvider>
         <IsDataSyncMonitoringNone Condition="'$(DataSyncMonitoringProvider)' == 'none'">true</IsDataSyncMonitoringNone>
         <IsDataSyncMonitoringOtlp Condition="'$(DataSyncMonitoringProvider)' == 'all' Or '$(DataSyncMonitoringProvider)' == 'otlp' Or '$(DataSyncMonitoringProvider)' == 'opentelemetry' Or '$(DataSyncMonitoringProvider)' == 'otlp-status' Or '$(DataSyncMonitoringProvider)' == 'otlp-azuremonitor' Or '$(DataSyncMonitoringProvider)' == 'otlp-azuremonitor-status'">true</IsDataSyncMonitoringOtlp>
         <IsDataSyncMonitoringAzureMonitor Condition="'$(DataSyncMonitoringProvider)' == 'all' Or '$(DataSyncMonitoringProvider)' == 'azuremonitor' Or '$(DataSyncMonitoringProvider)' == 'azure' Or '$(DataSyncMonitoringProvider)' == 'appinsights' Or '$(DataSyncMonitoringProvider)' == 'applicationinsights' Or '$(DataSyncMonitoringProvider)' == 'azuremonitor-status' Or '$(DataSyncMonitoringProvider)' == 'otlp-azuremonitor' Or '$(DataSyncMonitoringProvider)' == 'otlp-azuremonitor-status'">true</IsDataSyncMonitoringAzureMonitor>
@@ -20,6 +21,7 @@
         <DefineConstants Condition="'$(IsDataSyncSqlProvider)' == 'true'">$(DefineConstants);DATASYNC_PROVIDER_SQL</DefineConstants>
         <DefineConstants Condition="'$(IsDataSyncMongoProvider)' == 'true'">$(DefineConstants);DATASYNC_PROVIDER_MONGO</DefineConstants>
         <DefineConstants Condition="'$(IsDataSyncFilesystemProvider)' == 'true'">$(DefineConstants);DATASYNC_PROVIDER_FILESYSTEM</DefineConstants>
+        <DefineConstants Condition="'$(IsDataSyncAzureBlobProvider)' == 'true'">$(DefineConstants);DATASYNC_PROVIDER_AZUREBLOB</DefineConstants>
         <DefineConstants Condition="'$(IsDataSyncMonitoringOtlp)' == 'true'">$(DefineConstants);DATASYNC_MONITORING_OTLP</DefineConstants>
         <DefineConstants Condition="'$(IsDataSyncMonitoringAzureMonitor)' == 'true'">$(DefineConstants);DATASYNC_MONITORING_AZUREMONITOR</DefineConstants>
         <DefineConstants Condition="'$(IsDataSyncMonitoringStatusEndpoint)' == 'true'">$(DefineConstants);DATASYNC_MONITORING_STATUSENDPOINT</DefineConstants>
@@ -30,6 +32,7 @@
       <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.9" />
       <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.9" />
       <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.9" />
+      <PackageReference Include="Parquet.Net" Version="6.0.3" />
     </ItemGroup>
 
     <ItemGroup>
@@ -40,6 +43,10 @@
 
     <ItemGroup Condition="'$(IsDataSyncFilesystemProvider)' == 'true'">
       <ProjectReference Include="..\Stores\Sollatek.DataSync.Filesystem\Sollatek.DataSync.Filesystem.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(IsDataSyncAzureBlobProvider)' == 'true'">
+      <ProjectReference Include="..\Stores\Sollatek.DataSync.AzureBlob\Sollatek.DataSync.AzureBlob.csproj" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(IsDataSyncMongoProvider)' == 'true'">
@@ -75,8 +82,8 @@
 
     <Target Name="ValidateDataSyncProvider" BeforeTargets="Restore;PrepareForBuild">
       <Error
-        Condition="'$(IsDataSyncSqlProvider)' != 'true' And '$(IsDataSyncMongoProvider)' != 'true' And '$(IsDataSyncFilesystemProvider)' != 'true'"
-        Text="DataSyncProvider must be one of: all, sql, sqlserver, mssql, postgres, mysql, mongo, mongodb, filesystem, files." />
+        Condition="'$(IsDataSyncSqlProvider)' != 'true' And '$(IsDataSyncMongoProvider)' != 'true' And '$(IsDataSyncFilesystemProvider)' != 'true' And '$(IsDataSyncAzureBlobProvider)' != 'true'"
+        Text="DataSyncProvider must be one of: all, sql, sqlserver, mssql, postgres, mysql, mongo, mongodb, filesystem, files, azureblob, azureblobstorage, blob." />
       <Error
         Condition="'$(IsDataSyncMonitoringNone)' != 'true' And '$(IsDataSyncMonitoringOtlp)' != 'true' And '$(IsDataSyncMonitoringAzureMonitor)' != 'true' And '$(IsDataSyncMonitoringStatusEndpoint)' != 'true'"
         Text="DataSyncMonitoringProvider must be one of: none, all, otlp, opentelemetry, azuremonitor, azure, appinsights, applicationinsights, status, statusendpoint, http, otlp-status, azuremonitor-status, otlp-azuremonitor, otlp-azuremonitor-status." />

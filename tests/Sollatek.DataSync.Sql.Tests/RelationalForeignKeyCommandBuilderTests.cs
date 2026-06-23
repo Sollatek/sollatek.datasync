@@ -25,7 +25,7 @@ public sealed class RelationalForeignKeyCommandBuilderTests
             AssetTable(),
             AssetCustomerForeignKey());
 
-        Assert.Equal(
+        SqlAssert.Equal(
             """
             ALTER TABLE "assets"
             ADD CONSTRAINT "fk_assets_owner_customer_id"
@@ -45,7 +45,7 @@ public sealed class RelationalForeignKeyCommandBuilderTests
             AssetTable(),
             AssetCustomerForeignKey());
 
-        Assert.Equal(
+        SqlAssert.Equal(
             """
             ALTER TABLE `assets`
             ADD CONSTRAINT `fk_assets_owner_customer_id`
@@ -64,7 +64,7 @@ public sealed class RelationalForeignKeyCommandBuilderTests
             AssetTable(),
             AssetCustomerForeignKey());
 
-        Assert.Equal(
+        SqlAssert.Equal(
             """
             ALTER TABLE [assets] WITH NOCHECK
             ADD CONSTRAINT [fk_assets_owner_customer_id]

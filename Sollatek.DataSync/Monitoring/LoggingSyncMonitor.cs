@@ -47,13 +47,20 @@ public sealed class LoggingSyncMonitor : ISyncMonitor
     public void RecordRunStarted(string runId, DateTimeOffset? startedAt = null)
     {
         var timestamp = startedAt ?? DateTimeOffset.UtcNow;
+        var current = Current;
 
-        var status = new SyncRunStatus
+        var status = RuntimeMemorySnapshot.Capture(current with
         {
             State = SyncRunState.Running,
             RunId = runId,
-            StartedAt = timestamp
-        };
+            StartedAt = timestamp,
+            RecordsProcessed = 0,
+            PagesProcessed = 0,
+            FilesProcessed = 0,
+            CurrentEntityRecordsProcessed = 0,
+            CurrentEntityPagesProcessed = 0,
+            CurrentEntityFilesProcessed = 0
+        });
         Update(status);
         _metrics.Record(SyncMetricEvent.RunStarted, status);
 
@@ -66,18 +73,57 @@ public sealed class LoggingSyncMonitor : ISyncMonitor
         }
     }
 
+    public void RecordRunScheduled(
+        string scheduleMode,
+        DateTimeOffset nextRunAtUtc,
+        DateTimeOffset expectedCompletedRangeEndUtc)
+    {
+        var expected = expectedCompletedRangeEndUtc.ToUniversalTime();
+        var status = RuntimeMemorySnapshot.Capture(Current with
+        {
+            ScheduleMode = scheduleMode,
+            NextRunAtUtc = nextRunAtUtc.ToUniversalTime(),
+            ExpectedCompletedRangeEndUtc = expected
+        });
+        Update(status);
+        _metrics.Record(SyncMetricEvent.Progress, status);
+    }
+
+    public void RecordRunPlanned(
+        string runId,
+        string scheduleMode,
+        DateTimeOffset plannedRangeEndUtc,
+        DateTimeOffset expectedCompletedRangeEndUtc,
+        int plannedEntityCount)
+    {
+        var expected = expectedCompletedRangeEndUtc.ToUniversalTime();
+        var status = RuntimeMemorySnapshot.Capture(Current with
+        {
+            RunId = runId,
+            ScheduleMode = scheduleMode,
+            PlannedRangeEndUtc = plannedRangeEndUtc.ToUniversalTime(),
+            ExpectedCompletedRangeEndUtc = expected,
+            PlannedEntityCount = plannedEntityCount
+        });
+        Update(status);
+        _metrics.Record(SyncMetricEvent.Progress, status);
+    }
+
     public void RecordEntityStarted(string runId, string entityKey, DateTimeOffset? startedAt = null)
     {
         var timestamp = startedAt ?? DateTimeOffset.UtcNow;
 
         var current = Current;
-        var status = current with
+        var status = RuntimeMemorySnapshot.Capture(current with
         {
             State = SyncRunState.ProcessingEntity,
             RunId = runId,
             CurrentEntity = entityKey,
-            StartedAt = current.StartedAt ?? timestamp
-        };
+            StartedAt = current.StartedAt ?? timestamp,
+            CurrentEntityRecordsProcessed = 0,
+            CurrentEntityPagesProcessed = 0,
+            CurrentEntityFilesProcessed = 0
+        });
         Update(status);
         _metrics.Record(SyncMetricEvent.EntityStarted, status);
 
@@ -91,6 +137,35 @@ public sealed class LoggingSyncMonitor : ISyncMonitor
         }
     }
 
+    public void RecordEntityRange(
+        string runId,
+        string entityKey,
+        DateTimeOffset rangeStartUtc,
+        DateTimeOffset rangeEndUtc,
+        DateTimeOffset? expectedCompletedRangeEndUtc = null,
+        int? lagPeriods = null)
+    {
+        var rangeStart = rangeStartUtc.ToUniversalTime();
+        var rangeEnd = rangeEndUtc.ToUniversalTime();
+        var expected = (expectedCompletedRangeEndUtc ?? Current.ExpectedCompletedRangeEndUtc ?? rangeEnd)
+            .ToUniversalTime();
+        var lagSeconds = GetLagSeconds(rangeStart, expected);
+
+        var status = RuntimeMemorySnapshot.Capture(Current with
+        {
+            RunId = runId,
+            CurrentEntity = entityKey,
+            CurrentRangeStartUtc = rangeStart,
+            CurrentRangeEndUtc = rangeEnd,
+            LastCompletedRangeEndUtc = rangeStart,
+            ExpectedCompletedRangeEndUtc = expected,
+            LagSeconds = lagSeconds,
+            LagPeriods = lagPeriods
+        });
+        Update(status);
+        _metrics.Record(SyncMetricEvent.Progress, status);
+    }
+
     public void RecordFailure(
         string runId,
         string? entityKey,
@@ -102,7 +177,7 @@ public sealed class LoggingSyncMonitor : ISyncMonitor
         var timestamp = failedAt ?? DateTimeOffset.UtcNow;
         var state = nextRetryAt.HasValue ? SyncRunState.WaitingToRetry : SyncRunState.Failed;
 
-        var status = Current with
+        var status = RuntimeMemorySnapshot.Capture(Current with
         {
             State = state,
             RunId = runId,
@@ -111,7 +186,7 @@ public sealed class LoggingSyncMonitor : ISyncMonitor
             LastError = error,
             TryNumber = tryNumber,
             NextRetryAt = nextRetryAt
-        };
+        });
         Update(status);
         _metrics.Record(SyncMetricEvent.Failure, status);
 
@@ -138,14 +213,17 @@ public sealed class LoggingSyncMonitor : ISyncMonitor
         SyncRunStatus status;
         lock (_sync)
         {
-            status = _current with
+            status = RuntimeMemorySnapshot.Capture(_current with
             {
                 RunId = runId,
                 CurrentEntity = entityKey,
                 RecordsProcessed = _current.RecordsProcessed + recordsProcessed,
                 PagesProcessed = _current.PagesProcessed + pagesProcessed,
-                FilesProcessed = _current.FilesProcessed + filesProcessed
-            };
+                FilesProcessed = _current.FilesProcessed + filesProcessed,
+                CurrentEntityRecordsProcessed = _current.CurrentEntityRecordsProcessed + recordsProcessed,
+                CurrentEntityPagesProcessed = _current.CurrentEntityPagesProcessed + pagesProcessed,
+                CurrentEntityFilesProcessed = _current.CurrentEntityFilesProcessed + filesProcessed
+            });
             _current = status;
         }
 
@@ -154,18 +232,24 @@ public sealed class LoggingSyncMonitor : ISyncMonitor
         if (ShouldLog)
         {
             _logger.LogInformation(
-                "Sync run {RunId} progress for entity {EntityKey}: records {RecordsProcessed}, pages {PagesProcessed}, files {FilesProcessed}.",
+                "Sync run {RunId} progress for entity {EntityKey}: entity records {CurrentEntityRecordsProcessed}, entity pages {CurrentEntityPagesProcessed}, entity files {CurrentEntityFilesProcessed}; run records {RecordsProcessed}, run pages {PagesProcessed}, run files {FilesProcessed}; working set {WorkingSetBytes} bytes, managed heap {ManagedHeapBytes} bytes, peak working set {PeakWorkingSetBytes} bytes.",
                 runId,
                 entityKey,
+                status.CurrentEntityRecordsProcessed,
+                status.CurrentEntityPagesProcessed,
+                status.CurrentEntityFilesProcessed,
                 status.RecordsProcessed,
                 status.PagesProcessed,
-                status.FilesProcessed);
+                status.FilesProcessed,
+                status.WorkingSetBytes,
+                status.ManagedHeapBytes,
+                status.PeakWorkingSetBytes);
         }
     }
 
     public void RecordSuccess(string runId, DateTimeOffset finishedAt)
     {
-        var status = Current with
+        var status = RuntimeMemorySnapshot.Capture(Current with
         {
             State = SyncRunState.Succeeded,
             RunId = runId,
@@ -173,21 +257,70 @@ public sealed class LoggingSyncMonitor : ISyncMonitor
             LastSuccessAt = finishedAt,
             LastError = null,
             TryNumber = 0,
-            NextRetryAt = null
-        };
+            NextRetryAt = null,
+            CurrentEntityRecordsProcessed = 0,
+            CurrentEntityPagesProcessed = 0,
+            CurrentEntityFilesProcessed = 0
+        });
         Update(status);
         _metrics.Record(SyncMetricEvent.Success, status);
 
         if (ShouldLog)
         {
             _logger.LogInformation(
-                "Sync run {RunId} succeeded at {FinishedAt:O}.",
+                "Sync run {RunId} succeeded at {FinishedAt:O}. Working set {WorkingSetBytes} bytes, managed heap {ManagedHeapBytes} bytes, peak working set {PeakWorkingSetBytes} bytes.",
                 runId,
-                finishedAt);
+                finishedAt,
+                status.WorkingSetBytes,
+                status.ManagedHeapBytes,
+                status.PeakWorkingSetBytes);
         }
     }
 
+    public void RecordRunCompletedRange(
+        DateTimeOffset completedRangeEndUtc,
+        DateTimeOffset expectedCompletedRangeEndUtc,
+        int lagPeriods)
+    {
+        var completed = completedRangeEndUtc.ToUniversalTime();
+        var expected = expectedCompletedRangeEndUtc.ToUniversalTime();
+        var status = RuntimeMemorySnapshot.Capture(Current with
+        {
+            LastCompletedRangeEndUtc = completed,
+            ExpectedCompletedRangeEndUtc = expected,
+            CurrentRangeStartUtc = null,
+            CurrentRangeEndUtc = null,
+            LagSeconds = GetLagSeconds(completed, expected),
+            LagPeriods = lagPeriods
+        });
+        Update(status);
+        _metrics.Record(SyncMetricEvent.Progress, status);
+    }
+
+    public void RecordAsyncExportStatus(AsyncExportStatusSummary summary)
+    {
+        ArgumentNullException.ThrowIfNull(summary);
+
+        var status = RuntimeMemorySnapshot.Capture(Current with
+        {
+            AsyncExportsPending = summary.Pending,
+            AsyncExportsPolling = summary.Polling,
+            AsyncExportsDownloaded = summary.Downloaded,
+            AsyncExportsProcessing = summary.Processing,
+            AsyncExportsFailed = summary.Failed,
+            AsyncExportsExpired = summary.Expired
+        });
+        Update(status);
+        _metrics.Record(SyncMetricEvent.Progress, status);
+    }
+
     private bool ShouldLog => _options.Enabled && _options.StructuredLogsEnabled;
+
+    private static long GetLagSeconds(DateTimeOffset fromUtc, DateTimeOffset expectedUtc)
+    {
+        var lag = expectedUtc - fromUtc;
+        return lag <= TimeSpan.Zero ? 0 : Convert.ToInt64(Math.Ceiling(lag.TotalSeconds));
+    }
 
     private void Update(SyncRunStatus status)
     {

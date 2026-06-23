@@ -1,10 +1,13 @@
 using System.Net;
+using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Sollatek.DataSync.Config;
 using Sollatek.DataSync.Execution;
+using Sollatek.DataSync.Fetch;
 using Sollatek.DataSync.Monitoring;
+using Sollatek.DataSync.Notifications;
 using Sollatek.DataSync.State;
 using Sollatek.DataSync.Sync.Metadata;
 
@@ -70,20 +73,158 @@ public sealed class TimedHostedServiceTests
         Assert.Single(runner.Runs);
     }
 
+    [Fact]
+    public async Task RetryExhaustion_SendsFailureEmailNotification()
+    {
+        using var httpClient = new HttpClient(new SwaggerResponseHandler());
+        var lifetime = new RecordingApplicationLifetime();
+        var runner = new RecordingSyncJobRunner
+        {
+            Failure = new InvalidOperationException("sync failed")
+        };
+        var notifier = new RecordingFailureNotificationSender();
+        using var service = CreateService(
+            httpClient,
+            runner,
+            new RecordingSyncStateStore(),
+            lifetime,
+            new SyncOptions
+            {
+                StartFrom = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                RunOnStartup = true,
+                StopWhenFinished = true,
+                RunInterval = TimeSpan.FromHours(6)
+            },
+            new RetryOptions { MaxTries = 1 },
+            failureNotificationSender: notifier);
+
+        await service.StartAsync(CancellationToken.None);
+        await lifetime.StopRequested.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await service.StopAsync(CancellationToken.None);
+
+        var message = Assert.Single(notifier.Messages);
+        Assert.Equal("sync failed", message.Error);
+        Assert.Equal(1, message.TryNumber);
+        Assert.Equal(1, message.MaxTries);
+        Assert.Null(message.EntityKey);
+    }
+
+    [Fact]
+    public async Task RunAsync_ResumesOnlyActiveAsyncExportState()
+    {
+        using var httpClient = new HttpClient(new SwaggerResponseHandler());
+        var lifetime = new RecordingApplicationLifetime();
+        var runner = new RecordingSyncJobRunner();
+        var stateStore = new RecordingSyncStateStore();
+        var activeStart = new DateTimeOffset(2025, 12, 22, 0, 0, 0, TimeSpan.Zero);
+        var activeEnd = new DateTimeOffset(2026, 6, 22, 13, 47, 36, TimeSpan.Zero);
+        using var service = CreateService(
+            httpClient,
+            runner,
+            stateStore,
+            lifetime,
+            new SyncOptions
+            {
+                StartFrom = activeStart,
+                RunOnStartup = true,
+                StopWhenFinished = true,
+                RunInterval = TimeSpan.FromHours(6),
+                TransferMode = SyncTransferMode.AsyncExport
+            },
+            asyncExportRowSource: new FixedActiveAsyncExportRowSource(
+            [
+                new AsyncExportActiveRequestState(
+                    "rawDataTemperaturedata",
+                    activeStart,
+                    activeEnd,
+                    "polling")
+            ]));
+
+        await service.StartAsync(CancellationToken.None);
+        await lifetime.StopRequested.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await service.StopAsync(CancellationToken.None);
+
+        var job = Assert.Single(Assert.Single(runner.Runs));
+        Assert.Equal("rawDataTemperaturedata", job.Metadata.Key);
+        Assert.Equal(activeStart, job.Range.Start);
+        Assert.Equal(activeEnd, job.Range.End);
+        var save = Assert.Single(stateStore.Saves);
+        Assert.Equal("rawDataTemperaturedata", save.EntityKey);
+        Assert.Equal(activeEnd, save.End);
+    }
+
+    [Fact]
+    public async Task RunAsync_AllowsMultipleActiveAsyncExportStatesForSameEntity()
+    {
+        using var httpClient = new HttpClient(new SwaggerResponseHandler());
+        var lifetime = new RecordingApplicationLifetime();
+        var runner = new RecordingSyncJobRunner();
+        var stateStore = new RecordingSyncStateStore();
+        var rangeStart = new DateTimeOffset(2026, 3, 22, 0, 0, 0, TimeSpan.Zero);
+        var syncOptions = new SyncOptions
+        {
+            StartFrom = rangeStart,
+            StartupMode = SyncStartupMode.HistoricalOnly,
+            StopWhenFinished = true,
+            RunInterval = TimeSpan.FromHours(6),
+            TransferMode = SyncTransferMode.AsyncExport,
+            Schedule = new SyncScheduleOptions
+            {
+                Mode = SyncScheduleMode.Daily,
+                Time = new TimeOnly(1, 0)
+            }
+        };
+        var rangeEnd = SyncSchedulePlanner.GetStartupPlan(syncOptions, DateTimeOffset.UtcNow).RangeEnd;
+        using var service = CreateService(
+            httpClient,
+            runner,
+            stateStore,
+            lifetime,
+            syncOptions,
+            asyncExportRowSource: new FixedActiveAsyncExportRowSource(
+            [
+                new AsyncExportActiveRequestState(
+                    "assets",
+                    rangeStart,
+                    rangeStart.AddDays(1),
+                    "polling"),
+                new AsyncExportActiveRequestState(
+                    "assets",
+                    rangeStart.AddDays(1),
+                    rangeStart.AddDays(2),
+                    "polling")
+            ]));
+
+        await service.StartAsync(CancellationToken.None);
+        await lifetime.StopRequested.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await service.StopAsync(CancellationToken.None);
+
+        var job = Assert.Single(Assert.Single(runner.Runs));
+        Assert.Equal("assets", job.Metadata.Key);
+        Assert.Equal(rangeStart, job.Range.Start);
+        Assert.Equal(rangeEnd, job.Range.End);
+        var save = Assert.Single(stateStore.Saves);
+        Assert.Equal("assets", save.EntityKey);
+        Assert.Equal(rangeEnd, save.End);
+    }
+
     private static TimedHostedService CreateService(
         HttpClient httpClient,
         ISyncJobRunner runner,
         ISyncStateStore stateStore,
         IHostApplicationLifetime lifetime,
         SyncOptions syncOptions,
-        RetryOptions? retryOptions = null)
+        RetryOptions? retryOptions = null,
+        IAsyncExportRowSource? asyncExportRowSource = null,
+        IFailureNotificationSender? failureNotificationSender = null)
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["SwaggerDocuments:0:name"] = "data-v1",
                 ["SwaggerDocuments:0:url"] = "https://api.sollatek.io/swagger/data-v1/swagger.json",
-                ["SyncPlan:0"] = "assets"
+                ["SyncPlan:0"] = "assets",
+                ["SyncPlan:1"] = "rawDataTemperaturedata"
             })
             .Build();
 
@@ -98,7 +239,9 @@ public sealed class TimedHostedServiceTests
             runner,
             stateStore,
             new AlwaysHasDataSyncTargetDataStore(),
-            lifetime);
+            lifetime,
+            asyncExportRowSource ?? NoopAsyncExportRowSource.Instance,
+            failureNotificationSender ?? NoopFailureNotificationSender.Instance);
     }
 
     private sealed class FixedHttpClientFactory(HttpClient httpClient) : IHttpClientFactory
@@ -141,6 +284,75 @@ public sealed class TimedHostedServiceTests
         }
     }
 
+    private sealed class FixedActiveAsyncExportRowSource(
+        IReadOnlyList<AsyncExportActiveRequestState> activeStates) : IAsyncExportRowSource
+    {
+        public Task<IReadOnlyList<AsyncExportActiveRequestState>> GetActiveRequestsAsync(
+            CancellationToken cancellationToken)
+        {
+            return Task.FromResult(activeStates);
+        }
+
+        public Task<IReadOnlyList<AsyncExportDownloadedFile>> PrepareAsync(
+            IReadOnlyList<AsyncExportRequest> requests,
+            CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException();
+        }
+
+        public async IAsyncEnumerable<JsonElement> ReadRowsAsync(
+            AsyncExportDownloadedFile file,
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException();
+#pragma warning disable CS0162
+            await Task.CompletedTask;
+            yield break;
+#pragma warning restore CS0162
+        }
+
+        public Task CompleteAsync(
+            AsyncExportDownloadedFile file,
+            CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException();
+        }
+    }
+
+    private sealed class NoopAsyncExportRowSource : IAsyncExportRowSource
+    {
+        public static NoopAsyncExportRowSource Instance { get; } = new();
+
+        private NoopAsyncExportRowSource()
+        {
+        }
+
+        public Task<IReadOnlyList<AsyncExportDownloadedFile>> PrepareAsync(
+            IReadOnlyList<AsyncExportRequest> requests,
+            CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException();
+        }
+
+        public async IAsyncEnumerable<JsonElement> ReadRowsAsync(
+            AsyncExportDownloadedFile file,
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException();
+#pragma warning disable CS0162
+            await Task.CompletedTask;
+            yield break;
+#pragma warning restore CS0162
+        }
+
+        public Task CompleteAsync(
+            AsyncExportDownloadedFile file,
+            CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException();
+        }
+    }
+
     private sealed class RecordingSyncStateStore : ISyncStateStore
     {
         public List<(string EntityKey, DateTimeOffset End)> Saves { get; } = [];
@@ -158,6 +370,19 @@ public sealed class TimedHostedServiceTests
             CancellationToken cancellationToken)
         {
             Saves.Add((entityKey, end));
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class RecordingFailureNotificationSender : IFailureNotificationSender
+    {
+        public List<FailureNotificationMessage> Messages { get; } = [];
+
+        public Task SendAsync(
+            FailureNotificationMessage message,
+            CancellationToken cancellationToken)
+        {
+            Messages.Add(message);
             return Task.CompletedTask;
         }
     }
@@ -270,9 +495,14 @@ public sealed class TimedHostedServiceTests
     {
       "openapi": "3.0.1",
       "x-sollatek-sync": {
-        "version": 1,
-        "entities": {
-          "assets": { "operationId": "Assets_Get", "primaryKey": ["id"] }
+          "version": 1,
+          "entities": {
+          "assets": { "operationId": "Assets_Get", "primaryKey": ["id"] },
+          "rawDataTemperaturedata": {
+            "operationId": "RawData_GetTemperatureData",
+            "primaryKey": ["id"],
+            "watermark": { "field": "recordedAt" }
+          }
         }
       }
     }
