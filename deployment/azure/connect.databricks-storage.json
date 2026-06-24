@@ -1,0 +1,30 @@
+{
+  "subscription": "<subscription-id-or-name>",
+  "storage": {
+    "resourceGroup": "rg-sollatek-datasync-prod",
+    "accountName": "stsollatekdsync001",
+    "containerName": "sollatek-datasync",
+    "enforceSelectedNetworks": false
+  },
+  "databricks": {
+    "workspaceResourceGroup": "<databricks-workspace-resource-group>",
+    "workspaceName": "<databricks-workspace-name>",
+    "network": {
+      "resourceGroup": "<databricks-vnet-resource-group>",
+      "vnetName": "<databricks-vnet-name>",
+      "storageServiceEndpoint": "Microsoft.Storage",
+      "subnets": [
+        {
+          "name": "<databricks-compute-subnet-name>"
+        }
+      ]
+    },
+    "rbac": [
+      {
+        "principalId": "<databricks-access-principal-object-id>",
+        "role": "Storage Blob Data Contributor",
+        "scope": "container"
+      }
+    ]
+  }
+}

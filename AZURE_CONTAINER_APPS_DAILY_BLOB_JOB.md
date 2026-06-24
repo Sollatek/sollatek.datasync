@@ -1,183 +1,105 @@
 # Deploy DataSync As An Azure Container Apps Daily Blob Job
 
-This example deploys DataSync as an Azure Container Apps Job that starts every day at 01:00 UTC, exports completed daily windows to Azure Blob Storage, then stops. It uses Azure Blob Storage for both exported files and DataSync state, so the next execution continues from the last completed window.
+This guide deploys DataSync as an Azure Container Apps Job that starts every day at 01:00 UTC, exports completed daily windows to Azure Blob Storage, then stops. The same Blob container stores exported files and DataSync state, so each execution continues from the last completed window.
 
 Use this pattern when the host should be offline between runs. Use a normal Container App or VM service instead when DataSync should stay alive and schedule its own loop.
 
 ## Target Result
 
 - One Azure Container Apps Job.
-- Schedule trigger: `0 1 * * *` in UTC.
-- One replica per execution.
-- Azure Blob export layout:
-
-```text
-daily/202606/Assets_20260621.parquet
-daily/202606/Temperature_20260621.parquet
-daily/202606/Dooropening_20260621.parquet
-_state/sync-state.json
-```
-
+- No public inbound traffic to the DataSync workload.
+- One internal Container Apps Environment attached to a VNet subnet.
+- One Azure Blob container for exports and `_state`.
+- Storage account locked to selected networks with the Container Apps subnet allowed.
+- Daily schedule at `01:00` UTC.
+- A system-assigned managed identity with `AcrPull` and `Storage Blob Data Contributor`.
+- File export path shape like `daily-exports/202602/Assets_20260202.parquet`.
 - Assets exported as full data for each day.
 - Temperature and door opening data exported as differential daily windows.
-- If no blob state exists yet, the first execution starts from `2025-01-01T00:00:00Z`.
-- If blob state exists, the next execution continues from that state.
+- First execution starts from `2025-01-01T00:00:00Z` when no blob state exists.
 
 ## Prerequisites
 
-- Azure subscription access with permission to create resource groups, storage accounts, Container Apps environments, Container Apps Jobs, role assignments, and optional Application Insights resources.
-- Azure CLI access through Azure Cloud Shell or a local Azure CLI installation. The image build step uses Azure Container Registry Tasks, so local Docker is not required.
+- Azure subscription access with permission to create resource groups, storage accounts, storage network rules, Azure Container Registry, Container Apps environments, Container Apps Jobs, managed identities, and role assignments.
+- Azure CLI installed locally or available in Azure Cloud Shell.
 - Platform API credentials for `Settings:clientKey` and `Settings:clientSecret`.
 - The DataSync image must include the Azure Blob storage provider. The default Docker image includes all storage providers.
+- A blob container created before deployment when `storage.skipContainerSetup=true`.
 
-## Deployment Components
+## Included Files
 
-Create these Azure resources for the daily job deployment:
+- Deployment script: `deployment/azure/deploy-containerapps-job.ps1`
+- Daily deployment config: `deployment/azure/deploy.daily.azure-containerapps-job.json`
+- Optional Databricks storage connector script: `deployment/azure/connect-databricks-storage.ps1`
+- Optional Databricks storage connector config: `deployment/azure/connect.databricks-storage.json`
+- Cloud-team low-level design: `AZURE_DEPLOYMENT_LLD.md`
 
-| Resource | Purpose |
-| --- | --- |
-| Resource group | Holds the deployment resources. |
-| Azure Storage account | Stores exported blobs and blob-backed DataSync state. |
-| Blob container | Holds the `daily/` export prefix and `_state/` state prefix. |
-| Azure Container Registry | Stores the DataSync container image. |
-| Container Apps environment | Runtime boundary for the Container Apps Job and logs. |
-| Container Apps Job | Runs the DataSync container daily at 01:00 UTC and exits. |
-| Managed identity | Lets the job pull from ACR and read/write Azure Blob Storage without storing Azure keys. |
-| Optional Application Insights | Receives logs/metrics when the image is built with Azure Monitor support. |
+The script creates missing resources and updates an existing DataSync job only when `containerApps.updateExistingJob=true`.
 
-## Recommended Configuration Strategy
+## Network Model
 
-Keep the exact `SyncPlan` and non-secret defaults in the image, for example in `appsettings.Production.json`. Set secrets and environment-specific values in Azure Container Apps Job secrets and environment variables.
+The simplified deployment uses Azure Storage service endpoints and storage firewall rules.
 
-Reason: .NET configuration arrays merge by index. If the base image contains a longer default `SyncPlan`, setting only `SOL_SyncPlan__0`, `SOL_SyncPlan__1`, and `SOL_SyncPlan__2` in environment variables can leave extra default plan items active. Packaging the exact plan avoids accidental extra exports.
+When `network.skipSetup=false`, the script creates or configures:
 
-Use environment variables for secrets, storage account names, container names, connection strings, monitoring keys, and other deployment-specific values.
+- VNet.
+- Container Apps infrastructure subnet with `Microsoft.App/environments` delegation.
+- `Microsoft.Storage` service endpoint on the Container Apps subnet.
+- Storage firewall rule allowing the Container Apps subnet.
+- Internal Container Apps Environment for new environments.
 
-## Example `appsettings.Production.json`
+For storage, the script creates new accounts with:
 
-Put this file in the image or equivalent deployment-specific configuration source. Do not put client secrets in the file.
+- HTTPS only.
+- Minimum TLS 1.2.
+- Blob public access disabled.
+- Firewall default action denied.
+- No network bypass.
+- Public network access enabled for selected-network rules.
+
+This does not make the blob container public. Requests still need both an allowed network path and valid authorization.
+
+The Container Apps deployment script does not make Databricks network changes. If an existing Databricks workspace must read the same storage account, use `deployment/azure/connect-databricks-storage.ps1` after the storage account and Databricks VNet/subnets exist.
+
+## Daily Config Highlights
+
+The included config schedules the job with both Container Apps cron and DataSync schedule settings:
 
 ```json
-{
-  "Settings": {
-    "oauthUrl": "https://id.sollatek.io/",
-    "apiUrl": "https://api.sollatek.io/"
-  },
-  "Sync": {
-    "runOnStartup": "historicalOnly",
-    "stopWhenFinished": true,
-    "schedule": {
-      "mode": "daily",
-      "time": "01:00:00"
-    },
-    "startFrom": "2025-01-01T00:00:00Z",
-    "initial": "differential",
-    "transferMode": "asyncExport",
-    "apiRequestTimeout": "00:10:00",
-    "maxRetries": 3,
-    "retryDelay": "00:05:00"
-  },
-  "Storage": {
-    "provider": "azureBlobStorage",
-    "authentication": "defaultAzureCredential",
-    "accountName": "<storage-account-name>",
-    "containerName": "<blob-container-name>"
-  },
-  "State": {
-    "provider": "azureBlobStorage",
-    "rootPath": "_state"
-  },
-  "SyncPlan": [
-    {
-      "assets": {
-        "initial": "full",
-        "dataMode": "full",
-        "outputName": "Assets"
-      }
-    },
-    {
-      "rawDataTemperaturedata": {
-        "initial": "differential",
-        "dataMode": "differential",
-        "outputName": "Temperature"
-      }
-    },
-    {
-      "rawDataDooropeningdata": {
-        "initial": "differential",
-        "dataMode": "differential",
-        "outputName": "Dooropening"
-      }
-    }
-  ],
-  "FileExport": {
-    "rootPath": "daily",
-    "folderFormat": "yyyyMM",
-    "fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}",
-    "format": "parquet"
-  },
-  "AsyncExport": {
-    "maxSubmissions": 60,
-    "submissionWindow": "00:05:00",
-    "maxParallelRequests": 10,
-    "pollInterval": "00:01:00",
-    "rateLimitRetryDelay": "00:05:00"
-  },
-  "Notifications": {
-    "failureEmail": {
-      "enabled": false
-    }
-  }
+"containerApps": {
+  "jobName": "sollatek-datasync-daily",
+  "cronExpression": "0 1 * * *",
+  "replicaTimeout": 82800,
+  "runNow": false
+},
+"environmentVariables": {
+  "SOL_Sync__runOnStartup": "historicalOnly",
+  "SOL_Sync__stopWhenFinished": "true",
+  "SOL_Sync__schedule__mode": "daily",
+  "SOL_Sync__schedule__time": "01:00:00",
+  "SOL_Sync__startFrom": "2025-01-01T00:00:00Z",
+  "SOL_FileExport__folderFormat": "yyyyMM",
+  "SOL_FileExport__fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}",
+  "SOL_FileExport__format": "parquet"
 }
 ```
 
-`rawDataTemperaturedata` and `rawDataDooropeningdata` are canonical metadata keys and are safe for environment variable overrides. JSON config can also use route-style selectors where supported by DataSync, but avoid `/` in environment variable names.
+The included network config is:
 
-## Azure Portal Steps
-
-Container Apps Jobs run container images. This guide creates a private Azure Container Registry and uses that registry as the job image source.
-
-## Deployment Script
-
-For repeatable deployments, use the idempotent Azure CLI wrapper script:
-
-```powershell
-$env:DATASYNC_PLATFORM_CLIENT_KEY = "<platform-client-key>"
-$env:DATASYNC_PLATFORM_CLIENT_SECRET = "<platform-client-secret>"
-
-.\deployment\azure\deploy-containerapps-job.ps1 `
-  -ConfigPath .\deployment\azure\deploy.daily.azure-containerapps-job.json
+```json
+"network": {
+  "skipSetup": false,
+  "vnetName": "vnet-sollatek-datasync-prod",
+  "addressPrefix": "10.70.0.0/16",
+  "containerAppsSubnetName": "snet-sollatek-datasync-containerapps",
+  "containerAppsSubnetPrefix": "10.70.0.0/23",
+  "containerAppsInternalOnly": true
+}
 ```
 
-Use `-PlanOnly` to validate and print the resolved resource names without changing Azure:
+Set `network.skipSetup=true` only when the VNet, subnet, service endpoint, storage firewall rule, and Container Apps Environment network settings are already handled outside this script.
 
-```powershell
-.\deployment\azure\deploy-containerapps-job.ps1 `
-  -ConfigPath .\deployment\azure\deploy.daily.azure-containerapps-job.json `
-  -PlanOnly
-```
-
-The script creates or updates:
-
-- Resource group.
-- Azure Container Registry.
-- ACR-built DataSync image.
-- Storage account, and optionally the private blob container.
-- Container Apps environment.
-- Scheduled Container Apps Job.
-- System managed identity.
-- `AcrPull` and `Storage Blob Data Contributor` role assignments.
-- Job secrets and environment variables.
-
-Secrets are read from environment variables or Key Vault references defined in the JSON config. Keep API client secrets out of source-controlled JSON files. Container Apps Job secret names must be 20 characters or shorter.
-
-The included `deploy.daily.azure-containerapps-job.json` uses `0 1 * * *` and `Sync:schedule:time=01:00:00`. Change both values together if the deployment should run at a different UTC time, for example `0 2 * * *` and `02:00:00`.
-
-The included deployment config sets `containerApps.logsDestination` to `none`, so the script does not require a Log Analytics workspace or the `Microsoft.OperationalInsights` resource provider. Change it to `log-analytics` only when the subscription is prepared for Log Analytics and persisted Container Apps environment logs are required.
-
-The included deployment config sets `storage.skipContainerSetup` to `true`. This is intended for private/internal-only storage accounts where Azure Cloud Shell or the operator workstation cannot reach the Blob data plane. In that mode the script does not run `az storage container exists` or `az storage container create`; create the blob container from an allowed private network before running the deployment script. The script still assigns the Container Apps Job managed identity `Storage Blob Data Contributor` on the storage account.
-
-If the storage account allows the deployment machine to access the Blob data plane and you want the script to create the container, set `storage.skipContainerSetup` to `false`. Use `storage.containerSetupAuth` as `login` for Entra ID/RBAC authentication or `key` for storage account key authentication.
+## Portal Setup
 
 ### 1. Create The Resource Group
 
@@ -194,16 +116,14 @@ If the storage account allows the deployment machine to access the Blob data pla
 2. Select **Create**.
 3. Use the DataSync resource group and the same region as the Container Apps Job.
 4. Enter a globally unique registry name, for example `acrsollatekdatasync001`.
-5. Choose **Basic** for the smallest production-ready registry unless the deployment needs Premium networking features such as private endpoints.
-6. Keep public network access according to the client's network policy. For a first deployment, public access with RBAC is the simplest path.
+5. Choose **Basic** unless your cloud team requires another SKU.
+6. Keep the admin user disabled.
 7. Select **Review + create**, then **Create**.
 8. After deployment, open the registry and copy **Login server**, for example `acrsollatekdatasync001.azurecr.io`.
 
-Registry names must be lowercase alphanumeric and unique across Azure. The login server is the value used by the Container Apps Job image reference.
+Registry names must be lowercase alphanumeric and unique across Azure.
 
 ### 3. Build And Push The DataSync Image
-
-Use Azure Container Registry Tasks to build the image in Azure and push it into the registry. This avoids requiring Docker on the operator's machine.
 
 Run these commands from the DataSync repository root, the folder that contains `Sollatek.DataSync.sln` and `Sollatek.DataSync/Dockerfile`:
 
@@ -231,299 +151,188 @@ $image
 
 Use a unique immutable tag for each release. A date/build number or Git commit is better than `latest` because it makes job executions auditable.
 
-Monitoring build options:
-
-- Default/no external monitoring: `DATASYNC_MONITORING_PROVIDER=none`.
-- Azure Monitor metrics/logs: `DATASYNC_MONITORING_PROVIDER=azuremonitor`.
-- HTTP status endpoint plus Azure Monitor: add `--build-arg DATASYNC_MONITORING_PROVIDER=azuremonitor-status --build-arg DOTNET_RUNTIME_IMAGE=aspnet`.
-
-The image reference used later by the job is:
-
-```text
-<registry-name>.azurecr.io/datasync:<tag>
-```
-
 ### 4. Create The Storage Account
 
 1. Search for **Storage accounts**.
 2. Select **Create**.
-3. Use the DataSync resource group.
-4. Choose a globally unique storage account name.
-5. Choose the same region as the Container Apps Job.
-6. For redundancy, choose the level required by the deployment. `LRS` is the simplest low-cost option; production may require `ZRS` or `GRS`.
-7. Select **Review + create**, then **Create**.
+3. Use the DataSync resource group and region.
+4. Enter a globally unique storage account name, for example `stsollatekdsync001`.
+5. Use **Standard** performance and **LRS** redundancy unless your cloud team requires a different redundancy option.
+6. Keep **Allow Blob anonymous access** disabled.
+7. In **Networking**, choose **Enabled from selected virtual networks and IP addresses**.
+8. Keep default network access denied.
+9. Select **Review + create**, then **Create**.
+
+If the deployment script creates the storage account, it applies the same core settings automatically.
 
 ### 5. Create The Blob Container
+
+The included config sets `storage.skipContainerSetup=true`, so create the container before deployment.
 
 1. Open the storage account.
 2. Go to **Data storage** > **Containers**.
 3. Select **+ Container**.
-4. Name it, for example `exports`.
-5. Keep public access disabled.
+4. Name it, for example `sollatek-datasync`.
+5. Keep anonymous access disabled.
 6. Select **Create**.
 
-For a storage account with public network access disabled, perform this step from a machine, jump host, or deployment runner that is inside the allowed network path to the storage account. RBAC alone does not bypass storage firewall or private endpoint rules.
+If the storage firewall blocks the portal or Cloud Shell session, create the container from an allowed network path or temporarily use your approved cloud-team process.
 
-### 6. Create A Container Apps Environment
+### 6. Prepare The VNet And Subnet
+
+If `network.skipSetup=false`, the script can create the VNet and Container Apps subnet. If you create them manually:
+
+1. Search for **Virtual networks**.
+2. Select **Create**.
+3. Use the DataSync resource group and region.
+4. Use an address space such as `10.70.0.0/16`.
+5. Create a dedicated subnet such as `snet-sollatek-datasync-containerapps` with prefix `10.70.0.0/23`.
+6. Delegate the subnet to `Microsoft.App/environments`.
+7. Enable the `Microsoft.Storage` service endpoint on the subnet.
+8. On the storage account, add this subnet under **Networking** > **Virtual networks**.
+
+### 7. Create A Container Apps Environment
+
+If `network.skipSetup=false`, the script can create the Container Apps Environment. If you create it manually:
 
 1. Search for **Container Apps Environments**.
 2. Select **Create**.
 3. Use the DataSync resource group and region.
-4. Choose the log destination required by the deployment. Log Analytics gives persisted troubleshooting logs but requires the subscription to support `Microsoft.OperationalInsights`; `none` avoids Log Analytics.
-5. Select **Review + create**, then **Create**.
+4. Configure VNet integration with the dedicated Container Apps infrastructure subnet.
+5. Use an internal environment. The DataSync job does not need public inbound traffic.
+6. Use no persistent logs unless Log Analytics is approved and configured.
 
-### 7. Create The Scheduled Container Apps Job
+### 8. Prepare Secrets
 
-1. Search for **Container App Jobs**.
-2. Select **Create**.
-3. On **Basics**:
-   - Resource group: the DataSync resource group.
-   - Container Apps environment: the environment from step 6.
-   - Job name: for example `sollatek-datasync-daily`.
-   - Trigger type: **Schedule**.
-   - Cron expression: `0 1 * * *`.
-4. On **Container**:
-   - Image source: Azure Container Registry or other private registry.
-   - Registry: the ACR created in step 2.
-   - Image: the immutable DataSync image tag from step 3.
-   - CPU and memory: start with `1 vCPU` and `2 Gi`.
-   - Command and arguments: leave empty unless the image requires an override.
-5. On **Scale** or **Job settings**:
-   - Parallelism: `1`.
-   - Replica completion count: `1`.
-   - Replica retry limit: `0` or `1`. Prefer DataSync retries for API failures; use platform retry only for host-level failures.
-   - Replica timeout: `82800` seconds. This allows a 23-hour run and leaves one hour before the next daily trigger.
-6. Select **Review + create**, then **Create**.
-
-Azure evaluates the schedule cron expression in UTC. `0 1 * * *` means 01:00 UTC every day.
-
-If the portal flow does not let you set managed identity and private ACR image pull in one pass, create the job from Azure Cloud Shell instead:
+The sample config reads API credentials from environment variables:
 
 ```powershell
-az extension add --name containerapp --upgrade
-
-$resourceGroup = "rg-sollatek-datasync-prod"
-$location = "westeurope"
-$containerAppsEnvironment = "cae-sollatek-datasync-prod"
-$registryName = "acrsollatekdatasync001"
-$imageName = "sollatek-datasync"
-$imageTag = "2026-06-23.1"
-$jobName = "sollatek-datasync-daily"
-$image = "$registryName.azurecr.io/${imageName}:${imageTag}"
-
-az containerapp job create `
-  --name $jobName `
-  --resource-group $resourceGroup `
-  --environment $containerAppsEnvironment `
-  --trigger-type Schedule `
-  --cron-expression "0 1 * * *" `
-  --replica-timeout 82800 `
-  --replica-retry-limit 0 `
-  --parallelism 1 `
-  --replica-completion-count 1 `
-  --image $image `
-  --cpu 1 `
-  --memory 2Gi `
-  --mi-system-assigned `
-  --registry-server "$registryName.azurecr.io" `
-  --registry-identity system
+$env:DATASYNC_PLATFORM_CLIENT_KEY = "<client-key>"
+$env:DATASYNC_PLATFORM_CLIENT_SECRET = "<client-secret>"
 ```
 
-The CLI can assign the system identity and configure ACR image pull during job creation. Step 9 verifies or adds the `AcrPull` role assignment explicitly.
+Do not put client secrets in source-controlled JSON files.
 
-### 8. Enable Managed Identity On The Job
+For production, prefer Key Vault references in the `secrets` section after the cloud team grants the Container Apps Job identity access to the secret.
 
-1. Open the created Container Apps Job.
-2. Go to **Settings** > **Identity**.
-3. On **System assigned**, switch status to **On**.
-4. Select **Save**.
-5. Copy the displayed object/principal ID if the portal shows it.
+## Deploy With The Script
 
-Use a user-assigned managed identity instead if your organization wants the identity to survive job deletion or be shared by multiple jobs.
-
-### 9. Grant ACR Pull Access
-
-The job identity needs `AcrPull` on the Azure Container Registry. The CLI job creation command may add this automatically when permissions allow it, but verify the role assignment.
-
-Portal:
-
-1. Open the Azure Container Registry.
-2. Go to **Access control (IAM)**.
-3. Select **Add** > **Add role assignment**.
-4. Role: **AcrPull**.
-5. Members: select the Container Apps Job managed identity.
-6. Select **Review + assign**.
-
-Azure CLI:
+Review the plan first:
 
 ```powershell
-$resourceGroup = "rg-sollatek-datasync-prod"
-$registryName = "acrsollatekdatasync001"
-$jobName = "sollatek-datasync-daily"
-
-$acrId = az acr show `
-  --resource-group $resourceGroup `
-  --name $registryName `
-  --query id `
-  --output tsv
-
-$principalId = az containerapp job show `
-  --resource-group $resourceGroup `
-  --name $jobName `
-  --query identity.principalId `
-  --output tsv
-
-az role assignment create `
-  --assignee-object-id $principalId `
-  --assignee-principal-type ServicePrincipal `
-  --role AcrPull `
-  --scope $acrId
+.\deployment\azure\deploy-containerapps-job.ps1 `
+  -ConfigPath .\deployment\azure\deploy.daily.azure-containerapps-job.json `
+  -PlanOnly
 ```
 
-### 10. Grant Blob Access
+Deploy:
 
-1. Open the storage account or the specific blob container.
-2. Go to **Access control (IAM)**.
-3. Select **Add** > **Add role assignment**.
-4. Role: **Storage Blob Data Contributor**.
-5. Members: select the Container Apps Job managed identity.
-6. Scope: prefer the blob container scope if the portal allows it; otherwise use the storage account scope.
-7. Select **Review + assign**.
-
-RBAC changes can take several minutes to take effect. If the first manual run fails with authorization errors, wait and run it again after confirming the role assignment.
-
-### 11. Add Job Secrets
-
-Open the Container Apps Job and add secrets for sensitive values:
-
-| Secret name | Value |
-| --- | --- |
-| `platform-key` | Platform API client key |
-| `platform-secret` | Platform API client secret |
-| `smtp-password` | Optional SMTP password |
-| `appinsights-conn` | Optional Application Insights connection string |
-
-Do not put API client secrets, SMTP passwords, storage account keys, or SAS tokens into source-controlled settings files.
-
-### 12. Add Environment Variables
-
-Set these variables on the job container. For secret values, reference the job secret instead of pasting the value directly.
-
-| Name | Value |
-| --- | --- |
-| `DOTNET_ENVIRONMENT` | `Production` |
-| `SOL_Settings__clientKey` | secret reference: `platform-key` |
-| `SOL_Settings__clientSecret` | secret reference: `platform-secret` |
-| `SOL_Storage__provider` | `azureBlobStorage` |
-| `SOL_Storage__authentication` | `defaultAzureCredential` |
-| `SOL_Storage__accountName` | `<storage-account-name>` |
-| `SOL_Storage__containerName` | `<blob-container-name>` |
-| `SOL_State__provider` | `azureBlobStorage` |
-| `SOL_State__rootPath` | `_state` |
-| `SOL_Sync__runOnStartup` | `historicalOnly` |
-| `SOL_Sync__stopWhenFinished` | `true` |
-| `SOL_Sync__schedule__mode` | `daily` |
-| `SOL_Sync__schedule__time` | `01:00:00` |
-| `SOL_Sync__startFrom` | `2025-01-01T00:00:00Z` |
-| `SOL_Sync__transferMode` | `asyncExport` |
-| `SOL_FileExport__rootPath` | `daily` |
-| `SOL_FileExport__folderFormat` | `yyyyMM` |
-| `SOL_FileExport__fileNameFormat` | `{entity}_{date:yyyyMMdd}.{format}` |
-| `SOL_FileExport__format` | `parquet` |
-| `SOL_AsyncExport__maxSubmissions` | `60` |
-| `SOL_AsyncExport__submissionWindow` | `00:05:00` |
-| `SOL_AsyncExport__maxParallelRequests` | `10` |
-
-If you cannot package `SyncPlan` into the image, ensure the image does not contain unwanted default `SyncPlan` entries before using environment-variable array overrides.
-
-### 13. Optional Failure Email
-
-If SMTP failure notifications are required, add these environment variables and secrets:
-
-| Name | Value |
-| --- | --- |
-| `SOL_Notifications__failureEmail__enabled` | `true` |
-| `SOL_Notifications__failureEmail__smtpHost` | `<smtp-host>` |
-| `SOL_Notifications__failureEmail__smtpPort` | `587` |
-| `SOL_Notifications__failureEmail__enableSsl` | `true` |
-| `SOL_Notifications__failureEmail__username` | `<smtp-user>` |
-| `SOL_Notifications__failureEmail__password` | secret reference: `smtp-password` |
-| `SOL_Notifications__failureEmail__from` | `<sender-address>` |
-| `SOL_Notifications__failureEmail__to` | `<recipient-addresses>` |
-| `SOL_Notifications__failureEmail__subjectPrefix` | `[DataSync]` |
-
-Leave `failureEmail:enabled` false or omit the section when no email should be sent.
-
-### 14. Optional Azure Monitor
-
-If the image was built with an Azure Monitor-capable monitoring provider, add:
-
-| Name | Value |
-| --- | --- |
-| `SOL_Monitoring__azureMonitor__enabled` | `true` |
-| `SOL_Monitoring__azureMonitor__metricsEnabled` | `true` |
-| `SOL_Monitoring__azureMonitor__logsEnabled` | `true` |
-| `APPLICATIONINSIGHTS_CONNECTION_STRING` | secret reference: `appinsights-conn` |
-
-If the image was not built with Azure Monitor support, leave these unset. Container console logs are persisted only when the Container Apps environment log destination is configured for a logging backend such as Log Analytics.
-
-### 15. Run A Manual Validation Execution
-
-1. Open the Container Apps Job.
-2. Select **Run now**.
-3. Go to **Monitoring** > **Execution history**.
-4. Open the newest execution and inspect status and logs.
-5. Confirm that blobs are created in the container:
-
-```text
-daily/<yyyyMM>/Assets_<yyyyMMdd>.parquet
-daily/<yyyyMM>/Temperature_<yyyyMMdd>.parquet
-daily/<yyyyMM>/Dooropening_<yyyyMMdd>.parquet
-_state/sync-state.json
+```powershell
+.\deployment\azure\deploy-containerapps-job.ps1 `
+  -ConfigPath .\deployment\azure\deploy.daily.azure-containerapps-job.json
 ```
 
-If the first run has a large historical backlog, it may create many daily files before reaching the latest completed day.
+The script does the following:
 
-### 16. Verify Normal Daily Behavior
+- Selects the subscription.
+- Ensures the Container Apps Azure CLI extension is installed.
+- Creates the resource group if missing.
+- Creates the VNet and Container Apps subnet when `network.skipSetup=false`.
+- Creates the ACR if missing.
+- Builds the DataSync image unless `-SkipBuild` is used.
+- Reuses an existing ACR image tag when the tag already exists and `appsettings` are not baked into the image.
+- Rebuilds the image when `appsettings` are present in the deployment config, because that configuration is copied into `Sollatek.DataSync/appsettings.json` during the image build.
+- Creates the storage account if missing.
+- Adds the storage service endpoint and storage firewall subnet rule when `network.skipSetup=false`.
+- Creates the Container Apps Environment if missing.
+- Creates or optionally updates the Container Apps Job.
+- Assigns the job managed identity.
+- Assigns `AcrPull` and `Storage Blob Data Contributor`.
+- Sets registry, secrets, environment variables, image, schedule, CPU, memory, and retry settings.
 
-After the first successful catch-up:
+Existing jobs are not changed unless `containerApps.updateExistingJob=true`.
 
-1. Leave the scheduled trigger enabled.
-2. The next 01:00 UTC execution should read `_state/sync-state.json`.
-3. It should export only missing completed daily windows.
-4. It should stop when finished.
-5. Execution history should show one new execution per day.
+## Optional Databricks Storage Connection
 
-## Connection String Alternative
+Use this only when an existing Databricks workspace must read the same Blob container.
 
-Managed identity is preferred because no storage key is stored in job settings. If managed identity is not available, set:
+Update `deployment/azure/connect.databricks-storage.json` with:
 
-```text
-SOL_Storage__authentication=connectionString
-SOL_Storage__connectionString=<secret-reference>
-SOL_Storage__containerName=<blob-container-name>
+- Storage account resource group, account name, and container name.
+- Existing Databricks workspace name and resource group, when you want the script to validate the workspace.
+- Existing Databricks VNet resource group, VNet name, and compute subnet names.
+- Optional Databricks access principal object ID for Storage Blob RBAC.
+
+Review the plan:
+
+```powershell
+.\deployment\azure\connect-databricks-storage.ps1 `
+  -ConfigPath .\deployment\azure\connect.databricks-storage.json `
+  -PlanOnly
 ```
 
-Store the connection string as a Container Apps Job secret. Keep `State:provider=azureBlobStorage` only when the same blob configuration has read, write, create, list, and delete permissions for the state prefix.
+Apply:
 
-## Operational Notes
+```powershell
+.\deployment\azure\connect-databricks-storage.ps1 `
+  -ConfigPath .\deployment\azure\connect.databricks-storage.json
+```
 
-- The Container Apps Job schedule controls when the process starts. `Sync:schedule` tells DataSync how to plan completed windows and status/backlog metadata for the run.
-- Keep `replicaTimeout` lower than the schedule interval. The included daily deployment uses `82800` seconds, so a stuck execution is stopped before the next 24-hour trigger.
-- `runOnStartup=historicalOnly` makes a job execution process historical completed windows and exit instead of staying alive for another interval.
-- `stopWhenFinished=true` is required for the process to exit cleanly after catch-up.
-- Blob-backed state is available only with the `azureBlobStorage` storage provider.
-- `AsyncExport:statePath` remains a local temporary workspace for downloaded files during one execution. Durable pending-request state moves to blob state when `State:provider=azureBlobStorage`.
-- Do not run multiple scheduled replicas against the same state prefix. Keep parallelism and completion count at `1` unless a separate state prefix and export prefix are intentionally used.
-- If an execution fails after DataSync exhausts configured retries, optional SMTP notification is sent only when failure email is configured and enabled.
+The connector enables `Microsoft.Storage` service endpoints on the configured Databricks subnets, adds those subnets to the storage account network rules, and optionally assigns Storage Blob RBAC. It does not create Databricks workspaces, clusters, external locations, VNets, or subnets.
 
-## Microsoft References
+## Validate Deployment
 
-- [Jobs in Azure Container Apps](https://learn.microsoft.com/en-us/azure/container-apps/jobs)
-- [Managed identities in Azure Container Apps](https://learn.microsoft.com/en-us/azure/container-apps/managed-identity)
-- [Azure Container Apps image pull with managed identity](https://learn.microsoft.com/en-us/azure/container-apps/managed-identity-image-pull)
-- [Azure Container Apps job identity CLI reference](https://learn.microsoft.com/en-us/cli/azure/containerapp/job/identity)
-- [Assign an Azure role for blob data access](https://learn.microsoft.com/en-us/azure/storage/blobs/assign-azure-role-data-access)
-- [Containers in Azure Container Apps](https://learn.microsoft.com/en-us/azure/container-apps/containers)
-- [Create an Azure Container Registry in the portal](https://learn.microsoft.com/en-us/azure/container-registry/container-registry-get-started-portal)
-- [Build a container image with Azure Container Registry Tasks](https://learn.microsoft.com/en-us/azure/container-registry/container-registry-quickstart-task-cli)
+Check the job:
+
+```powershell
+az containerapp job show `
+  --resource-group rg-sollatek-datasync-prod `
+  --name sollatek-datasync-daily `
+  --query "{name:name,trigger:configuration.triggerType,schedule:configuration.scheduleTriggerConfig.cronExpression,identity:identity.principalId}"
+```
+
+Check storage network rules:
+
+```powershell
+az storage account show `
+  --resource-group rg-sollatek-datasync-prod `
+  --name stsollatekdsync001 `
+  --query "{publicNetworkAccess:publicNetworkAccess,defaultAction:networkRuleSet.defaultAction,bypass:networkRuleSet.bypass,subnetRules:networkRuleSet.virtualNetworkRules[].virtualNetworkResourceId}"
+```
+
+Check the subnet:
+
+```powershell
+az network vnet subnet show `
+  --resource-group rg-sollatek-datasync-prod `
+  --vnet-name vnet-sollatek-datasync-prod `
+  --name snet-sollatek-datasync-containerapps `
+  --query "{delegations:delegations[].serviceName,serviceEndpoints:serviceEndpoints[].service}"
+```
+
+Start one run manually only after credentials, blob container, RBAC, and network rules are ready:
+
+```powershell
+az containerapp job start `
+  --resource-group rg-sollatek-datasync-prod `
+  --name sollatek-datasync-daily
+```
+
+## Troubleshooting
+
+| Symptom | Likely cause | Checks |
+| --- | --- | --- |
+| Job cannot write blobs | Missing container, missing RBAC, or storage firewall rule missing | Check container existence, job identity role assignment, subnet service endpoint, and storage network rules. |
+| Job cannot pull image | Missing `AcrPull`, wrong registry server, or image tag missing | Check job identity, registry setting, ACR repository, and image tag. |
+| Script cannot create the blob container | Deployment machine is blocked by storage firewall | Keep `storage.skipContainerSetup=true` and create the container from an allowed network path. |
+| Existing job was not changed | `containerApps.updateExistingJob=false` | Set it to `true` only for an intentional redeploy. |
+| Job stops before the historical backlog completes | Replica timeout is too low | Included config uses `82800` seconds, which is 23 hours. Increase only if your platform limit and operations policy allow it. |
+
+## Cost Notes
+
+- Network-only estimate for this daily export scenario: `$0/month` for the VNet, subnet, `Microsoft.Storage` service endpoint, and storage firewall subnet rule.
+- This estimate assumes the app, Container Apps Environment, and Storage account are in the same Azure region, and that the deployment does not add VNet peering, NAT Gateway, Azure Firewall, VPN Gateway, ExpressRoute, Load Balancer, public IP addresses, or any other extra networking service.
+- Same-region Azure service data transfer does not add a separate data-transfer charge. Incoming data transfer to Azure is free. Internet egress from Azure has the first 100 GB/month free on current public Azure pricing, then the published regional bandwidth rates apply.
+- For the daily export flow, downloads from the platform into Azure are inbound to Azure, and writes from the job to Blob Storage stay inside Azure. Normal non-network costs still apply.
+- Container Apps Job execution, ACR storage/build, Blob Storage capacity/transactions, Log Analytics, Application Insights, NAT Gateway, firewall, and extra networking services can create charges.
+- The included config keeps `containerApps.logsDestination=none` to avoid surprise platform log ingestion.
