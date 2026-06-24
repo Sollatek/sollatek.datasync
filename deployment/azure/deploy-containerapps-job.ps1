@@ -360,6 +360,7 @@ function Write-Plan($Config) {
     $acrName = Get-RequiredString $Config.containerRegistry "name" "containerRegistry"
     $storageName = Get-RequiredString $Config.storage "accountName" "storage"
     $containerName = Get-RequiredString $Config.storage "containerName" "storage"
+    $skipContainerSetup = Get-OptionalBool $Config.storage "skipContainerSetup" $false
     $environmentName = Get-RequiredString $Config.containerApps "environmentName" "containerApps"
     $jobName = Get-RequiredString $Config.containerApps "jobName" "containerApps"
     $imageName = Get-RequiredString $Config.image "name" "image"
@@ -373,6 +374,7 @@ function Write-Plan($Config) {
     Write-Host "ACR: $acrName"
     Write-Host "Image: $acrName.azurecr.io/${imageName}:$imageTag"
     Write-Host "Storage account/container: $storageName/$containerName"
+    Write-Host "Skip storage container setup: $skipContainerSetup"
     Write-Host "Container Apps environment: $environmentName"
     Write-Host "Container Apps job: $jobName"
     Write-Host "Schedule: $($Config.containerApps.cronExpression)"
@@ -406,6 +408,7 @@ $storageContainer = Get-RequiredString $config.storage "containerName" "storage"
 $storageSku = Get-OptionalString $config.storage "sku" "Standard_LRS"
 $storageKind = Get-OptionalString $config.storage "kind" "StorageV2"
 $storageContainerAuth = Get-OptionalString $config.storage "containerSetupAuth" "key"
+$skipStorageContainerSetup = Get-OptionalBool $config.storage "skipContainerSetup" $false
 
 $environmentName = Get-RequiredString $config.containerApps "environmentName" "containerApps"
 $jobName = Get-RequiredString $config.containerApps "jobName" "containerApps"
@@ -511,7 +514,9 @@ if (-not (Test-AzResource -Arguments @("storage", "account", "show", "--resource
     Write-Host "Storage account already exists: $storageAccount"
 }
 
-if ($storageContainerAuth.ToLowerInvariant() -eq "login") {
+if ($skipStorageContainerSetup) {
+    Write-Host "Skipping storage container setup: $storageContainer. The container must already exist."
+} elseif ($storageContainerAuth.ToLowerInvariant() -eq "login") {
     $containerExists = (Invoke-AzCliTsv -Arguments @(
         "storage", "container", "exists",
         "--account-name", $storageAccount,

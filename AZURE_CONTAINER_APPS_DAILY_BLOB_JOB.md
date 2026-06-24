@@ -162,7 +162,7 @@ The script creates or updates:
 - Resource group.
 - Azure Container Registry.
 - ACR-built DataSync image.
-- Storage account and private blob container.
+- Storage account, and optionally the private blob container.
 - Container Apps environment.
 - Scheduled Container Apps Job.
 - System managed identity.
@@ -174,6 +174,10 @@ Secrets are read from environment variables or Key Vault references defined in t
 The included `deploy.daily.azure-containerapps-job.json` uses `0 1 * * *` and `Sync:schedule:time=01:00:00`. Change both values together if the deployment should run at a different UTC time, for example `0 2 * * *` and `02:00:00`.
 
 The included deployment config sets `containerApps.logsDestination` to `none`, so the script does not require a Log Analytics workspace or the `Microsoft.OperationalInsights` resource provider. Change it to `log-analytics` only when the subscription is prepared for Log Analytics and persisted Container Apps environment logs are required.
+
+The included deployment config sets `storage.skipContainerSetup` to `true`. This is intended for private/internal-only storage accounts where Azure Cloud Shell or the operator workstation cannot reach the Blob data plane. In that mode the script does not run `az storage container exists` or `az storage container create`; create the blob container from an allowed private network before running the deployment script. The script still assigns the Container Apps Job managed identity `Storage Blob Data Contributor` on the storage account.
+
+If the storage account allows the deployment machine to access the Blob data plane and you want the script to create the container, set `storage.skipContainerSetup` to `false`. Use `storage.containerSetupAuth` as `login` for Entra ID/RBAC authentication or `key` for storage account key authentication.
 
 ### 1. Create The Resource Group
 
@@ -257,6 +261,8 @@ The image reference used later by the job is:
 4. Name it, for example `exports`.
 5. Keep public access disabled.
 6. Select **Create**.
+
+For a storage account with public network access disabled, perform this step from a machine, jump host, or deployment runner that is inside the allowed network path to the storage account. RBAC alone does not bypass storage firewall or private endpoint rules.
 
 ### 6. Create A Container Apps Environment
 

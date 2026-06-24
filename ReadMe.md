@@ -874,7 +874,7 @@ Logs are disabled by default to avoid surprise ingestion volume. Set `Monitoring
 
 ## Deployment
 
-For an Azure portal walkthrough that deploys DataSync as a 01:00 UTC daily Container Apps Job writing to Azure Blob Storage, see [Deploy DataSync As An Azure Container Apps Daily Blob Job](AZURE_CONTAINER_APPS_DAILY_BLOB_JOB.md).
+For an Azure portal walkthrough that deploys DataSync as a 01:00 UTC daily Container Apps Job writing to Azure Blob Storage, see [Deploy DataSync As An Azure Container Apps Daily Blob Job](AZURE_CONTAINER_APPS_DAILY_BLOB_JOB.md). The guide also covers private/internal-only storage accounts where the deployment script must skip blob container data-plane setup.
 
 ### Docker Runtime
 
