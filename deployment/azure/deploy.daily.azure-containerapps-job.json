@@ -26,6 +26,14 @@
     "containerSetupAuth": "key",
     "skipContainerSetup": true
   },
+  "network": {
+    "skipSetup": false,
+    "vnetName": "vnet-sollatek-datasync-prod",
+    "addressPrefix": "10.70.0.0/16",
+    "containerAppsSubnetName": "snet-sollatek-datasync-containerapps",
+    "containerAppsSubnetPrefix": "10.70.0.0/23",
+    "containerAppsInternalOnly": true
+  },
   "containerApps": {
     "environmentName": "cae-sollatek-datasync-prod",
     "jobName": "sollatek-datasync-daily",
@@ -37,6 +45,7 @@
     "replicaCompletionCount": 1,
     "cpu": "1",
     "memory": "2Gi",
+    "updateExistingJob": false,
     "runNow": false
   },
   "secrets": {
