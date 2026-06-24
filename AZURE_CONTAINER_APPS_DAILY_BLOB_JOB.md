@@ -173,6 +173,8 @@ Secrets are read from environment variables or Key Vault references defined in t
 
 The included `deploy.daily.azure-containerapps-job.json` uses `0 1 * * *` and `Sync:schedule:time=01:00:00`. Change both values together if the deployment should run at a different UTC time, for example `0 2 * * *` and `02:00:00`.
 
+The included deployment config sets `containerApps.logsDestination` to `none`, so the script does not require a Log Analytics workspace or the `Microsoft.OperationalInsights` resource provider. Change it to `log-analytics` only when the subscription is prepared for Log Analytics and persisted Container Apps environment logs are required.
+
 ### 1. Create The Resource Group
 
 1. Open the Azure portal.
@@ -261,7 +263,7 @@ The image reference used later by the job is:
 1. Search for **Container Apps Environments**.
 2. Select **Create**.
 3. Use the DataSync resource group and region.
-4. Create or select a Log Analytics workspace. Keep logs enabled for job troubleshooting.
+4. Choose the log destination required by the deployment. Log Analytics gives persisted troubleshooting logs but requires the subscription to support `Microsoft.OperationalInsights`; `none` avoids Log Analytics.
 5. Select **Review + create**, then **Create**.
 
 ### 7. Create The Scheduled Container Apps Job
@@ -457,7 +459,7 @@ If the image was built with an Azure Monitor-capable monitoring provider, add:
 | `SOL_Monitoring__azureMonitor__logsEnabled` | `true` |
 | `APPLICATIONINSIGHTS_CONNECTION_STRING` | secret reference: `appinsights-conn` |
 
-If the image was not built with Azure Monitor support, leave these unset. Console logs are still available through the Container Apps environment logs.
+If the image was not built with Azure Monitor support, leave these unset. Container console logs are persisted only when the Container Apps environment log destination is configured for a logging backend such as Log Analytics.
 
 ### 15. Run A Manual Validation Execution
 
