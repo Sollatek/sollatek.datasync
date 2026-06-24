@@ -29,6 +29,7 @@
     "environmentName": "cae-sollatek-datasync-prod",
     "jobName": "sollatek-datasync-daily",
     "cronExpression": "0 1 * * *",
+    "logsDestination": "none",
     "replicaTimeout": 82800,
     "replicaRetryLimit": 0,
     "parallelism": 1,

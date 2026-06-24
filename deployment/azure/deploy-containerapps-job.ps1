@@ -20,6 +20,39 @@ function Get-ScriptRoot {
     Split-Path -Parent $MyInvocation.ScriptName
 }
 
+function Join-RelativePath([string] $Root, [string] $RelativePath) {
+    if ([System.IO.Path]::IsPathRooted($RelativePath)) {
+        throw "Path must be relative: $RelativePath"
+    }
+
+    $path = $Root
+    foreach ($part in ($RelativePath -split '[\\/]+')) {
+        if ([string]::IsNullOrWhiteSpace($part) -or $part -eq ".") {
+            continue
+        }
+
+        if ($part -eq "..") {
+            throw "Relative path must not traverse outside its root: $RelativePath"
+        }
+
+        $path = Join-Path $path $part
+    }
+
+    $path
+}
+
+function Convert-ToAcrRelativePath([string] $RelativePath) {
+    if ([System.IO.Path]::IsPathRooted($RelativePath)) {
+        throw "ACR Dockerfile path must be relative to the build context: $RelativePath"
+    }
+
+    if ($RelativePath -match '(^|[\\/])\.\.([\\/]|$)') {
+        throw "ACR Dockerfile path must not traverse outside the build context: $RelativePath"
+    }
+
+    ($RelativePath -replace '\\', '/').TrimStart('/')
+}
+
 function Get-RepoRoot {
     $scriptRoot = Get-ScriptRoot
     $current = Resolve-Path $scriptRoot
@@ -27,7 +60,7 @@ function Get-RepoRoot {
     while ($null -ne $current) {
         $candidate = $current.Path
         if ((Test-Path -LiteralPath (Join-Path $candidate "Sollatek.DataSync.sln")) -and
-            (Test-Path -LiteralPath (Join-Path $candidate "Sollatek.DataSync\Dockerfile"))) {
+            (Test-Path -LiteralPath (Join-RelativePath $candidate "Sollatek.DataSync/Dockerfile"))) {
             return $current
         }
 
@@ -107,14 +140,19 @@ function Get-TagArgs($Tags) {
 }
 
 function Invoke-AzCli([string[]] $Arguments, [switch] $Sensitive) {
+    $effectiveArguments = @($Arguments)
+    if ($effectiveArguments -notcontains "--only-show-errors") {
+        $effectiveArguments += "--only-show-errors"
+    }
+
     $display = if ($Sensitive) {
         "az <sensitive arguments omitted>"
     } else {
-        "az " + ($Arguments -join " ")
+        "az " + ($effectiveArguments -join " ")
     }
 
     Write-Host ">> $display"
-    $output = & az @Arguments 2>&1
+    $output = & az @effectiveArguments 2>&1
     if ($LASTEXITCODE -ne 0) {
         throw "Command failed: $display`n$output"
     }
@@ -194,15 +232,16 @@ function New-BuildContext($Config, [string] $RepoRoot, [string] $JobName) {
     }
 
     $stamp = Get-Date -Format "yyyyMMddHHmmss"
-    $target = Join-Path $RepoRoot ".artifacts\deploy-azure\$JobName-$stamp"
+    $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) "sollatek-datasync-deploy"
+    $target = Join-Path $tempRoot "$JobName-$stamp"
     $resolvedRoot = (Resolve-Path $RepoRoot).Path
-    New-Item -ItemType Directory -Path (Join-Path $RepoRoot ".artifacts") -Force | Out-Null
-    $resolvedParent = (Resolve-Path (Join-Path $RepoRoot ".artifacts")).Path
+    New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
+    $resolvedParent = (Resolve-Path $tempRoot).Path
 
     New-Item -ItemType Directory -Path $target -Force | Out-Null
     $resolvedTarget = (Resolve-Path $target).Path
     if (-not $resolvedTarget.StartsWith($resolvedParent, [StringComparison]::OrdinalIgnoreCase)) {
-        throw "Temporary build context is outside .artifacts: $resolvedTarget"
+        throw "Temporary build context is outside deployment temp root: $resolvedTarget"
     }
 
     Write-Host "Preparing temporary build context: $resolvedTarget"
@@ -235,7 +274,7 @@ function New-BuildContext($Config, [string] $RepoRoot, [string] $JobName) {
             Remove-Item -LiteralPath $_.FullName -Force
         }
 
-    $appsettingsPath = Join-Path $resolvedTarget "Sollatek.DataSync\appsettings.json"
+    $appsettingsPath = Join-RelativePath $resolvedTarget "Sollatek.DataSync/appsettings.json"
     if (-not (Test-Path -LiteralPath $appsettingsPath)) {
         throw "Could not find appsettings.json in temporary build context: $appsettingsPath"
     }
@@ -356,6 +395,7 @@ $storageContainerAuth = Get-OptionalString $config.storage "containerSetupAuth" 
 $environmentName = Get-RequiredString $config.containerApps "environmentName" "containerApps"
 $jobName = Get-RequiredString $config.containerApps "jobName" "containerApps"
 $cronExpression = Get-RequiredString $config.containerApps "cronExpression" "containerApps"
+$logsDestination = Get-OptionalString $config.containerApps "logsDestination" "none"
 $cpu = [string] (Get-OptionalValue $config.containerApps "cpu" "1")
 $memory = Get-OptionalString $config.containerApps "memory" "2Gi"
 $replicaTimeout = Get-OptionalInt $config.containerApps "replicaTimeout" 82800
@@ -368,6 +408,7 @@ $bootstrapImage = Get-OptionalString $config.containerApps "bootstrapImage" "mcr
 $imageName = Get-RequiredString $config.image "name" "image"
 $imageTag = Get-RequiredString $config.image "tag" "image"
 $dockerfile = Get-OptionalString $config.image "dockerfile" "Sollatek.DataSync/Dockerfile"
+$acrDockerfile = Convert-ToAcrRelativePath $dockerfile
 $dataSyncProvider = Get-OptionalString $config.image "provider" "all"
 $monitoringProvider = Get-OptionalString $config.image "monitoringProvider" "none"
 $dotnetRuntimeImage = Get-OptionalString $config.image "dotnetRuntimeImage" ""
@@ -400,12 +441,17 @@ $buildContext = $null
 try {
     if (-not $SkipBuild) {
         $buildContext = New-BuildContext -Config $config -RepoRoot $repoRoot -JobName $jobName
+        $dockerfileInContext = Join-RelativePath $buildContext.Path $acrDockerfile
+        if (-not (Test-Path -LiteralPath $dockerfileInContext -PathType Leaf)) {
+            throw "Dockerfile '$acrDockerfile' was not found in build context '$($buildContext.Path)'. Check image.dockerfile and the repository layout."
+        }
+
         $buildArgs = @(
             "acr", "build",
             "--resource-group", $resourceGroup,
             "--registry", $acrName,
             "--image", "${imageName}:$imageTag",
-            "--file", $dockerfile,
+            "--file", $acrDockerfile,
             "--build-arg", "DATASYNC_PROVIDER=$dataSyncProvider",
             "--build-arg", "DATASYNC_MONITORING_PROVIDER=$monitoringProvider"
         )
@@ -502,7 +548,8 @@ if (-not (Test-AzResource -Arguments @("containerapp", "env", "show", "--resourc
         "containerapp", "env", "create",
         "--resource-group", $resourceGroup,
         "--name", $environmentName,
-        "--location", $location
+        "--location", $location,
+        "--logs-destination", $logsDestination
     ) + (Get-TagArgs $tags)) | Out-Null
 } else {
     Write-Host "Container Apps environment already exists: $environmentName"
