@@ -478,8 +478,13 @@ try {
             }
         }
 
-        $buildArgs += @($buildContext.Path)
-        Invoke-AzCli -Arguments $buildArgs | Out-Null
+        $buildArgs += @(".")
+        Push-Location -LiteralPath $buildContext.Path
+        try {
+            Invoke-AzCli -Arguments $buildArgs | Out-Null
+        } finally {
+            Pop-Location
+        }
     } else {
         Write-Host "Skipping image build. Expected image: $image"
     }
