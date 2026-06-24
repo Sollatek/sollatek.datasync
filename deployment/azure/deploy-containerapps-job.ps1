@@ -287,6 +287,21 @@ function New-BuildContext($Config, [string] $RepoRoot, [string] $JobName) {
     }
 }
 
+function Resolve-AcrDockerfile([object] $BuildContext, [string] $Dockerfile) {
+    $dockerfileInContext = Join-RelativePath $BuildContext.Path $Dockerfile
+    if (-not (Test-Path -LiteralPath $dockerfileInContext -PathType Leaf)) {
+        throw "Dockerfile '$Dockerfile' was not found in build context '$($BuildContext.Path)'. Check image.dockerfile and the repository layout."
+    }
+
+    if (-not $BuildContext.IsTemporary) {
+        return $Dockerfile
+    }
+
+    $acrDockerfile = "Dockerfile.acr"
+    Copy-Item -LiteralPath $dockerfileInContext -Destination (Join-Path $BuildContext.Path $acrDockerfile) -Force
+    $acrDockerfile
+}
+
 function Ensure-RoleAssignment([string] $PrincipalId, [string] $Role, [string] $Scope) {
     $existing = Invoke-AzCliTsv -Arguments @(
         "role", "assignment", "list",
@@ -441,17 +456,14 @@ $buildContext = $null
 try {
     if (-not $SkipBuild) {
         $buildContext = New-BuildContext -Config $config -RepoRoot $repoRoot -JobName $jobName
-        $dockerfileInContext = Join-RelativePath $buildContext.Path $acrDockerfile
-        if (-not (Test-Path -LiteralPath $dockerfileInContext -PathType Leaf)) {
-            throw "Dockerfile '$acrDockerfile' was not found in build context '$($buildContext.Path)'. Check image.dockerfile and the repository layout."
-        }
+        $buildDockerfile = Resolve-AcrDockerfile -BuildContext $buildContext -Dockerfile $acrDockerfile
 
         $buildArgs = @(
             "acr", "build",
             "--resource-group", $resourceGroup,
             "--registry", $acrName,
             "--image", "${imageName}:$imageTag",
-            "--file", $acrDockerfile,
+            "--file", $buildDockerfile,
             "--build-arg", "DATASYNC_PROVIDER=$dataSyncProvider",
             "--build-arg", "DATASYNC_MONITORING_PROVIDER=$monitoringProvider"
         )
