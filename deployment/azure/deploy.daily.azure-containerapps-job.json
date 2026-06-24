@@ -23,7 +23,8 @@
     "containerName": "sollatek-datasync",
     "sku": "Standard_LRS",
     "kind": "StorageV2",
-    "containerSetupAuth": "key"
+    "containerSetupAuth": "key",
+    "skipContainerSetup": true
   },
   "containerApps": {
     "environmentName": "cae-sollatek-datasync-prod",
