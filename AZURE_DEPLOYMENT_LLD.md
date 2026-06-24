@@ -4,9 +4,19 @@ This document defines the Azure resources, network topology, identity model, RBA
 
 The deployment is designed for no public inbound access to the DataSync workload. The Container Apps Environment is VNet-integrated and internal, the app reaches the internet only through outbound HTTPS, and Azure Blob Storage is restricted to selected networks by a storage firewall rule for the Container Apps subnet.
 
+## Audience and Handoff Purpose
+
+This document is intended for cloud platform, architecture, and network teams that need to review or build the Azure landing zone for DataSync. It describes what must exist in Azure, which parts the deployment script can create, and which permissions or network rules must be approved before the scheduled job can run.
+
+## Application Overview
+
+Sollatek DataSync is a containerized export worker. It authenticates to the Sollatek platform API, submits or reads configured exports, downloads the completed export files, and writes them to Azure Blob Storage using the configured folder and file naming policy. In the daily Azure deployment, the app runs as a finite scheduled job, processes the due historical or daily export windows, saves export files such as Parquet under date-based folders, stores sync state in Blob Storage so it can resume after interruption, then exits.
+
+The app is not a public web service. It has no inbound user traffic requirement. Runtime traffic is outbound HTTPS to identity/API/export endpoints, Azure Container Registry image pull, Azure Blob Storage writes and reads, and optional SMTP or monitoring endpoints when configured.
+
 ## Scope
 
-In scope:
+The Azure design covers:
 
 - Azure Container Apps Job running DataSync on a daily schedule.
 - Azure Container Registry for the DataSync image.
@@ -18,12 +28,20 @@ In scope:
 - Optional Key Vault-backed secrets.
 - RBAC required for deployment, runtime, and operations.
 
-Out of scope:
+## External Dependencies and Inputs
 
-- Databricks workspace provisioning, cluster policy, Unity Catalog external location setup, and notebook/job configuration.
-- Hub/spoke routing, firewall, NAT Gateway, ExpressRoute, VPN, and corporate DNS forwarding.
-- Key Vault creation.
-- Log Analytics workspace creation when `containerApps.logsDestination` is `none`.
+These items are required inputs or separately owned platform decisions. They are listed here so the cloud team can assign them before deployment:
+
+| Item | Owner | Required decision or input |
+| --- | --- | --- |
+| Subscription and region | Cloud architecture | Target subscription, resource group naming, Azure region, and tagging policy. |
+| CIDR allocation | Network team | VNet and Container Apps subnet ranges that do not overlap existing hub, spoke, VPN, ExpressRoute, or other application ranges. |
+| Outbound routing | Network team | Whether default Azure outbound routing is acceptable, or whether corporate firewall/NAT/route tables are required outside this deployment script. |
+| Platform API access | Application/API team | API base URL, identity URL, client key, and client secret delivery method. |
+| Blob container lifecycle | Cloud/storage team | Whether the deployment script creates the container or the container is pre-created from an allowed network. |
+| Secret storage | Security/cloud team | Environment variables for deployment-time injection or Key Vault references for production secrets. |
+| Monitoring target | Operations/cloud team | `none`, Log Analytics, Application Insights, Azure Monitor, or another approved sink. |
+| Databricks integration | Data platform team | Existing Databricks VNet/subnets and the principal that should receive Blob access. |
 
 ## Assumptions
 
@@ -38,14 +56,29 @@ Out of scope:
 - The blob container is created before deployment, or `storage.skipContainerSetup=false` is used only from a machine allowed by the storage firewall.
 - The DataSync app requires outbound HTTPS to identity, API, export download, ACR, and optional SMTP/monitoring endpoints.
 
+## Architecture Decisions
+
+| Decision | Value | Reason |
+| --- | --- | --- |
+| Compute | Azure Container Apps Job | The workload is finite, scheduled, and exits after each run. |
+| Trigger | Schedule cron in UTC | Azure Container Apps scheduled jobs use five-field cron expressions evaluated in UTC. |
+| Inbound access | None to the job | DataSync is a worker, not a public service. |
+| Environment network | Internal Container Apps Environment integrated with a VNet | Keeps the workload inside the subscription network boundary for inbound exposure. |
+| Storage network control | Storage selected networks with VNet rules | Allows only approved subnets while keeping storage authorization enforced by Microsoft Entra/RBAC. |
+| Storage route from VNet | `Microsoft.Storage` service endpoint | Avoids public source IP allowlists and keeps Azure service traffic on the Azure backbone. |
+| Runtime identity | System-assigned managed identity on the job | Removes ACR and Blob credentials from the container. |
+| Runtime storage state | Blob-backed state under `_state` | Allows the job to resume from the last saved sync/export state across executions. |
+| Image source | Azure Container Registry with admin disabled | Uses RBAC and managed identity for image pull. |
+
 ## Target Architecture
 
 ```mermaid
 flowchart LR
-    Operator["Deployment operator or CI runner"] -->|Azure control plane| RG["DataSync resource group"]
-    Operator -->|az acr build| ACR["Azure Container Registry"]
+    Operator["Deployment operator or CI runner"] -->|Azure control plane| Env
+    Operator -->|Azure control plane| Storage
+    Operator -->|az acr build| ACR
 
-    subgraph RG["DataSync resource group"]
+    subgraph RGScope["DataSync resource group"]
         subgraph VNet["DataSync virtual network"]
             Subnet["Container Apps infrastructure subnet\nMicrosoft.App/environments delegation\nMicrosoft.Storage service endpoint"]
             Env["Container Apps Environment\ninternal only"]
@@ -87,6 +120,17 @@ flowchart LR
 | Key Vault | Optional | No | Use Container Apps Key Vault references if required. |
 | Log Analytics / Application Insights | Optional | No | Included daily config uses `logsDestination=none`. |
 
+## Build Requirements by Team
+
+| Team | Must provide or validate |
+| --- | --- |
+| Cloud platform | Subscription, resource group policy, naming policy, ACR, Container Apps Environment, Container Apps Job, managed identity, tags, and deployment execution process. |
+| Network | VNet/subnet CIDR, subnet delegation, selected-network storage rule, service endpoint, route table/NSG compatibility, and outbound HTTPS policy. |
+| Storage | Storage account, blob container, network firewall settings, retention/lifecycle policy if required, and Blob RBAC scope. |
+| Security/IAM | Deployment identity permissions, runtime managed identity permissions, Key Vault or secret injection process, and approval for who can manually start job executions. |
+| Data platform | Databricks subnet details and storage access principal if Databricks will read the same Blob container. |
+| Operations | Monitoring destination, alerting expectations, runbook ownership, and failed-job triage process. |
+
 ## Network Design
 
 ### CIDR Plan
@@ -109,7 +153,18 @@ The script uses Azure Storage selected-network access:
 - VNet rule for the Container Apps subnet
 - `Microsoft.Storage` service endpoint on the Container Apps subnet
 
-This means the storage account still has a normal Azure service address, but access is denied unless the request comes from an allowed network rule and has valid authorization. The job still needs `Storage Blob Data Contributor`; the network rule alone is not enough.
+This means the storage account still uses the normal Azure Storage service address and DNS behavior, but access is denied unless the request comes from an allowed network rule and has valid authorization. The job still needs `Storage Blob Data Contributor`; the network rule alone is not enough.
+
+Network team acceptance criteria:
+
+- The Container Apps subnet is dedicated to the Container Apps Environment.
+- The Container Apps subnet is delegated to `Microsoft.App/environments`.
+- The Container Apps subnet has the `Microsoft.Storage` service endpoint enabled.
+- The storage account network default action is `Deny`.
+- Storage trusted service bypass is `None`, unless a separately approved monitoring or governance requirement needs it.
+- The storage account has a VNet rule for the Container Apps subnet.
+- No public inbound route is required or configured for the Container Apps Job.
+- Outbound HTTPS from the job is allowed to Microsoft Entra ID, the Sollatek platform API/export endpoints, ACR, Blob Storage, and optional SMTP/monitoring endpoints.
 
 For an existing Databricks workspace that needs the same storage account, use `deployment/azure/connect-databricks-storage.ps1` with `deployment/azure/connect.databricks-storage.json`. For VNet-injected compute, configure the Databricks VNet and compute subnet names explicitly. The connector script enables the Storage service endpoint on those subnets, adds storage firewall subnet rules, and can assign Storage Blob RBAC to a configured Databricks access principal.
 
@@ -236,6 +291,8 @@ Minimum built-in role planning depends on how your cloud team separates duties. 
 | Storage account scope | Storage Account Contributor | Create/update storage account and network rules. |
 | Databricks VNet scope | Network Contributor | Enable Storage service endpoints on the configured Databricks subnets. |
 | Databricks storage access principal scope | User Access Administrator or Role Based Access Control Administrator | Assign optional Storage Blob RBAC when configured. |
+
+The deployment identity also needs Azure CLI access from a machine or Cloud Shell session that can reach Azure control plane endpoints. If `storage.skipContainerSetup=false`, that same execution location must also be allowed by the storage firewall or use credentials from an allowed network path to create the blob container.
 
 ## Runtime RBAC
 
