@@ -80,6 +80,7 @@
     "SOL_FileExport__folderFormat": "yyyyMM",
     "SOL_FileExport__fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}",
     "SOL_FileExport__format": "parquet",
+    "SOL_FileExport__replaceExisting": "true",
     "SOL_AsyncExport__maxSubmissions": "60",
     "SOL_AsyncExport__submissionWindow": "00:05:00",
     "SOL_AsyncExport__maxParallelRequests": "10"
@@ -143,7 +144,8 @@
       "statePath": "_state/sync-state.json",
       "folderFormat": "yyyyMM",
       "fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}",
-      "format": "parquet"
+      "format": "parquet",
+      "replaceExisting": true
     },
     "AsyncExport": {
       "maxSubmissions": 60,
