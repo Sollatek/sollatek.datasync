@@ -23,6 +23,8 @@ public sealed record FileExportOptions
 
     public string FileNameFormat { get; init; } = DefaultFileNameFormat;
 
+    public bool ReplaceExisting { get; init; } = true;
+
     public IReadOnlyDictionary<string, FileExportEntityOptions> Entities { get; init; } =
         new Dictionary<string, FileExportEntityOptions>(StringComparer.OrdinalIgnoreCase);
 
@@ -57,6 +59,7 @@ public sealed record FileExportOptions
         var statePath = configuration.GetValue<string>("FileExport:statePath");
         var folderFormat = configuration.GetValue<string>("FileExport:folderFormat");
         var fileNameFormat = configuration.GetValue<string>("FileExport:fileNameFormat");
+        var replaceExisting = configuration.GetValue<bool?>("FileExport:replaceExisting") ?? true;
 
         return new FileExportOptions
         {
@@ -65,6 +68,7 @@ public sealed record FileExportOptions
             Format = format,
             FolderFormat = string.IsNullOrWhiteSpace(folderFormat) ? DefaultFolderFormat : folderFormat,
             FileNameFormat = string.IsNullOrWhiteSpace(fileNameFormat) ? DefaultFileNameFormat : fileNameFormat,
+            ReplaceExisting = replaceExisting,
             Entities = ReadEntityOptions(configuration)
         };
     }

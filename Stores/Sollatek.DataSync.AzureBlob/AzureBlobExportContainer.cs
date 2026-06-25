@@ -20,19 +20,22 @@ public sealed class AzureBlobExportContainer : IBlobExportContainer
         string blobName,
         Stream content,
         string? contentType,
+        bool replaceExisting,
         CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(blobName);
         ArgumentNullException.ThrowIfNull(content);
 
         await EnsureContainerAsync(cancellationToken);
-        var uploadOptions = new BlobUploadOptions
+        var uploadOptions = new BlobUploadOptions();
+        if (!replaceExisting)
         {
-            Conditions = new BlobRequestConditions
+            uploadOptions.Conditions = new BlobRequestConditions
             {
                 IfNoneMatch = Azure.ETag.All
-            }
-        };
+            };
+        }
+
         if (!string.IsNullOrWhiteSpace(contentType))
         {
             uploadOptions.HttpHeaders = new BlobHttpHeaders

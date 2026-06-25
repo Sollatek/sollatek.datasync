@@ -59,6 +59,7 @@ public sealed class AzureBlobSyncTargetDataStoreTests
             string blobName,
             Stream content,
             string? contentType,
+            bool replaceExisting,
             CancellationToken cancellationToken)
         {
             throw new NotSupportedException();

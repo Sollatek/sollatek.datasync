@@ -32,7 +32,7 @@ public sealed class AzureBlobFileExportObjectSink : IFileExportObjectSink
         }
 
         var blobName = AzureBlobExportPath.BuildBlobName(_options, entityKey, day, partNumber);
-        if (await _container.ExistsAsync(blobName, cancellationToken))
+        if (!_options.ReplaceExisting && await _container.ExistsAsync(blobName, cancellationToken))
         {
             throw new InvalidOperationException($"Azure Blob export object already exists: {blobName}");
         }
@@ -57,7 +57,12 @@ public sealed class AzureBlobFileExportObjectSink : IFileExportObjectSink
             }
 
             await using var stream = File.OpenRead(temporaryPath);
-            await _container.UploadAsync(blobName, stream, GetContentType(), cancellationToken);
+            await _container.UploadAsync(
+                blobName,
+                stream,
+                GetContentType(),
+                _options.ReplaceExisting,
+                cancellationToken);
             return blobName;
         }
         finally
@@ -79,13 +84,18 @@ public sealed class AzureBlobFileExportObjectSink : IFileExportObjectSink
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
 
         var blobName = AzureBlobExportPath.BuildBlobName(_options, entityKey, day, partNumber);
-        if (await _container.ExistsAsync(blobName, cancellationToken))
+        if (!_options.ReplaceExisting && await _container.ExistsAsync(blobName, cancellationToken))
         {
             throw new InvalidOperationException($"Azure Blob export object already exists: {blobName}");
         }
 
         await using var stream = File.OpenRead(sourcePath);
-        await _container.UploadAsync(blobName, stream, GetContentType(), cancellationToken);
+        await _container.UploadAsync(
+            blobName,
+            stream,
+            GetContentType(),
+            _options.ReplaceExisting,
+            cancellationToken);
         return blobName;
     }
 

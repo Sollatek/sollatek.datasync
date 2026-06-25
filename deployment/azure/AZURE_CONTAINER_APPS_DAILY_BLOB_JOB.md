@@ -28,10 +28,10 @@ Use this pattern when the host should be offline between runs. Use a normal Cont
 
 ## Included Files
 
-- Deployment script: `deployment/azure/deploy-containerapps-job.ps1`
-- Daily deployment config: `deployment/azure/deploy.daily.azure-containerapps-job.json`
-- Optional Databricks storage connector script: `deployment/azure/connect-databricks-storage.ps1`
-- Optional Databricks storage connector config: `deployment/azure/connect.databricks-storage.json`
+- Deployment script: `deploy-containerapps-job.ps1`
+- Daily deployment config: `deploy.daily.azure-containerapps-job.json`
+- Optional Databricks storage connector script: `connect-databricks-storage.ps1`
+- Optional Databricks storage connector config: `connect.databricks-storage.json`
 - Cloud-team low-level design: `AZURE_DEPLOYMENT_LLD.md`
 
 The script creates missing resources and updates an existing DataSync job only when `containerApps.updateExistingJob=true`.
@@ -59,7 +59,7 @@ For storage, the script creates new accounts with:
 
 This does not make the blob container public. Requests still need both an allowed network path and valid authorization.
 
-The Container Apps deployment script does not make Databricks network changes. If an existing Databricks workspace must read the same storage account, use `deployment/azure/connect-databricks-storage.ps1` after the storage account and Databricks VNet/subnets exist.
+The Container Apps deployment script does not make Databricks network changes. If an existing Databricks workspace must read the same storage account, use `connect-databricks-storage.ps1` after the storage account and Databricks VNet/subnets exist.
 
 ## Daily Config Highlights
 
@@ -80,7 +80,8 @@ The included config schedules the job with both Container Apps cron and DataSync
   "SOL_Sync__startFrom": "2025-01-01T00:00:00Z",
   "SOL_FileExport__folderFormat": "yyyyMM",
   "SOL_FileExport__fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}",
-  "SOL_FileExport__format": "parquet"
+  "SOL_FileExport__format": "parquet",
+  "SOL_FileExport__replaceExisting": "true"
 }
 ```
 
@@ -219,17 +220,19 @@ For production, prefer Key Vault references in the `secrets` section after the c
 
 Review the plan first:
 
+From the `deployment/azure` folder:
+
 ```powershell
-.\deployment\azure\deploy-containerapps-job.ps1 `
-  -ConfigPath .\deployment\azure\deploy.daily.azure-containerapps-job.json `
+.\deploy-containerapps-job.ps1 `
+  -ConfigPath .\deploy.daily.azure-containerapps-job.json `
   -PlanOnly
 ```
 
 Deploy:
 
 ```powershell
-.\deployment\azure\deploy-containerapps-job.ps1 `
-  -ConfigPath .\deployment\azure\deploy.daily.azure-containerapps-job.json
+.\deploy-containerapps-job.ps1 `
+  -ConfigPath .\deploy.daily.azure-containerapps-job.json
 ```
 
 The script does the following:
@@ -252,11 +255,30 @@ The script does the following:
 
 Existing jobs are not changed unless `containerApps.updateExistingJob=true`.
 
+## Update Only The Job Image
+
+Use image-only mode when the Azure resources and Container Apps Job already exist and you only need the job to use a rebuilt DataSync app image:
+
+```powershell
+.\deploy-containerapps-job.ps1 `
+  -ConfigPath .\deploy.daily.azure-containerapps-job.json `
+  -ImageOnly
+```
+
+Image-only mode:
+
+- Requires the configured resource group, Azure Container Registry, and Container Apps Job to already exist.
+- Rebuilds the configured ACR image tag even when that tag already exists.
+- Updates only the Container Apps Job image reference.
+- Does not create or update storage, networking, secrets, environment variables, RBAC, schedule, CPU, memory, retry settings, or start a job execution.
+
+For a deterministic rollout, update `image.tag` in the config to a new release tag before running image-only mode. Reusing the same tag is allowed, but a unique tag makes it clear which image each job execution used.
+
 ## Optional Databricks Storage Connection
 
 Use this only when an existing Databricks workspace must read the same Blob container.
 
-Update `deployment/azure/connect.databricks-storage.json` with:
+Update `connect.databricks-storage.json` with:
 
 - Storage account resource group, account name, and container name.
 - Existing Databricks workspace name and resource group, when you want the script to validate the workspace.
@@ -266,16 +288,16 @@ Update `deployment/azure/connect.databricks-storage.json` with:
 Review the plan:
 
 ```powershell
-.\deployment\azure\connect-databricks-storage.ps1 `
-  -ConfigPath .\deployment\azure\connect.databricks-storage.json `
+.\connect-databricks-storage.ps1 `
+  -ConfigPath .\connect.databricks-storage.json `
   -PlanOnly
 ```
 
 Apply:
 
 ```powershell
-.\deployment\azure\connect-databricks-storage.ps1 `
-  -ConfigPath .\deployment\azure\connect.databricks-storage.json
+.\connect-databricks-storage.ps1 `
+  -ConfigPath .\connect.databricks-storage.json
 ```
 
 The connector enables `Microsoft.Storage` service endpoints on the configured Databricks subnets, adds those subnets to the storage account network rules, and optionally assigns Storage Blob RBAC. It does not create Databricks workspaces, clusters, external locations, VNets, or subnets.

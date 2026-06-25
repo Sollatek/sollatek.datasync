@@ -8,6 +8,7 @@ public interface IBlobExportContainer
         string blobName,
         Stream content,
         string? contentType,
+        bool replaceExisting,
         CancellationToken cancellationToken);
 
     Task<bool> ExistsAsync(
