@@ -195,12 +195,64 @@ public sealed class ParquetFileExportSinkTests
     }
 
     [Fact]
-    public async Task WriteAsync_RejectsExistingPartFile()
+    public async Task WriteAsync_ReplacesExistingPartFileByDefault()
     {
         var directory = CreateTempDirectory();
         try
         {
             var sink = new ParquetFileExportSink(new FileExportOptions { RootPath = directory });
+            IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+            [
+                new Dictionary<string, object?>
+                {
+                    ["id"] = 1
+                }
+            ];
+
+            await sink.WriteAsync(
+                "assets",
+                new DateOnly(2026, 6, 18),
+                rows,
+                partNumber: 0,
+                CancellationToken.None);
+
+            var path = await sink.WriteAsync(
+                "assets",
+                new DateOnly(2026, 6, 18),
+                [
+                    new Dictionary<string, object?>
+                    {
+                        ["id"] = 2
+                    },
+                    new Dictionary<string, object?>
+                    {
+                        ["id"] = 3
+                    }
+                ],
+                partNumber: 0,
+                CancellationToken.None);
+
+            await using var reader = await ParquetReader.CreateAsync(path!);
+            using var rowGroup = reader.OpenRowGroupReader(0);
+            Assert.Equal(2, rowGroup.RowCount);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task WriteAsync_RejectsExistingPartFileWhenReplaceExistingIsDisabled()
+    {
+        var directory = CreateTempDirectory();
+        try
+        {
+            var sink = new ParquetFileExportSink(new FileExportOptions
+            {
+                RootPath = directory,
+                ReplaceExisting = false
+            });
             IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
             [
                 new Dictionary<string, object?>
@@ -229,6 +281,45 @@ public sealed class ParquetFileExportSinkTests
         finally
         {
             Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task CopyAsync_ReplacesExistingPortalFileByDefault()
+    {
+        var directory = CreateTempDirectory();
+        var sourceDirectory = CreateTempDirectory();
+        try
+        {
+            var firstSourcePath = Path.Combine(sourceDirectory, "first.xlsx");
+            var secondSourcePath = Path.Combine(sourceDirectory, "second.xlsx");
+            await File.WriteAllTextAsync(firstSourcePath, "first");
+            await File.WriteAllTextAsync(secondSourcePath, "second");
+            var sink = new ParquetFileExportSink(new FileExportOptions
+            {
+                RootPath = directory,
+                Format = "xlsx"
+            });
+
+            var path = await sink.CopyAsync(
+                "assets",
+                new DateOnly(2026, 6, 18),
+                firstSourcePath,
+                partNumber: 0,
+                CancellationToken.None);
+            await sink.CopyAsync(
+                "assets",
+                new DateOnly(2026, 6, 18),
+                secondSourcePath,
+                partNumber: 0,
+                CancellationToken.None);
+
+            Assert.Equal("second", await File.ReadAllTextAsync(path));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+            Directory.Delete(sourceDirectory, recursive: true);
         }
     }
 

@@ -70,6 +70,67 @@ public sealed class FilesystemExportRunnerTests
     }
 
     [Fact]
+    public async Task RunAsync_ProcessesPagedExportsByDayAcrossSyncPlan()
+    {
+        var directory = CreateTempDirectory();
+        try
+        {
+            var pagedClient = new RecordingPagedApiClient(
+                Page("""[{ "id": 1 }]""", totalPages: 1),
+                Page("""[{ "id": 2 }]""", totalPages: 1),
+                Page("""[{ "id": 3 }]""", totalPages: 1),
+                Page("""[{ "id": 4 }]""", totalPages: 1));
+            var runner = new FilesystemExportRunner(
+                NullLogger<FilesystemExportRunner>.Instance,
+                pagedClient,
+                new RecordingFileExportObjectSink(),
+                new FileExportOptions { RootPath = directory },
+                new SystemExportDateProvider(),
+                new SyncOptions
+                {
+                    StartFrom = new DateTimeOffset(2026, 6, 18, 0, 0, 0, TimeSpan.Zero),
+                    MaxPageSize = 500
+                },
+                new RecordingSyncMonitor());
+            var range = new SyncDateRange(
+                new DateTimeOffset(2026, 6, 18, 0, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 6, 20, 0, 0, 0, TimeSpan.Zero));
+
+            await runner.RunAsync(
+                "run-1",
+                [
+                    CreateJob(range, transferMode: SyncTransferMode.PagedApi, entityKey: "assets"),
+                    CreateJob(range, transferMode: SyncTransferMode.PagedApi, entityKey: "rawDataTemperaturedata")
+                ],
+                CancellationToken.None);
+
+            Assert.Equal(
+                ["assets", "rawDataTemperaturedata", "assets", "rawDataTemperaturedata"],
+                pagedClient.EntityKeys);
+            Assert.Equal(
+                [
+                    new DateTimeOffset(2026, 6, 18, 0, 0, 0, TimeSpan.Zero),
+                    new DateTimeOffset(2026, 6, 18, 0, 0, 0, TimeSpan.Zero),
+                    new DateTimeOffset(2026, 6, 19, 0, 0, 0, TimeSpan.Zero),
+                    new DateTimeOffset(2026, 6, 19, 0, 0, 0, TimeSpan.Zero)
+                ],
+                pagedClient.RequestedRanges.Select(x => x.Start).ToArray());
+            Assert.Equal(
+                [
+                    new DateTimeOffset(2026, 6, 19, 0, 0, 0, TimeSpan.Zero),
+                    new DateTimeOffset(2026, 6, 19, 0, 0, 0, TimeSpan.Zero),
+                    new DateTimeOffset(2026, 6, 20, 0, 0, 0, TimeSpan.Zero),
+                    new DateTimeOffset(2026, 6, 20, 0, 0, 0, TimeSpan.Zero)
+                ],
+                pagedClient.RequestedRanges.Select(x => x.End).ToArray());
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task RunAsync_RejectsEntityWithoutWatermark()
     {
         var directory = CreateTempDirectory();
@@ -190,19 +251,88 @@ public sealed class FilesystemExportRunnerTests
             Assert.True(File.Exists(firstDay));
             Assert.True(File.Exists(secondDay));
             Assert.Empty(pagedClient.Requests);
-            var requests = asyncExports.PreparedRequests.Single();
-            Assert.Equal(2, requests.Count);
-            Assert.Equal("assets", requests[0].Job.Metadata.Key);
-            Assert.Equal(0, requests[0].Sequence);
-            Assert.Equal(new DateTimeOffset(2026, 6, 18, 0, 0, 0, TimeSpan.Zero), requests[0].Range.Start);
-            Assert.Equal(new DateTimeOffset(2026, 6, 19, 0, 0, 0, TimeSpan.Zero), requests[0].Range.End);
-            Assert.Equal(1, requests[1].Sequence);
-            Assert.Equal(new DateTimeOffset(2026, 6, 19, 0, 0, 0, TimeSpan.Zero), requests[1].Range.Start);
-            Assert.Equal(new DateTimeOffset(2026, 6, 20, 0, 0, 0, TimeSpan.Zero), requests[1].Range.End);
+            Assert.Equal(2, asyncExports.PreparedRequests.Count);
+            var firstRequest = Assert.Single(asyncExports.PreparedRequests[0]);
+            Assert.Equal("assets", firstRequest.Job.Metadata.Key);
+            Assert.Equal(0, firstRequest.Sequence);
+            Assert.Equal(new DateTimeOffset(2026, 6, 18, 0, 0, 0, TimeSpan.Zero), firstRequest.Range.Start);
+            Assert.Equal(new DateTimeOffset(2026, 6, 19, 0, 0, 0, TimeSpan.Zero), firstRequest.Range.End);
+            var secondRequest = Assert.Single(asyncExports.PreparedRequests[1]);
+            Assert.Equal("assets", secondRequest.Job.Metadata.Key);
+            Assert.Equal(1, secondRequest.Sequence);
+            Assert.Equal(new DateTimeOffset(2026, 6, 19, 0, 0, 0, TimeSpan.Zero), secondRequest.Range.Start);
+            Assert.Equal(new DateTimeOffset(2026, 6, 20, 0, 0, 0, TimeSpan.Zero), secondRequest.Range.End);
             Assert.Equal(2, asyncExports.CompletedFiles.Count);
             Assert.Equal(0, monitor.Current.RecordsProcessed);
             Assert.Equal(0, monitor.Current.PagesProcessed);
             Assert.Equal(2, monitor.Current.FilesProcessed);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunAsync_PreparesAsyncExportsByDayAcrossSyncPlan()
+    {
+        var directory = CreateTempDirectory();
+        try
+        {
+            var asyncExports = new RecordingAsyncExportRowSource();
+            var sink = new RecordingFileExportObjectSink();
+            var runner = new FilesystemExportRunner(
+                NullLogger<FilesystemExportRunner>.Instance,
+                new RecordingPagedApiClient(),
+                asyncExports,
+                sink,
+                new FileExportOptions { RootPath = directory },
+                new SystemExportDateProvider(),
+                new SyncOptions
+                {
+                    StartFrom = new DateTimeOffset(2026, 6, 18, 0, 0, 0, TimeSpan.Zero),
+                    MaxPageSize = 500
+                },
+                new RecordingSyncMonitor());
+            var range = new SyncDateRange(
+                new DateTimeOffset(2026, 6, 18, 0, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 6, 20, 0, 0, 0, TimeSpan.Zero));
+
+            await runner.RunAsync(
+                "run-1",
+                [
+                    CreateJob(range, transferMode: SyncTransferMode.AsyncExport, entityKey: "assets"),
+                    CreateJob(range, transferMode: SyncTransferMode.AsyncExport, entityKey: "rawDataTemperaturedata")
+                ],
+                CancellationToken.None);
+
+            Assert.Equal(2, asyncExports.PreparedRequests.Count);
+            Assert.Equal(
+                ["assets", "rawDataTemperaturedata"],
+                asyncExports.PreparedRequests[0].Select(x => x.Job.Metadata.Key).ToArray());
+            Assert.Equal([0, 0], asyncExports.PreparedRequests[0].Select(x => x.Sequence).ToArray());
+            Assert.All(
+                asyncExports.PreparedRequests[0],
+                request =>
+                {
+                    Assert.Equal(new DateTimeOffset(2026, 6, 18, 0, 0, 0, TimeSpan.Zero), request.Range.Start);
+                    Assert.Equal(new DateTimeOffset(2026, 6, 19, 0, 0, 0, TimeSpan.Zero), request.Range.End);
+                });
+            Assert.Equal(
+                ["assets", "rawDataTemperaturedata"],
+                asyncExports.PreparedRequests[1].Select(x => x.Job.Metadata.Key).ToArray());
+            Assert.Equal([1, 1], asyncExports.PreparedRequests[1].Select(x => x.Sequence).ToArray());
+            Assert.All(
+                asyncExports.PreparedRequests[1],
+                request =>
+                {
+                    Assert.Equal(new DateTimeOffset(2026, 6, 19, 0, 0, 0, TimeSpan.Zero), request.Range.Start);
+                    Assert.Equal(new DateTimeOffset(2026, 6, 20, 0, 0, 0, TimeSpan.Zero), request.Range.End);
+                });
+            Assert.Equal(4, sink.Copies.Count);
+            Assert.Equal(
+                ["assets", "rawDataTemperaturedata", "assets", "rawDataTemperaturedata"],
+                sink.Copies.Select(x => x.EntityKey).ToArray());
         }
         finally
         {
@@ -259,12 +389,60 @@ public sealed class FilesystemExportRunnerTests
         try
         {
             var asyncExports = new OutOfOrderAsyncExportRowSource();
+            var sink = new RecordingFileExportObjectSink();
             var runner = new FilesystemExportRunner(
                 NullLogger<FilesystemExportRunner>.Instance,
                 new RecordingPagedApiClient(),
                 asyncExports,
-                new ParquetFileExportSink(new FileExportOptions { RootPath = directory }),
+                sink,
                 new FileExportOptions { RootPath = directory },
+                new SystemExportDateProvider(),
+                new SyncOptions
+                {
+                    StartFrom = new DateTimeOffset(2026, 6, 18, 0, 0, 0, TimeSpan.Zero),
+                    MaxPageSize = 500
+                },
+                new RecordingSyncMonitor());
+            var range = new SyncDateRange(
+                new DateTimeOffset(2026, 6, 18, 0, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 6, 19, 0, 0, 0, TimeSpan.Zero));
+
+            await runner.RunAsync(
+                "run-1",
+                [
+                    CreateJob(range, transferMode: SyncTransferMode.AsyncExport, entityKey: "assets"),
+                    CreateJob(range, transferMode: SyncTransferMode.AsyncExport, entityKey: "rawDataTemperaturedata")
+                ],
+                CancellationToken.None);
+
+            Assert.Equal(
+                ["rawDataTemperaturedata", "assets"],
+                asyncExports.CompletedFiles.Select(x => x.Request.Job.Metadata.Key).ToArray());
+            Assert.Equal(
+                ["rawDataTemperaturedata", "assets"],
+                sink.Copies.Select(x => x.EntityKey).ToArray());
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunAsync_PreparesExistingDailyAsyncExportFilesWhenReplaceExistingIsEnabled()
+    {
+        var directory = CreateTempDirectory();
+        try
+        {
+            var asyncExports = new RecordingAsyncExportRowSource();
+            var sink = new RecordingFileExportObjectSink(exists: true);
+            var fileExportOptions = new FileExportOptions { RootPath = directory };
+            var runner = new FilesystemExportRunner(
+                NullLogger<FilesystemExportRunner>.Instance,
+                new RecordingPagedApiClient(),
+                asyncExports,
+                sink,
+                fileExportOptions,
                 new SystemExportDateProvider(),
                 new SyncOptions
                 {
@@ -275,14 +453,13 @@ public sealed class FilesystemExportRunnerTests
             var job = CreateJob(
                 new SyncDateRange(
                     new DateTimeOffset(2026, 6, 18, 0, 0, 0, TimeSpan.Zero),
-                    new DateTimeOffset(2026, 6, 20, 0, 0, 0, TimeSpan.Zero)),
+                    new DateTimeOffset(2026, 6, 19, 0, 0, 0, TimeSpan.Zero)),
                 transferMode: SyncTransferMode.AsyncExport);
 
             await runner.RunAsync("run-1", [job], CancellationToken.None);
 
-            Assert.Equal([1, 0], asyncExports.CompletedFiles.Select(x => x.Request.Sequence).ToArray());
-            Assert.True(File.Exists(Path.Combine(directory, "assets", "year=2026", "month=06", "day=18", "part-000000.parquet")));
-            Assert.True(File.Exists(Path.Combine(directory, "assets", "year=2026", "month=06", "day=19", "part-000000.parquet")));
+            Assert.Single(asyncExports.PreparedRequests);
+            Assert.Single(sink.Copies);
         }
         finally
         {
@@ -301,6 +478,7 @@ public sealed class FilesystemExportRunnerTests
                 RootPath = directory,
                 FolderFormat = "yyyyMM",
                 FileNameFormat = "{entity}_{date:yyyyMMdd}.{format}",
+                ReplaceExisting = false,
                 Entities = new Dictionary<string, FileExportEntityOptions>(StringComparer.OrdinalIgnoreCase)
                 {
                     ["assets"] = new()
@@ -692,6 +870,8 @@ public sealed class FilesystemExportRunnerTests
 
         public List<bool> ReceivedWatermarkMetadata { get; } = [];
 
+        public List<string> EntityKeys { get; } = [];
+
         public Task<PagedApiPage> GetPageAsync(
             SwaggerSyncEntityMetadata metadata,
             SyncDateRange range,
@@ -702,6 +882,7 @@ public sealed class FilesystemExportRunnerTests
             Requests.Add((top, skip));
             RequestedRanges.Add(range);
             ReceivedWatermarkMetadata.Add(metadata.Watermark != null);
+            EntityKeys.Add(metadata.Key);
             return Task.FromResult(_pages.Dequeue());
         }
     }
@@ -766,7 +947,7 @@ public sealed class FilesystemExportRunnerTests
         }
     }
 
-    private sealed class RecordingFileExportObjectSink : IFileExportObjectSink
+    private sealed class RecordingFileExportObjectSink(bool exists = false) : IFileExportObjectSink
     {
         public List<(string EntityKey, DateOnly Day, string SourcePath, int PartNumber)> Copies { get; } = [];
 
@@ -797,7 +978,7 @@ public sealed class FilesystemExportRunnerTests
             int partNumber,
             CancellationToken cancellationToken)
         {
-            return Task.FromResult(false);
+            return Task.FromResult(exists);
         }
     }
 
@@ -811,7 +992,7 @@ public sealed class FilesystemExportRunnerTests
         {
             return Task.FromResult<IReadOnlyList<AsyncExportDownloadedFile>>(
                 requests
-                    .OrderByDescending(x => x.Sequence)
+                    .Reverse()
                     .Select(CreateFile)
                     .ToArray());
         }
@@ -820,7 +1001,7 @@ public sealed class FilesystemExportRunnerTests
             IReadOnlyList<AsyncExportRequest> requests,
             [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            foreach (var request in requests.OrderByDescending(x => x.Sequence))
+            foreach (var request in requests.Reverse())
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 yield return CreateFile(request);

@@ -263,6 +263,24 @@ public sealed class StorageOptionsTests
         Assert.Equal("parquet", options.Format);
         Assert.Equal("{entityKey}/year={date:yyyy}/month={date:MM}/day={date:dd}", options.FolderFormat);
         Assert.Equal("part-{part:000000}.{format}", options.FileNameFormat);
+        Assert.True(options.ReplaceExisting);
+    }
+
+    [Theory]
+    [InlineData("true", true)]
+    [InlineData("false", false)]
+    public void FileExportOptions_ReadsReplaceExisting(string configuredValue, bool expectedValue)
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["FileExport:replaceExisting"] = configuredValue
+            })
+            .Build();
+
+        var options = FileExportOptions.FromConfiguration(configuration);
+
+        Assert.Equal(expectedValue, options.ReplaceExisting);
     }
 
     [Fact]

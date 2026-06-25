@@ -51,6 +51,74 @@ public sealed class AzureBlobFileExportObjectSinkTests
     }
 
     [Fact]
+    public async Task CopyAsync_ReplacesExistingBlobByDefault()
+    {
+        var sourcePath = Path.Combine(Path.GetTempPath(), $"datasync-blob-source-{Guid.NewGuid():N}.parquet");
+        await File.WriteAllTextAsync(sourcePath, "new payload");
+        try
+        {
+            var container = new RecordingBlobExportContainer();
+            container.Blobs["exports/assets/year=2026/month=03/day=22/part-000000.parquet"] = "old payload";
+            var sink = new AzureBlobFileExportObjectSink(
+                container,
+                new FileExportOptions
+                {
+                    RootPath = "exports"
+                });
+
+            var blobName = await sink.CopyAsync(
+                "assets",
+                new DateOnly(2026, 3, 22),
+                sourcePath,
+                partNumber: 0,
+                CancellationToken.None);
+
+            Assert.Equal("exports/assets/year=2026/month=03/day=22/part-000000.parquet", blobName);
+            Assert.Equal("new payload", container.Blobs[blobName]);
+            Assert.Equal([true], container.ReplaceExistingValues);
+        }
+        finally
+        {
+            File.Delete(sourcePath);
+        }
+    }
+
+    [Fact]
+    public async Task CopyAsync_RejectsExistingBlobWhenReplaceExistingIsDisabled()
+    {
+        var sourcePath = Path.Combine(Path.GetTempPath(), $"datasync-blob-source-{Guid.NewGuid():N}.parquet");
+        await File.WriteAllTextAsync(sourcePath, "new payload");
+        try
+        {
+            var container = new RecordingBlobExportContainer();
+            container.Blobs["exports/assets/year=2026/month=03/day=22/part-000000.parquet"] = "old payload";
+            var sink = new AzureBlobFileExportObjectSink(
+                container,
+                new FileExportOptions
+                {
+                    RootPath = "exports",
+                    ReplaceExisting = false
+                });
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                sink.CopyAsync(
+                    "assets",
+                    new DateOnly(2026, 3, 22),
+                    sourcePath,
+                    partNumber: 0,
+                    CancellationToken.None));
+
+            Assert.Contains("already exists", exception.Message);
+            Assert.Equal("old payload", container.Blobs["exports/assets/year=2026/month=03/day=22/part-000000.parquet"]);
+            Assert.Empty(container.ReplaceExistingValues);
+        }
+        finally
+        {
+            File.Delete(sourcePath);
+        }
+    }
+
+    [Fact]
     public async Task ExistsAsync_ChecksRenderedBlobName()
     {
         var container = new RecordingBlobExportContainer();
@@ -86,15 +154,19 @@ public sealed class AzureBlobFileExportObjectSinkTests
 
         public Dictionary<string, string?> ContentTypes { get; } = new(StringComparer.Ordinal);
 
+        public List<bool> ReplaceExistingValues { get; } = [];
+
         public async Task UploadAsync(
             string blobName,
             Stream content,
             string? contentType,
+            bool replaceExisting,
             CancellationToken cancellationToken)
         {
             using var reader = new StreamReader(content);
             Blobs[blobName] = await reader.ReadToEndAsync(cancellationToken);
             ContentTypes[blobName] = contentType;
+            ReplaceExistingValues.Add(replaceExisting);
         }
 
         public Task<bool> ExistsAsync(

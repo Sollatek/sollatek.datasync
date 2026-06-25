@@ -70,16 +70,26 @@ public sealed class FilesystemExportRunner : ISyncJobRunner
         ArgumentException.ThrowIfNullOrWhiteSpace(runId);
         ArgumentNullException.ThrowIfNull(jobs);
 
-        foreach (var job in jobs)
+        var workItems = new List<DailyExportWorkItem>();
+        foreach (var (job, jobIndex) in jobs.Select((job, index) => (job, index)))
         {
-            await ExportEntityAsync(runId, job, cancellationToken);
+            workItems.AddRange(GetDailyWorkItems(job, jobIndex));
+        }
+
+        foreach (var period in workItems
+                     .GroupBy(x => x.DailyRange.Day)
+                     .OrderBy(x => x.Key))
+        {
+            await ExportDailyPeriodAsync(
+                runId,
+                period.OrderBy(x => x.JobIndex).ToArray(),
+                cancellationToken);
         }
     }
 
-    private async Task ExportEntityAsync(
-        string runId,
+    private IReadOnlyList<DailyExportWorkItem> GetDailyWorkItems(
         SyncJob job,
-        CancellationToken cancellationToken)
+        int jobIndex)
     {
         var entityKey = job.Metadata.Key;
         var isFullExport = IsFullExport(job);
@@ -95,17 +105,9 @@ public sealed class FilesystemExportRunner : ISyncJobRunner
             _logger.LogInformation(
                 "Skipping filesystem export for {EntityKey} because the sync date range is empty.",
                 entityKey);
-            return;
+            return [];
         }
 
-        _monitor.RecordEntityStarted(runId, entityKey);
-        _monitor.RecordEntityRange(
-            runId,
-            entityKey,
-            job.Range.Start,
-            job.Range.End,
-            job.ExpectedCompletedRangeEndUtc,
-            job.LagPeriods);
         _logger.LogInformation(
             "Starting filesystem {DataMode} {TransferMode} export for {EntityKey} across {DayCount} day partitions.",
             isFullExport ? "full" : "differential",
@@ -113,69 +115,118 @@ public sealed class FilesystemExportRunner : ISyncJobRunner
             entityKey,
             dailyRanges.Count);
 
-        if (job.TransferMode == SyncTransferMode.AsyncExport)
-        {
-            await ExportAsyncEntityRangeAsync(runId, entityKey, job, dailyRanges, cancellationToken);
-            return;
-        }
-
-        foreach (var dailyRange in dailyRanges)
-        {
-            await ExportPagedDailyRangeAsync(runId, entityKey, job, dailyRange, cancellationToken);
-        }
+        return dailyRanges
+            .Select((dailyRange, index) => new DailyExportWorkItem(
+                jobIndex,
+                index,
+                job,
+                entityKey,
+                isFullExport,
+                dailyRange))
+            .ToArray();
     }
 
-    private async Task ExportAsyncEntityRangeAsync(
+    private async Task ExportDailyPeriodAsync(
         string runId,
-        string entityKey,
-        SyncJob job,
-        IReadOnlyList<DailyExportRange> dailyRanges,
+        IReadOnlyList<DailyExportWorkItem> workItems,
         CancellationToken cancellationToken)
     {
-        var requestMetadata = GetRequestMetadata(job);
-        var descriptors = new List<AsyncDailyExportRequest>();
-        foreach (var (dailyRange, index) in dailyRanges.Select((dailyRange, index) => (dailyRange, index)))
+        var asyncRequests = new List<AsyncDailyExportRequest>();
+        foreach (var workItem in workItems)
         {
-            var outputDay = GetOutputDayForDailyRequest(job, dailyRange);
-            var partNumber = outputDay == dailyRange.Day ? 0 : index;
-            var descriptor = new AsyncDailyExportRequest(
-                new AsyncExportRequest(index, job, requestMetadata, dailyRange.Range),
-                outputDay,
-                partNumber);
-            if (!await _objectSink.ExistsAsync(
-                    entityKey,
-                    descriptor.OutputDay,
-                    descriptor.PartNumber,
-                    cancellationToken))
+            RecordDailyWorkStarted(runId, workItem);
+            if (workItem.Job.TransferMode == SyncTransferMode.AsyncExport)
             {
-                descriptors.Add(descriptor);
+                var descriptor = await CreateAsyncDailyExportRequestAsync(workItem, cancellationToken);
+                if (descriptor is not null)
+                {
+                    asyncRequests.Add(descriptor);
+                }
+
                 continue;
             }
 
-            _logger.LogInformation(
-                "Skipping filesystem async export request for {EntityKey} day {Day} part {PartNumber} because the output file already exists.",
-                entityKey,
-                descriptor.OutputDay,
-                descriptor.PartNumber);
+            await ExportPagedDailyRangeAsync(
+                runId,
+                workItem.EntityKey,
+                workItem.Job,
+                workItem.DailyRange,
+                cancellationToken);
         }
 
-        if (descriptors.Count == 0)
+        if (asyncRequests.Count > 0)
         {
-            _logger.LogInformation(
-                "Skipping filesystem async export for {EntityKey} because all {DayCount} daily output files already exist.",
-                entityKey,
-                dailyRanges.Count);
-            return;
+            await ExportAsyncDailyRequestsAsync(runId, asyncRequests, cancellationToken);
+        }
+    }
+
+    private void RecordDailyWorkStarted(
+        string runId,
+        DailyExportWorkItem workItem)
+    {
+        _monitor.RecordEntityStarted(runId, workItem.EntityKey);
+        _monitor.RecordEntityRange(
+            runId,
+            workItem.EntityKey,
+            workItem.DailyRange.Range.Start,
+            workItem.DailyRange.Range.End,
+            workItem.Job.ExpectedCompletedRangeEndUtc,
+            workItem.Job.LagPeriods);
+        _logger.LogInformation(
+            "Starting filesystem {DataMode} {TransferMode} export for {EntityKey} day {Day}.",
+            workItem.IsFullExport ? "full" : "differential",
+            workItem.Job.TransferMode,
+            workItem.EntityKey,
+            workItem.DailyRange.Day);
+    }
+
+    private async Task<AsyncDailyExportRequest?> CreateAsyncDailyExportRequestAsync(
+        DailyExportWorkItem workItem,
+        CancellationToken cancellationToken)
+    {
+        var outputDay = GetOutputDayForDailyRequest(workItem.Job, workItem.DailyRange);
+        var partNumber = outputDay == workItem.DailyRange.Day ? 0 : workItem.DailyRangeIndex;
+        var descriptor = new AsyncDailyExportRequest(
+            new AsyncExportRequest(
+                workItem.DailyRangeIndex,
+                workItem.Job,
+                GetRequestMetadata(workItem.Job),
+                workItem.DailyRange.Range),
+            workItem.EntityKey,
+            outputDay,
+            partNumber);
+
+        if (_fileExportOptions.ReplaceExisting ||
+            !await _objectSink.ExistsAsync(
+                    workItem.EntityKey,
+                    descriptor.OutputDay,
+                    descriptor.PartNumber,
+                    cancellationToken))
+        {
+            return descriptor;
         }
 
-        var descriptorsBySequence = descriptors.ToDictionary(x => x.Request.Sequence);
+        _logger.LogInformation(
+            "Skipping filesystem async export request for {EntityKey} day {Day} part {PartNumber} because the output file already exists.",
+            workItem.EntityKey,
+            descriptor.OutputDay,
+            descriptor.PartNumber);
+        return null;
+    }
+
+    private async Task ExportAsyncDailyRequestsAsync(
+        string runId,
+        IReadOnlyList<AsyncDailyExportRequest> descriptors,
+        CancellationToken cancellationToken)
+    {
+        var descriptorsByRequestKey = descriptors.ToDictionary(x => GetAsyncDailyRequestKey(x.Request));
         var requests = descriptors.Select(x => x.Request).ToArray();
 
         await foreach (var file in _asyncExportRowSource.PrepareUnorderedAsync(requests, cancellationToken))
         {
-            var descriptor = descriptorsBySequence[file.Request.Sequence];
+            var descriptor = descriptorsByRequestKey[GetAsyncDailyRequestKey(file.Request)];
             var path = await _objectSink.CopyAsync(
-                entityKey,
+                descriptor.EntityKey,
                 descriptor.OutputDay,
                 file.Path,
                 descriptor.PartNumber,
@@ -183,15 +234,30 @@ public sealed class FilesystemExportRunner : ISyncJobRunner
             await _asyncExportRowSource.CompleteAsync(file, cancellationToken);
             _logger.LogInformation(
                 "Saved filesystem async export for {EntityKey} day {Day} part {PartNumber} to {Path}.",
-                entityKey,
+                descriptor.EntityKey,
                 descriptor.OutputDay,
                 descriptor.PartNumber,
                 path);
             _monitor.RecordProgress(
                 runId,
-                entityKey,
+                descriptor.EntityKey,
                 filesProcessed: 1);
         }
+    }
+
+    private string GetAsyncDailyRequestKey(AsyncExportRequest request)
+    {
+        return string.Join(
+            "|",
+            request.Job.Metadata.Key,
+            request.Sequence.ToString(CultureInfo.InvariantCulture),
+            request.RequestMetadata.Operations.FirstOrDefault()?.Path ?? "",
+            request.Range.Start.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
+            request.Range.End.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
+            request.Range.IncludeEndFilter.ToString(CultureInfo.InvariantCulture),
+            request.Job.DataMode.ToString(),
+            _fileExportOptions.Format,
+            request.Job.IsInitial.ToString(CultureInfo.InvariantCulture));
     }
 
     private async Task ExportPagedDailyRangeAsync(
@@ -373,6 +439,15 @@ public sealed class FilesystemExportRunner : ISyncJobRunner
 
     private sealed record AsyncDailyExportRequest(
         AsyncExportRequest Request,
+        string EntityKey,
         DateOnly OutputDay,
         int PartNumber);
+
+    private sealed record DailyExportWorkItem(
+        int JobIndex,
+        int DailyRangeIndex,
+        SyncJob Job,
+        string EntityKey,
+        bool IsFullExport,
+        DailyExportRange DailyRange);
 }
