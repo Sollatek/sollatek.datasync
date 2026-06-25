@@ -73,7 +73,8 @@ Filesystem example:
     "statePath": "_state/sync-state.json",
     "format": "parquet",
     "folderFormat": "yyyyMM",
-    "fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}"
+    "fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}",
+    "replaceExisting": true
   }
 }
 ```
@@ -92,7 +93,8 @@ Azure Blob uses the same `FileExport` layout as filesystem storage:
     "statePath": "_state/sync-state.json",
     "format": "parquet",
     "folderFormat": "yyyyMM",
-    "fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}"
+    "fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}",
+    "replaceExisting": true
   },
   "State": {
     "provider": "azureBlobStorage",
@@ -242,7 +244,8 @@ Connection string examples:
     "statePath": "_state/sync-state.json",
     "format": "parquet",
     "folderFormat": "yyyyMM",
-    "fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}"
+    "fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}",
+    "replaceExisting": true
   }
 }
 ```
@@ -259,7 +262,8 @@ Connection string examples:
     "statePath": "_state/sync-state.json",
     "format": "parquet",
     "folderFormat": "yyyyMM",
-    "fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}"
+    "fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}",
+    "replaceExisting": true
   }
 }
 ```
@@ -435,6 +439,7 @@ Filesystem and Azure Blob storage use `FileExport` to decide where portal export
 - `FileExport:format`: portal export format for filesystem or Azure Blob async export. Supported values: `csv`, `xml`, `xlsx`, and `parquet`. Paged API local writing supports `csv` and `parquet`.
 - `FileExport:folderFormat`: folder path under `FileExport:rootPath`. Defaults to `{entityKey}/year={date:yyyy}/month={date:MM}/day={date:dd}`. A value without `{...}` tokens is treated as a `DateOnly` format, so `yyyyMM` renders `202602`.
 - `FileExport:fileNameFormat`: file name under the rendered folder. Defaults to `part-{part:000000}.{format}`.
+- `FileExport:replaceExisting`: whether a rendered export file/blob can replace an existing object with the same name. Defaults to `true`. Set to `false` to keep existing files/blobs; async export skips existing daily outputs, and paged/copy exports fail before overwriting.
 - `FileExport:statePath`: local DataSync checkpoint state path. Defaults to `_state/sync-state.json` under the running app base directory. Relative paths are resolved from the running app base directory, not from `FileExport:rootPath`. When `State:provider` is `azureBlobStorage`, checkpoints are stored in blob state instead.
 - Supported path tokens: `{entity}`, `{entityKey}`, `{date}`, `{date:<format>}`, `{yyyy}`, `{MM}`, `{dd}`, `{part}`, `{part:<format>}`, and `{format}`.
 
@@ -451,7 +456,8 @@ Daily file organization example, producing paths such as `202602/Assets_20260202
     "statePath": "_state/sync-state.json",
     "format": "parquet",
     "folderFormat": "yyyyMM",
-    "fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}"
+    "fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}",
+    "replaceExisting": true
   }
 }
 ```
@@ -505,7 +511,8 @@ Complete daily filesystem export example:
     "statePath": "_state/sync-state.json",
     "format": "parquet",
     "folderFormat": "yyyyMM",
-    "fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}"
+    "fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}",
+    "replaceExisting": true
   }
 }
 ```
@@ -524,7 +531,8 @@ For Azure Blob Storage, keep the same `Sync`, `SyncPlan`, and `FileExport` layou
     "statePath": "_state/sync-state.json",
     "format": "parquet",
     "folderFormat": "yyyyMM",
-    "fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}"
+    "fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}",
+    "replaceExisting": true
   },
   "State": {
     "provider": "azureBlobStorage",
@@ -874,7 +882,7 @@ Logs are disabled by default to avoid surprise ingestion volume. Set `Monitoring
 
 ## Deployment
 
-For an Azure portal walkthrough that deploys DataSync as a 01:00 UTC daily Container Apps Job writing to Azure Blob Storage through selected-network storage firewall rules, see [Deploy DataSync As An Azure Container Apps Daily Blob Job](AZURE_CONTAINER_APPS_DAILY_BLOB_JOB.md). For the cloud-team low-level design, including Azure resources, VNet integration, storage service endpoints, RBAC, and validation steps from scratch, see [Azure Deployment Low-Level Design](AZURE_DEPLOYMENT_LLD.md). The guide also covers storage accounts where the deployment script must skip blob container data-plane setup.
+For an Azure portal walkthrough that deploys DataSync as a 01:00 UTC daily Container Apps Job writing to Azure Blob Storage through selected-network storage firewall rules, see [Deploy DataSync As An Azure Container Apps Daily Blob Job](deployment/azure/AZURE_CONTAINER_APPS_DAILY_BLOB_JOB.md). The deployment script also supports `-ImageOnly` to rebuild the configured ACR image and update only the existing Container Apps Job image. For the cloud-team low-level design, including Azure resources, VNet integration, storage service endpoints, RBAC, and validation steps from scratch, see [Azure Deployment Low-Level Design](deployment/azure/AZURE_DEPLOYMENT_LLD.md). The guide also covers storage accounts where the deployment script must skip blob container data-plane setup.
 
 ### Docker Runtime
 

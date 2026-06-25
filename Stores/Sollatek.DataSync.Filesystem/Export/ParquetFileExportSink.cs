@@ -33,7 +33,7 @@ public sealed class ParquetFileExportSink : IFileExportObjectSink
         }
 
         var path = GetOutputPath(entityKey, day, partNumber);
-        if (File.Exists(path))
+        if (!_options.ReplaceExisting && File.Exists(path))
         {
             throw new InvalidOperationException($"Filesystem export file already exists: {path}");
         }
@@ -84,7 +84,7 @@ public sealed class ParquetFileExportSink : IFileExportObjectSink
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
 
         var path = GetOutputPath(entityKey, day, partNumber);
-        if (File.Exists(path))
+        if (!_options.ReplaceExisting && File.Exists(path))
         {
             throw new InvalidOperationException($"Filesystem export file already exists: {path}");
         }

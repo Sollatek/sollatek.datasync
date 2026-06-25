@@ -5,6 +5,8 @@ param(
 
     [switch] $SkipBuild,
 
+    [switch] $ImageOnly,
+
     [switch] $PlanOnly,
 
     [switch] $NoCleanup
@@ -589,6 +591,85 @@ function Ensure-StorageServiceEndpointRule($NetworkOptions, [string] $ResourceGr
     ) | Out-Null
 }
 
+function Build-ContainerImage(
+    $Config,
+    [string] $RepoRoot,
+    [string] $ResourceGroup,
+    [string] $AcrName,
+    [string] $ImageName,
+    [string] $ImageTag,
+    [string] $AcrDockerfile,
+    [string] $JobName,
+    [string] $DataSyncProvider,
+    [string] $MonitoringProvider,
+    [string] $DotnetRuntimeImage,
+    [string] $Image,
+    [bool] $HasAppsettingsOverride,
+    [bool] $SkipBuild,
+    [bool] $NoCleanup,
+    [bool] $ForceBuild)
+{
+    $buildContext = $null
+    try {
+        if ($SkipBuild) {
+            Write-Host "Skipping image build. Expected image: $Image"
+            return
+        }
+
+        $imageTagExists = Test-AcrImageTag -AcrName $AcrName -ImageName $ImageName -ImageTag $ImageTag
+        $shouldBuildImage = $true
+
+        if ($imageTagExists -and $ForceBuild) {
+            Write-Host "Image tag already exists. Rebuilding because this run requested an image refresh: $Image"
+        } elseif ($imageTagExists -and -not $HasAppsettingsOverride) {
+            Write-Host "Image tag already exists and appsettings are not baked into the image. Skipping image build: $Image"
+            $shouldBuildImage = $false
+        } elseif ($imageTagExists -and $HasAppsettingsOverride) {
+            Write-Host "Image tag already exists, but appsettings are baked into the image. Rebuilding image to keep image configuration current: $Image"
+        }
+
+        if (-not $shouldBuildImage) {
+            return
+        }
+
+        $buildContext = New-BuildContext -Config $Config -RepoRoot $RepoRoot -JobName $JobName
+        $buildDockerfile = Resolve-AcrDockerfile -BuildContext $buildContext -Dockerfile $AcrDockerfile
+
+        $buildArgs = @(
+            "acr", "build",
+            "--resource-group", $ResourceGroup,
+            "--registry", $AcrName,
+            "--image", "${ImageName}:$ImageTag",
+            "--file", $buildDockerfile,
+            "--build-arg", "DATASYNC_PROVIDER=$DataSyncProvider",
+            "--build-arg", "DATASYNC_MONITORING_PROVIDER=$MonitoringProvider"
+        )
+
+        if (-not [string]::IsNullOrWhiteSpace($DotnetRuntimeImage)) {
+            $buildArgs += @("--build-arg", "DOTNET_RUNTIME_IMAGE=$DotnetRuntimeImage")
+        }
+
+        if (Has-Property $Config.image "buildArgs") {
+            foreach ($property in $Config.image.buildArgs.PSObject.Properties) {
+                $buildArgs += @("--build-arg", "$($property.Name)=$($property.Value)")
+            }
+        }
+
+        $buildArgs += @(".")
+        Push-Location -LiteralPath $buildContext.Path
+        try {
+            Invoke-AzCli -Arguments $buildArgs | Out-Null
+        } finally {
+            Pop-Location
+        }
+    } finally {
+        if ($buildContext -and $buildContext.IsTemporary -and -not $NoCleanup) {
+            Write-Host "Removing temporary build context: $($buildContext.Path)"
+            Remove-DirectoryWithRetry -Path $buildContext.Path
+        }
+    }
+}
+
 function Write-Plan($Config) {
     $acrName = Get-RequiredString $Config.containerRegistry "name" "containerRegistry"
     $storageName = Get-RequiredString $Config.storage "accountName" "storage"
@@ -623,10 +704,19 @@ function Write-Plan($Config) {
     Write-Host "Replica timeout: $replicaTimeout seconds"
     Write-Host "Update existing job: $(Get-OptionalBool $Config.containerApps 'updateExistingJob' $false)"
     $hasAppsettingsOverride = Has-Property $Config "appsettings"
+    if ($ImageOnly) {
+        Write-Host "Mode: image only"
+        Write-Host "Actions: rebuild the configured ACR image and update only the existing Container Apps Job image."
+        Write-Host "Storage, networking, secrets, environment variables, RBAC, schedule, and run settings will not be changed."
+    } else {
+        Write-Host "Mode: full deployment"
+    }
     Write-Host "Build appsettings override: $hasAppsettingsOverride"
-    Write-Host "Reuse existing image tag when present: $(-not $hasAppsettingsOverride)"
+    Write-Host "Reuse existing image tag when present: $(-not $hasAppsettingsOverride -and -not $ImageOnly)"
     if ($hasAppsettingsOverride) {
         Write-Host "Image build policy: rebuild because appsettings are baked into the image."
+    } elseif ($ImageOnly) {
+        Write-Host "Image build policy: rebuild because image-only mode refreshes the job image."
     }
 }
 
@@ -685,6 +775,55 @@ $hasAppsettingsOverride = Has-Property $config "appsettings"
 Invoke-AzCli -Arguments @("account", "set", "--subscription", $subscription) | Out-Null
 Invoke-AzCli -Arguments @("extension", "add", "--name", "containerapp", "--upgrade", "--only-show-errors") | Out-Null
 
+if ($ImageOnly) {
+    $groupExists = (Invoke-AzCliTsv -Arguments @("group", "exists", "--name", $resourceGroup)).ToLowerInvariant()
+    if ($groupExists -ne "true") {
+        throw "Image-only update requires an existing resource group: $resourceGroup"
+    }
+
+    if (-not (Test-AzResource -Arguments @("acr", "show", "--resource-group", $resourceGroup, "--name", $acrName))) {
+        throw "Image-only update requires an existing Azure Container Registry: $acrName"
+    }
+
+    if (-not (Test-AzResource -Arguments @("containerapp", "job", "show", "--resource-group", $resourceGroup, "--name", $jobName))) {
+        throw "Image-only update requires an existing Container Apps Job: $jobName"
+    }
+
+    Build-ContainerImage `
+        -Config $config `
+        -RepoRoot $repoRoot `
+        -ResourceGroup $resourceGroup `
+        -AcrName $acrName `
+        -ImageName $imageName `
+        -ImageTag $imageTag `
+        -AcrDockerfile $acrDockerfile `
+        -JobName $jobName `
+        -DataSyncProvider $dataSyncProvider `
+        -MonitoringProvider $monitoringProvider `
+        -DotnetRuntimeImage $dotnetRuntimeImage `
+        -Image $image `
+        -HasAppsettingsOverride ([bool] $hasAppsettingsOverride) `
+        -SkipBuild ([bool] $SkipBuild) `
+        -NoCleanup ([bool] $NoCleanup) `
+        -ForceBuild $true
+
+    if ($SkipBuild -and -not (Test-AcrImageTag -AcrName $acrName -ImageName $imageName -ImageTag $imageTag)) {
+        throw "Configured image tag does not exist in ACR and -SkipBuild was specified: $image"
+    }
+
+    Invoke-AzCli -Arguments @(
+        "containerapp", "job", "update",
+        "--resource-group", $resourceGroup,
+        "--name", $jobName,
+        "--image", $image
+    ) | Out-Null
+
+    Write-Host "Image-only update complete."
+    Write-Host "Image: $image"
+    Write-Host "Job: $jobName"
+    return
+}
+
 $groupExists = (Invoke-AzCliTsv -Arguments @("group", "exists", "--name", $resourceGroup)).ToLowerInvariant()
 if ($groupExists -ne "true") {
     Invoke-AzCli -Arguments (@("group", "create", "--name", $resourceGroup, "--location", $location) + (Get-TagArgs $tags)) | Out-Null
@@ -718,60 +857,23 @@ if (-not (Test-AzResource -Arguments @("acr", "show", "--resource-group", $resou
     Write-Host "Azure Container Registry already exists: $acrName"
 }
 
-$buildContext = $null
-try {
-    if (-not $SkipBuild) {
-        $imageTagExists = Test-AcrImageTag -AcrName $acrName -ImageName $imageName -ImageTag $imageTag
-        $shouldBuildImage = $true
-
-        if ($imageTagExists -and -not $hasAppsettingsOverride) {
-            Write-Host "Image tag already exists and appsettings are not baked into the image. Skipping image build: $image"
-            $shouldBuildImage = $false
-        } elseif ($imageTagExists -and $hasAppsettingsOverride) {
-            Write-Host "Image tag already exists, but appsettings are baked into the image. Rebuilding image to keep image configuration current: $image"
-        }
-
-        if ($shouldBuildImage) {
-            $buildContext = New-BuildContext -Config $config -RepoRoot $repoRoot -JobName $jobName
-            $buildDockerfile = Resolve-AcrDockerfile -BuildContext $buildContext -Dockerfile $acrDockerfile
-
-            $buildArgs = @(
-                "acr", "build",
-                "--resource-group", $resourceGroup,
-                "--registry", $acrName,
-                "--image", "${imageName}:$imageTag",
-                "--file", $buildDockerfile,
-                "--build-arg", "DATASYNC_PROVIDER=$dataSyncProvider",
-                "--build-arg", "DATASYNC_MONITORING_PROVIDER=$monitoringProvider"
-            )
-
-            if (-not [string]::IsNullOrWhiteSpace($dotnetRuntimeImage)) {
-                $buildArgs += @("--build-arg", "DOTNET_RUNTIME_IMAGE=$dotnetRuntimeImage")
-            }
-
-            if (Has-Property $config.image "buildArgs") {
-                foreach ($property in $config.image.buildArgs.PSObject.Properties) {
-                    $buildArgs += @("--build-arg", "$($property.Name)=$($property.Value)")
-                }
-            }
-
-            $buildArgs += @(".")
-            Push-Location -LiteralPath $buildContext.Path
-            try {
-                Invoke-AzCli -Arguments $buildArgs | Out-Null
-            } finally {
-                Pop-Location
-            }
-        }
-    } else {
-        Write-Host "Skipping image build. Expected image: $image"
-    }
-} finally {
-    if ($buildContext -and $buildContext.IsTemporary -and -not $NoCleanup) {
-        Write-Host "Removing temporary build context: $($buildContext.Path)"
-        Remove-DirectoryWithRetry -Path $buildContext.Path
-    }
-}
+Build-ContainerImage `
+    -Config $config `
+    -RepoRoot $repoRoot `
+    -ResourceGroup $resourceGroup `
+    -AcrName $acrName `
+    -ImageName $imageName `
+    -ImageTag $imageTag `
+    -AcrDockerfile $acrDockerfile `
+    -JobName $jobName `
+    -DataSyncProvider $dataSyncProvider `
+    -MonitoringProvider $monitoringProvider `
+    -DotnetRuntimeImage $dotnetRuntimeImage `
+    -Image $image `
+    -HasAppsettingsOverride ([bool] $hasAppsettingsOverride) `
+    -SkipBuild ([bool] $SkipBuild) `
+    -NoCleanup ([bool] $NoCleanup) `
+    -ForceBuild $false
 
 if (-not (Test-AzResource -Arguments @("storage", "account", "show", "--resource-group", $resourceGroup, "--name", $storageAccount))) {
     $storageCreateArgs = @(

@@ -48,10 +48,10 @@ These items are required inputs or separately owned platform decisions. They are
 - The job runs once per day at `01:00` UTC using Container Apps schedule cron `0 1 * * *`.
 - DataSync exits after processing the historical backlog for the run.
 - Exported files and state are stored in one Azure Blob container.
-- The deployment script is `deployment/azure/deploy-containerapps-job.ps1`.
-- The optional Databricks storage connector script is `deployment/azure/connect-databricks-storage.ps1`.
-- The example deployment config is `deployment/azure/deploy.daily.azure-containerapps-job.json`.
-- The example Databricks storage connector config is `deployment/azure/connect.databricks-storage.json`.
+- The deployment script is `deploy-containerapps-job.ps1`.
+- The optional Databricks storage connector script is `connect-databricks-storage.ps1`.
+- The example deployment config is `deploy.daily.azure-containerapps-job.json`.
+- The example Databricks storage connector config is `connect.databricks-storage.json`.
 - Existing Azure resources are reused but not reconfigured unless the script owns that specific setting.
 - The blob container is created before deployment, or `storage.skipContainerSetup=false` is used only from a machine allowed by the storage firewall.
 - The DataSync app requires outbound HTTPS to identity, API, export download, ACR, and optional SMTP/monitoring endpoints.
@@ -166,7 +166,7 @@ Network team acceptance criteria:
 - No public inbound route is required or configured for the Container Apps Job.
 - Outbound HTTPS from the job is allowed to Microsoft Entra ID, the Sollatek platform API/export endpoints, ACR, Blob Storage, and optional SMTP/monitoring endpoints.
 
-For an existing Databricks workspace that needs the same storage account, use `deployment/azure/connect-databricks-storage.ps1` with `deployment/azure/connect.databricks-storage.json`. For VNet-injected compute, configure the Databricks VNet and compute subnet names explicitly. The connector script enables the Storage service endpoint on those subnets, adds storage firewall subnet rules, and can assign Storage Blob RBAC to a configured Databricks access principal.
+For an existing Databricks workspace that needs the same storage account, use `connect-databricks-storage.ps1` with `connect.databricks-storage.json`. For VNet-injected compute, configure the Databricks VNet and compute subnet names explicitly. The connector script enables the Storage service endpoint on those subnets, adds storage firewall subnet rules, and can assign Storage Blob RBAC to a configured Databricks access principal.
 
 ### Container Apps Environment
 
@@ -217,20 +217,22 @@ Keep `skipContainerSetup=true` when the deployment machine is not allowed by the
 3. Create or select the ACR and keep the admin user disabled.
 4. Create or select the storage account and blob container.
 5. Prepare platform API credentials as environment variables or Key Vault references.
-6. Review `deployment/azure/deploy.daily.azure-containerapps-job.json`.
+6. Review `deploy.daily.azure-containerapps-job.json`.
 7. Run a plan:
 
+From the `deployment/azure` folder:
+
 ```powershell
-.\deployment\azure\deploy-containerapps-job.ps1 `
-  -ConfigPath .\deployment\azure\deploy.daily.azure-containerapps-job.json `
+.\deploy-containerapps-job.ps1 `
+  -ConfigPath .\deploy.daily.azure-containerapps-job.json `
   -PlanOnly
 ```
 
 8. Deploy:
 
 ```powershell
-.\deployment\azure\deploy-containerapps-job.ps1 `
-  -ConfigPath .\deployment\azure\deploy.daily.azure-containerapps-job.json
+.\deploy-containerapps-job.ps1 `
+  -ConfigPath .\deploy.daily.azure-containerapps-job.json
 ```
 
 9. Confirm the job has `AcrPull` on ACR and `Storage Blob Data Contributor` on the storage account.
@@ -242,20 +244,20 @@ Use this only for an existing Databricks workspace that should read the same Blo
 
 1. Identify the Databricks VNet resource group, VNet name, and compute subnet names that should reach Storage.
 2. Identify the Databricks access principal object ID. For Unity Catalog this is usually the managed identity behind the Databricks access connector or the principal used by the external location.
-3. Update `deployment/azure/connect.databricks-storage.json`.
+3. Update `connect.databricks-storage.json`.
 4. Run a plan:
 
 ```powershell
-.\deployment\azure\connect-databricks-storage.ps1 `
-  -ConfigPath .\deployment\azure\connect.databricks-storage.json `
+.\connect-databricks-storage.ps1 `
+  -ConfigPath .\connect.databricks-storage.json `
   -PlanOnly
 ```
 
 5. Apply the connection:
 
 ```powershell
-.\deployment\azure\connect-databricks-storage.ps1 `
-  -ConfigPath .\deployment\azure\connect.databricks-storage.json
+.\connect-databricks-storage.ps1 `
+  -ConfigPath .\connect.databricks-storage.json
 ```
 
 The connector script:
