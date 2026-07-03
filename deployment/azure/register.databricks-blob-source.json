@@ -1,0 +1,29 @@
+{
+  "storage": {
+    "accountName": "stsollatekdsync001",
+    "containerName": "sollatek-datasync",
+    "path": "daily-exports"
+  },
+  "databricks": {
+    "profile": "<databricks-cli-profile-name>"
+  },
+  "unityCatalog": {
+    "storageCredentialName": "cred_sollatek_datasync_exports",
+    "accessConnectorId": "/subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.Databricks/accessConnectors/<access-connector-name>",
+    "managedIdentityId": "",
+    "externalLocationName": "extloc_sollatek_datasync_exports",
+    "comment": "DataSync export files in Azure Storage.",
+    "readOnly": true,
+    "skipValidation": false,
+    "enableFileEvents": false,
+    "catalogName": "sollatek_datasync",
+    "catalogComment": "DataSync exported data.",
+    "schemaName": "exports",
+    "schemaComment": "External access to DataSync export files.",
+    "volumeName": "files",
+    "volumeComment": "External volume over the DataSync export folder.",
+    "createCatalog": true,
+    "createSchema": true,
+    "createVolume": true
+  }
+}
