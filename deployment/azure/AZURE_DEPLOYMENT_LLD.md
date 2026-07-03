@@ -24,6 +24,7 @@ The Azure design covers:
 - Optional VNet and Container Apps subnet creation.
 - Storage service endpoint and storage firewall rule for the Container Apps subnet.
 - Optional Databricks subnet connection to the same Storage account using service endpoints and storage firewall rules.
+- Optional Databricks Unity Catalog source registration over the same Storage container.
 - Managed identity based runtime access to ACR and Blob Storage.
 - Optional Key Vault-backed secrets.
 - RBAC required for deployment, runtime, and operations.
@@ -41,7 +42,7 @@ These items are required inputs or separately owned platform decisions. They are
 | Blob container lifecycle | Cloud/storage team | Whether the deployment script creates the container or the container is pre-created from an allowed network. |
 | Secret storage | Security/cloud team | Environment variables for deployment-time injection or Key Vault references for production secrets. |
 | Monitoring target | Operations/cloud team | `none`, Log Analytics, Application Insights, Azure Monitor, or another approved sink. |
-| Databricks integration | Data platform team | Existing Databricks VNet/subnets and the principal that should receive Blob access. |
+| Databricks integration | Data platform team | Existing Databricks VNet/subnets, Databricks CLI profile, Unity Catalog privileges, access connector resource ID, and the principal that should receive Blob access. |
 
 ## Assumptions
 
@@ -50,11 +51,16 @@ These items are required inputs or separately owned platform decisions. They are
 - Exported files and state are stored in one Azure Blob container.
 - The deployment script is `deploy-containerapps-job.ps1`.
 - The optional Databricks storage connector script is `connect-databricks-storage.ps1`.
+- The optional Databricks source registration script is `register-databricks-blob-source.ps1`.
+- The optional all-in-one Databricks catalog setup script is `setup-databricks-blob-catalog.ps1`.
 - The example deployment config is `deploy.daily.azure-containerapps-job.json`.
 - The example Databricks storage connector config is `connect.databricks-storage.json`.
+- The example Databricks source registration config is `register.databricks-blob-source.json`.
+- The example Databricks catalog setup config is `setup.databricks-blob-catalog.json`.
 - Existing Azure resources are reused but not reconfigured unless the script owns that specific setting.
 - The blob container is created before deployment, or `storage.skipContainerSetup=false` is used only from a machine allowed by the storage firewall.
 - The DataSync app requires outbound HTTPS to identity, API, export download, ACR, and optional SMTP/monitoring endpoints.
+- Databricks Unity Catalog source registration uses an ADLS Gen2-compatible storage URL in the form `abfss://<container>@<account>.dfs.core.windows.net/<path>/`.
 
 ## Architecture Decisions
 
@@ -111,6 +117,10 @@ flowchart LR
 | Storage account | Yes | Yes, if missing | Created with HTTPS only, TLS 1.2 minimum, blob public access disabled, default network action deny, and no bypass. |
 | Storage firewall subnet rule | Yes, when script manages network | Yes, when `network.skipSetup=false` | Allows the Container Apps subnet. |
 | Databricks storage firewall subnet rule | Optional | Yes, by `connect-databricks-storage.ps1` | Allows explicitly configured Databricks VNet subnets. |
+| Databricks access connector storage resource-instance rule | Optional | Yes, by `setup-databricks-blob-catalog.ps1` | Allows an existing Azure Databricks access connector through storage network rules. |
+| Databricks Unity Catalog storage credential | Optional | Yes, by Databricks source scripts | Uses an Azure Databricks access connector managed identity. |
+| Databricks Unity Catalog external location | Optional | Yes, by Databricks source scripts | Points to the configured storage container or folder. |
+| Databricks Unity Catalog external volume | Optional | Yes, by Databricks source scripts | Created when catalog, schema, and volume names are configured. |
 | Blob container | Yes | Optional | Included daily config sets `storage.skipContainerSetup=true`; create the container before deployment. |
 | Azure Container Registry | Yes | Yes, if missing | Admin user disabled. Runtime image pull uses managed identity and `AcrPull`. |
 | Container Apps Environment | Yes | Yes, if missing | New environments use the configured subnet and `--internal-only true` by default. |
@@ -128,7 +138,7 @@ flowchart LR
 | Network | VNet/subnet CIDR, subnet delegation, selected-network storage rule, service endpoint, route table/NSG compatibility, and outbound HTTPS policy. |
 | Storage | Storage account, blob container, network firewall settings, retention/lifecycle policy if required, and Blob RBAC scope. |
 | Security/IAM | Deployment identity permissions, runtime managed identity permissions, Key Vault or secret injection process, and approval for who can manually start job executions. |
-| Data platform | Databricks subnet details and storage access principal if Databricks will read the same Blob container. |
+| Data platform | Databricks subnet details, access connector resource ID, Unity Catalog target names, and storage access principal if Databricks will read the same Blob container. |
 | Operations | Monitoring destination, alerting expectations, runbook ownership, and failed-job triage process. |
 
 ## Network Design
@@ -167,6 +177,10 @@ Network team acceptance criteria:
 - Outbound HTTPS from the job is allowed to Microsoft Entra ID, the Sollatek platform API/export endpoints, ACR, Blob Storage, and optional SMTP/monitoring endpoints.
 
 For an existing Databricks workspace that needs the same storage account, use `connect-databricks-storage.ps1` with `connect.databricks-storage.json`. For VNet-injected compute, configure the Databricks VNet and compute subnet names explicitly. The connector script enables the Storage service endpoint on those subnets, adds storage firewall subnet rules, and can assign Storage Blob RBAC to a configured Databricks access principal.
+
+After network and RBAC access are ready, use `register-databricks-blob-source.ps1` with `register.databricks-blob-source.json` to register the storage path in Unity Catalog. The source registration script uses the Databricks CLI to create missing storage credential, external location, and optional catalog/schema/external volume objects. Existing Unity Catalog objects are reused and not modified.
+
+Use `setup-databricks-blob-catalog.ps1` with `setup.databricks-blob-catalog.json` when a single run should reuse an existing Azure Databricks access connector, add that access connector as a storage account resource-instance network rule, assign Blob RBAC on the container to the access connector managed identity, and create the Unity Catalog source objects. The storage resource-instance rule is storage-account scoped; the configured blob container is used for RBAC scope and Unity Catalog paths.
 
 ### Container Apps Environment
 
@@ -268,9 +282,73 @@ The connector script:
 - Enables the configured Storage service endpoint on each Databricks subnet.
 - Adds each Databricks subnet to the storage account network rules.
 - Optionally assigns Storage Blob RBAC to configured principals at storage account or container scope.
-- Does not create Databricks workspaces, VNets, subnets, clusters, external locations, or notebooks.
+- Does not create Databricks workspaces, VNets, subnets, clusters, Unity Catalog objects, or notebooks.
 
 Set `storage.enforceSelectedNetworks=true` only when the script is allowed to apply `publicNetworkAccess=Enabled`, `defaultAction=Deny`, and `bypass=None` on the storage account. Otherwise, the script adds the subnet rules and warns if the storage account is not already using selected-network restrictions.
+
+## Optional Databricks Source Registration
+
+Use this only after the Databricks workspace is Unity Catalog enabled and the access connector managed identity already has Storage Blob access to the target storage account or container.
+
+1. Confirm the storage account supports ADLS Gen2 external locations and that the container or folder path is correct.
+2. Authenticate the Databricks CLI with a profile that has the required Unity Catalog privileges.
+3. Identify the Access Connector for Azure Databricks resource ID.
+4. If using a user-assigned managed identity, identify that managed identity resource ID.
+5. Update `register.databricks-blob-source.json`.
+6. Run a plan:
+
+```powershell
+.\register-databricks-blob-source.ps1 `
+  -ConfigPath .\register.databricks-blob-source.json `
+  -PlanOnly
+```
+
+7. Apply the registration:
+
+```powershell
+.\register-databricks-blob-source.ps1 `
+  -ConfigPath .\register.databricks-blob-source.json
+```
+
+The source registration script:
+
+- Creates a Unity Catalog storage credential when missing.
+- Creates a Unity Catalog external location when missing.
+- Creates the configured catalog and schema when missing and enabled.
+- Creates an external volume when `catalogName`, `schemaName`, and `volumeName` are configured and volume creation is enabled.
+- Reuses existing Unity Catalog objects without changing them.
+
+## Optional Databricks Catalog Setup
+
+Use this when one script should perform the Azure storage access steps and the Databricks Unity Catalog registration steps for a new blob container.
+
+1. Confirm the Azure Databricks access connector already exists.
+2. Confirm the storage account and container exist, or set `storage.createContainer=true` only when the deployment machine is allowed by the storage firewall.
+3. Authenticate Azure CLI to an identity that can update storage network rules and assign Blob RBAC.
+4. Authenticate the Databricks CLI with a profile that has the required Unity Catalog privileges.
+5. Update `setup.databricks-blob-catalog.json`.
+6. Run a plan:
+
+```powershell
+.\setup-databricks-blob-catalog.ps1 `
+  -ConfigPath .\setup.databricks-blob-catalog.json `
+  -PlanOnly
+```
+
+7. Apply the setup:
+
+```powershell
+.\setup-databricks-blob-catalog.ps1 `
+  -ConfigPath .\setup.databricks-blob-catalog.json
+```
+
+The catalog setup script:
+
+- Reuses an existing Azure Databricks access connector by ID or by resource group and name.
+- Adds the access connector as a storage account resource-instance network rule when enabled.
+- Assigns `Storage Blob Data Contributor` on the configured container to the access connector managed identity when enabled.
+- Creates missing Unity Catalog storage credential, external location, catalog, optional schema, and optional external volume.
+- Reuses existing Azure and Databricks objects without modifying them when they already exist.
 
 ## Deployment Permissions
 
@@ -282,6 +360,7 @@ The deployment identity needs enough Azure permissions to create or manage:
 - Azure Container Registry.
 - Container Apps Environment and Job.
 - Role assignments for the job managed identity.
+- Databricks Unity Catalog metastore/catalog/schema, when source registration is used.
 
 Minimum built-in role planning depends on how your cloud team separates duties. A typical split is:
 
@@ -293,6 +372,8 @@ Minimum built-in role planning depends on how your cloud team separates duties. 
 | Storage account scope | Storage Account Contributor | Create/update storage account and network rules. |
 | Databricks VNet scope | Network Contributor | Enable Storage service endpoints on the configured Databricks subnets. |
 | Databricks storage access principal scope | User Access Administrator or Role Based Access Control Administrator | Assign optional Storage Blob RBAC when configured. |
+| Databricks Unity Catalog metastore | Metastore admin or equivalent delegated privileges | Create storage credentials and external locations. |
+| Databricks Unity Catalog catalog/schema | Owner or delegated privileges | Create schema and external volume when configured. |
 
 The deployment identity also needs Azure CLI access from a machine or Cloud Shell session that can reach Azure control plane endpoints. If `storage.skipContainerSetup=false`, that same execution location must also be allowed by the storage firewall or use credentials from an allowed network path to create the blob container.
 

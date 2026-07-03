@@ -32,6 +32,10 @@ Use this pattern when the host should be offline between runs. Use a normal Cont
 - Daily deployment config: `deploy.daily.azure-containerapps-job.json`
 - Optional Databricks storage connector script: `connect-databricks-storage.ps1`
 - Optional Databricks storage connector config: `connect.databricks-storage.json`
+- Optional Databricks source registration script: `register-databricks-blob-source.ps1`
+- Optional Databricks source registration config: `register.databricks-blob-source.json`
+- Optional Databricks catalog setup script: `setup-databricks-blob-catalog.ps1`
+- Optional Databricks catalog setup config: `setup.databricks-blob-catalog.json`
 - Cloud-team low-level design: `AZURE_DEPLOYMENT_LLD.md`
 
 The script creates missing resources and updates an existing DataSync job only when `containerApps.updateExistingJob=true`.
@@ -278,6 +282,8 @@ For a deterministic rollout, update `image.tag` in the config to a new release t
 
 Use this only when an existing Databricks workspace must read the same Blob container.
 
+This step handles Azure network and RBAC access only. Use the next section when the Blob container also needs to be registered in Databricks Unity Catalog.
+
 Update `connect.databricks-storage.json` with:
 
 - Storage account resource group, account name, and container name.
@@ -300,7 +306,75 @@ Apply:
   -ConfigPath .\connect.databricks-storage.json
 ```
 
-The connector enables `Microsoft.Storage` service endpoints on the configured Databricks subnets, adds those subnets to the storage account network rules, and optionally assigns Storage Blob RBAC. It does not create Databricks workspaces, clusters, external locations, VNets, or subnets.
+The connector enables `Microsoft.Storage` service endpoints on the configured Databricks subnets, adds those subnets to the storage account network rules, and optionally assigns Storage Blob RBAC. It does not create Databricks workspaces, clusters, Unity Catalog objects, VNets, or subnets.
+
+## Optional Databricks Source Registration
+
+Use this after the storage account, blob container, Databricks workspace, Databricks access connector, storage RBAC, and storage network rules are ready.
+
+The script uses the Databricks CLI to create or reuse:
+
+- A Unity Catalog storage credential backed by an Azure Databricks access connector managed identity.
+- A Unity Catalog external location over the configured storage container or folder.
+- An optional catalog, schema, and external volume so the storage path is browsable as a Databricks source.
+
+The storage account must be compatible with Azure Data Lake Storage Gen2 external locations. The generated URL uses `abfss://<container>@<account>.dfs.core.windows.net/<path>/`.
+
+Update `register.databricks-blob-source.json` with:
+
+- `storage.accountName`, `storage.containerName`, and optional `storage.path`, or a full `storage.url`.
+- `databricks.profile`, matching an authenticated Databricks CLI profile.
+- `unityCatalog.accessConnectorId`, the Azure resource ID of the Access Connector for Azure Databricks.
+- Optional `unityCatalog.managedIdentityId` when the access connector uses a user-assigned managed identity.
+- Unity Catalog names for `storageCredentialName`, `externalLocationName`, and optional `catalogName`, `schemaName`, and `volumeName`.
+
+Review the plan:
+
+```powershell
+.\register-databricks-blob-source.ps1 `
+  -ConfigPath .\register.databricks-blob-source.json `
+  -PlanOnly
+```
+
+Apply:
+
+```powershell
+.\register-databricks-blob-source.ps1 `
+  -ConfigPath .\register.databricks-blob-source.json
+```
+
+Existing Unity Catalog objects are reused and not modified. The script creates missing objects only.
+
+## Optional Databricks Catalog Setup
+
+Use `setup-databricks-blob-catalog.ps1` when you want one script to reuse an existing Azure Databricks access connector, allow that access connector through the storage account network rules, assign Blob RBAC on the container, and then register the storage path in Unity Catalog.
+
+The Azure Storage resource-instance rule is applied at storage account level. The blob container is used for RBAC scope and the Unity Catalog external location URL.
+
+Update `setup.databricks-blob-catalog.json` with:
+
+- Storage account resource group, account name, container name, and optional folder path.
+- Existing access connector resource group and name, or full access connector resource ID.
+- Optional user-assigned managed identity resource ID and principal ID when the access connector does not use its system-assigned identity.
+- Databricks CLI profile.
+- Unity Catalog storage credential, external location, catalog, optional schema, and optional external volume names.
+
+Review the plan:
+
+```powershell
+.\setup-databricks-blob-catalog.ps1 `
+  -ConfigPath .\setup.databricks-blob-catalog.json `
+  -PlanOnly
+```
+
+Apply:
+
+```powershell
+.\setup-databricks-blob-catalog.ps1 `
+  -ConfigPath .\setup.databricks-blob-catalog.json
+```
+
+Set `storage.createContainer=true` only when the deployment machine is allowed by the storage firewall and should create the container. Otherwise create the container through the approved storage process first.
 
 ## Validate Deployment
 
