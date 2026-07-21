@@ -55,7 +55,15 @@ namespace Platform.ApiClient.Models
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<ApiResponse> CancelExportAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<FileResponse> DownloadExportAsync(System.Guid id, System.Guid downloadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<FileResponse> DownloadExportByDownloadIdAsync(System.Guid downloadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -91,13 +99,13 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="filter">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAssetConnectivities2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAssetConnectivitiesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="compute">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetAssetConnectivityById2Async(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetAssetConnectivityByIdAsync(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -107,27 +115,27 @@ namespace Platform.ApiClient.Models
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetModelProfile>>> GetProfiles2Async(bool? includeDeleted = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetModelProfile>>> GetProfilesAsync(bool? includeDeleted = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<AssetModelProfile>> CreateProfile2Async(AssetModelProfileCreateUpdate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<AssetModelProfile>> CreateProfileAsync(AssetModelProfileCreateUpdate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<AssetModelProfile>> GetProfileById2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<AssetModelProfile>> GetProfileByIdAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> UpdateProfile2Async(System.Guid id, AssetModelProfileCreateUpdate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> UpdateProfileAsync(System.Guid id, AssetModelProfileCreateUpdate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> DeleteProfile2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> DeleteProfileAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetModelProfileMobileCommand>>> GetMobileCommands2Async(System.Guid? assetId = null, System.Guid? deviceId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetModelProfileMobileCommand>>> GetMobileCommandsAsync(System.Guid? assetId = null, System.Guid? deviceId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -142,37 +150,37 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[AssetSubModel](#/components/schemas/AssetSubModel)** schema fields.</param>
         /// <param name="filter">Applies to **[AssetSubModel](#/components/schemas/AssetSubModel)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetSubModel>>> GetAssetModels2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetSubModel>>> GetAssetModelsAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<AssetSubModel>> CreateAssetModelBody2Async(AssetModelCreateUpdate assetModelCreateCreateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<AssetSubModel>> CreateAssetModelBodyAsync(AssetModelCreateUpdate assetModelCreateCreateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[AssetSubModel](#/components/schemas/AssetSubModel)** schema fields.</param>
         /// <param name="compute">Applies to **[AssetSubModel](#/components/schemas/AssetSubModel)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<AssetSubModel>> GetAssetModelById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<AssetSubModel>> GetAssetModelByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> UpdateAssetModel2Async(System.Guid id, AssetModelCreateUpdate assetModelUpdateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> UpdateAssetModelAsync(System.Guid id, AssetModelCreateUpdate assetModelUpdateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> PatchAssetModel2Async(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> PatchAssetModelAsync(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> DeleteAssetModel2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> DeleteAssetModelAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> MergeAssetModels2Async(AssetSubModelMerge dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> MergeAssetModelsAsync(AssetSubModelMerge dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<FileResponse> GetModelPhoto2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<FileResponse> GetModelPhotoAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -187,13 +195,13 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="filter">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAssetModes2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAssetModesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="compute">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetAssetModesById2Async(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetAssetModesByIdAsync(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -208,13 +216,13 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="filter">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAPowerLines2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAPowerLinesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="compute">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetAssetPowerLineById2Async(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetAssetPowerLineByIdAsync(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -229,7 +237,7 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="filter">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssets2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
@@ -237,7 +245,7 @@ namespace Platform.ApiClient.Models
         /// <param name="distinct">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsBySerial2Async(string serial, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsBySerialAsync(string serial, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
@@ -245,7 +253,7 @@ namespace Platform.ApiClient.Models
         /// <param name="distinct">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsBySerial4Async(string serial, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsBySerialAssetTypeValueAsync(string serial, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
@@ -253,7 +261,7 @@ namespace Platform.ApiClient.Models
         /// <param name="distinct">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsByBarcode2Async(string barCode, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsByBarcodeAsync(string barCode, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
@@ -261,37 +269,41 @@ namespace Platform.ApiClient.Models
         /// <param name="distinct">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsByBarcode4Async(string barCode, int? assetypevalue = null, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsByBarcodeWithoutAssetTypeValueAsync(string barCode, int? assetypevalue = null, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="compute">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<Asset>> GetAssetById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<Asset>> GetAssetByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> UnpairDevices2Async(UnPairDeviceFromMachine cmQuickActionDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> UnpairDevicesAsync(UnPairDeviceFromMachine cmQuickActionDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<ApiResponse> UpdateAssetsOwnerAsync(AssetBulkOwnerTransfer assetsToCustomerDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         [System.Obsolete]
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetMapSimplified>>> GetAssetsForMap2Async(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetMapSimplified>>> GetAssetsForMapAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="filter">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<MapExtent>> GetAssetsMapExtent2Async(int? width = null, int? height = null, int? padding = null, int? maxZoom = null, int? minZoom = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<MapExtent>> GetAssetsMapExtentAsync(int? width = null, int? height = null, int? padding = null, int? maxZoom = null, int? minZoom = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="filter">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<AssetMapFeatureCollection>> GetAssetsMapFeatures2Async(int zoom, double west, double south, double east, double north, int? clusterPx = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<AssetMapFeatureCollection>> GetAssetsMapFeaturesAsync(int zoom, double west, double south, double east, double north, int? clusterPx = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="filter">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<ModelCountWrapper>> GetAssetsModelDistribution2Async(string filter = null, int? top = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<ModelCountWrapper>> GetAssetsModelDistributionAsync(string filter = null, int? top = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -306,13 +318,13 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="filter">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAssetStatuses2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAssetStatusesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="compute">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetAssetStatusesById2Async(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetAssetStatusesByIdAsync(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -327,7 +339,7 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="filter">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAssetTypes2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAssetTypesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
@@ -336,13 +348,13 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="filter">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAvailableAssetTypes2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAvailableAssetTypesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="compute">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetAssetTypesById2Async(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetAssetTypesByIdAsync(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -357,29 +369,29 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[AssetVendor](#/components/schemas/AssetVendor)** schema fields.</param>
         /// <param name="filter">Applies to **[AssetVendor](#/components/schemas/AssetVendor)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetVendor>>> GetAssetVendors2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetVendor>>> GetAssetVendorsAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<AssetVendor>> CreateAssetVendor2Async(AssetVendorCreateUpdate assetVendorAssetVendorCreateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<AssetVendor>> CreateAssetVendorAsync(AssetVendorCreateUpdate assetVendorAssetVendorCreateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[AssetVendor](#/components/schemas/AssetVendor)** schema fields.</param>
         /// <param name="compute">Applies to **[AssetVendor](#/components/schemas/AssetVendor)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<AssetVendor>> GetAssetVendorById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<AssetVendor>> GetAssetVendorByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> UpdateAssetVendor2Async(System.Guid id, AssetVendorCreateUpdate assetVendorToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> UpdateAssetVendorAsync(System.Guid id, AssetVendorCreateUpdate assetVendorToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> PartiallyUpdateAssetVendor2Async(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> PartiallyUpdateAssetVendorAsync(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> DeleteAssetVendor2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> DeleteAssetVendorAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -394,19 +406,11 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="filter">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssets2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<Asset>> CreateCooler2Async(AssetCreate asset = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <param name="select">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
-        /// <param name="compute">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
-        /// <param name="distinct">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
-        /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsBySerialOrOther2Async(string key, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<Asset>> CreateCoolerAsync(AssetCreate asset = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
@@ -414,7 +418,7 @@ namespace Platform.ApiClient.Models
         /// <param name="distinct">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsBySerialOrOther4Async(string key, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsBySerialOrOtherAsync(string key, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
@@ -422,7 +426,7 @@ namespace Platform.ApiClient.Models
         /// <param name="distinct">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetCoolersBySerial2Async(string serial, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsBySerialOrOtherWithoutAssetTypeValueAsync(string key, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
@@ -430,7 +434,7 @@ namespace Platform.ApiClient.Models
         /// <param name="distinct">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetCoolersBySerial4Async(string serial, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetCoolersBySerialAsync(string serial, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
@@ -438,7 +442,7 @@ namespace Platform.ApiClient.Models
         /// <param name="distinct">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetCoolersByBarcode2Async(string barCode, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetCoolersBySerialWithoutAssetTypeValueAsync(string serial, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
@@ -446,64 +450,72 @@ namespace Platform.ApiClient.Models
         /// <param name="distinct">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetCoolersByBarcode4Async(string barCode, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetCoolersByBarcodeAsync(string barCode, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <param name="select">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
+        /// <param name="compute">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
+        /// <param name="distinct">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
+        /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetCoolersByBarcodeWithoutAssetTypeValueAsync(string barCode, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> UpdateCooler2Async(System.Guid id, UpdateAsset asset = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> UpdateCoolerAsync(System.Guid id, UpdateAsset asset = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="compute">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<Asset>> GetCoolerById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<Asset>> GetCoolerByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> DeleteCooler2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> PartiallyUpdateCoolerAsync(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> PartiallyUpdateCooler2Async(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<FileResponse> GetAssetPhotoByIdAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<FileResponse> GetAssetPhotoById2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> UnpairDevicesAsync(UnPairDeviceFromMachine cmQuickActionDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> UnpairDevices2Async(UnPairDeviceFromMachine cmQuickActionDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> UpdateAssetsOwnerAsync(AssetBulkOwnerTransfer assetsToCustomerDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> UpdatePointOfInterestForMachine2Async(System.Guid id, System.Guid poiId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> UpdatePointOfInterestForMachineAsync(System.Guid id, System.Guid poiId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> PairAssetWithDevice2Async(System.Guid id, System.Guid deviceId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> PairAssetWithDeviceAsync(System.Guid id, System.Guid deviceId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> UnpairAssetFromDevice2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> UnpairAssetFromDeviceAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> UpdatePointOfInterestForMachines2Async(AssignAssetsToPoiQuickAction cmQuickActionDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> UpdatePointOfInterestForMachinesAsync(AssignAssetsToPoiQuickAction cmQuickActionDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="filter">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<MapExtent>> GetAssetsMapExtent2Async(int? width = null, int? height = null, int? padding = null, int? maxZoom = null, int? minZoom = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<MapExtent>> GetAssetsMapExtentAsync(int? width = null, int? height = null, int? padding = null, int? maxZoom = null, int? minZoom = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="filter">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<AssetMapFeatureCollection>> GetAssetsMapFeatures2Async(int zoom, double west, double south, double east, double north, int? clusterPx = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<AssetMapFeatureCollection>> GetAssetsMapFeaturesAsync(int zoom, double west, double south, double east, double north, int? clusterPx = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         [System.Obsolete]
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetMapSimplified>>> GetAssetsForMap2Async(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetMapSimplified>>> GetAssetsForMapAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -518,39 +530,35 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[Customer](#/components/schemas/Customer)** schema fields.</param>
         /// <param name="filter">Applies to **[Customer](#/components/schemas/Customer)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Customer>>> GetCustomers2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Customer>>> GetCustomersAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<Customer>> CreateCustomer2Async(CustomerCreate customer = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <param name="select">Applies to **[Customer](#/components/schemas/Customer)** schema fields.</param>
-        /// <param name="compute">Applies to **[Customer](#/components/schemas/Customer)** schema fields.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<Customer>> GetCustomerByPath2Async(string path = null, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<Customer>> CreateCustomerAsync(CustomerCreate customer = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[Customer](#/components/schemas/Customer)** schema fields.</param>
         /// <param name="compute">Applies to **[Customer](#/components/schemas/Customer)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<Customer>> GetCustomerById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<Customer>> GetCustomerByPathAsync(string path = null, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <param name="select">Applies to **[Customer](#/components/schemas/Customer)** schema fields.</param>
+        /// <param name="compute">Applies to **[Customer](#/components/schemas/Customer)** schema fields.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<ApiResponse<Customer>> GetCustomerByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> UpdateCustomer2Async(System.Guid id, CustomerUpdate customerToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> UpdateCustomerAsync(System.Guid id, CustomerUpdate customerToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> DeleteCustomer2Async(System.Guid id, System.Guid? pointOfInterestToAssignAssetsId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<CustomerPreferences>> GetCustomerPreferencesAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<CustomerPreferences>> GetCustomerPreferences2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> UpdateCustomerPreferences2Async(System.Guid id, CustomerPreferencesUpdate preferences = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> UpdateCustomerPreferencesAsync(System.Guid id, CustomerPreferencesUpdate preferences = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -565,13 +573,13 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="filter">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetCustomerTypes2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetCustomerTypesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="compute">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetCustomerTypeById2Async(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetCustomerTypeByIdAsync(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -586,13 +594,32 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[Professions](#/components/schemas/Professions)** schema fields.</param>
         /// <param name="filter">Applies to **[Professions](#/components/schemas/Professions)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Professions>>> GetProfessions2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Professions>>> GetProfessionsAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial interface IImageClient
+    {
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<FileResponse> DownloadImageFileAsync(string id, ImageFileVariant? variant = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial interface IRawDataClient
     {
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <param name="select">Applies to **[ImageData](#/components/schemas/ImageData)** schema fields.</param>
+        /// <param name="compute">Applies to **[ImageData](#/components/schemas/ImageData)** schema fields.</param>
+        /// <param name="distinct">Applies to **[ImageData](#/components/schemas/ImageData)** schema fields.</param>
+        /// <param name="sort">Applies to **[ImageData](#/components/schemas/ImageData)** schema fields.</param>
+        /// <param name="filter">Applies to **[ImageData](#/components/schemas/ImageData)** schema fields.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ImageData>>> GetImagesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
@@ -608,7 +635,7 @@ namespace Platform.ApiClient.Models
         /// <param name="filter">Applies to **[ExtraInfoRawData](#/components/schemas/ExtraInfoRawData)** schema fields.</param>
         /// <returns>Array of extra info raw data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ExtraInfoRawData>>> GetExtraInfoData2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ExtraInfoRawData>>> GetExtraInfoDataAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
@@ -621,7 +648,7 @@ namespace Platform.ApiClient.Models
         /// <param name="filter">Applies to **[DataEntity](#/components/schemas/DataEntity)** schema fields.</param>
         /// <returns>Array of daily communication data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ExtraInfoDailyCom>>> GetExtraInfoDailyCom2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ExtraInfoDailyCom>>> GetExtraInfoDailyComAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
@@ -634,7 +661,7 @@ namespace Platform.ApiClient.Models
         /// <param name="filter">Applies to **[DataEntity](#/components/schemas/DataEntity)** schema fields.</param>
         /// <returns>Array of daily power on seconds data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ExtraInfoDailyPowerOn>>> GetExtraInfoDailyPowerOn2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ExtraInfoDailyPowerOn>>> GetExtraInfoDailyPowerOnAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
@@ -650,7 +677,7 @@ namespace Platform.ApiClient.Models
         /// <param name="filter">Applies to **[BatteryPeriodRawData](#/components/schemas/BatteryPeriodRawData)** schema fields.</param>
         /// <returns>Array of extra info raw data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<BatteryPeriodRawData>>> GetBatteryPeriodData2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<BatteryPeriodRawData>>> GetBatteryPeriodDataAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
@@ -663,7 +690,7 @@ namespace Platform.ApiClient.Models
         /// <param name="filter">Applies to **[LocationRawData](#/components/schemas/LocationRawData)** schema fields.</param>
         /// <returns>Array of location raw data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<LocationRawData>>> GetLocationData2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<LocationRawData>>> GetLocationDataAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
@@ -676,7 +703,7 @@ namespace Platform.ApiClient.Models
         /// <param name="filter">Applies to **[TemperaturesRawData](#/components/schemas/TemperaturesRawData)** schema fields.</param>
         /// <returns>Array of temperature raw data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<TemperaturesRawData>>> GetTemperatureData2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<TemperaturesRawData>>> GetTemperatureDataAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
@@ -690,7 +717,7 @@ namespace Platform.ApiClient.Models
         /// <param name="interval">day, week, month, year</param>
         /// <returns>Array of aggregated temperature data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<TemperatureIntervalAggregate>>> GetTemperatureAggregates2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, string interval = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<TemperatureIntervalAggregate>>> GetTemperatureAggregatesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, string filter = null, string interval = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
@@ -703,7 +730,7 @@ namespace Platform.ApiClient.Models
         /// <param name="filter">Applies to **[DoorOpeningRawData](#/components/schemas/DoorOpeningRawData)** schema fields.</param>
         /// <returns>Array of dooropening raw data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<DoorOpeningRawData>>> GetDoorOpeningData2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<DoorOpeningRawData>>> GetDoorOpeningDataAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
@@ -717,7 +744,7 @@ namespace Platform.ApiClient.Models
         /// <param name="interval">day, week, month, year</param>
         /// <returns>Array of aggregated door openings data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<DoorOpeningsIntervalAggregate>>> GetDoorOpeningAggregates2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, string interval = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<DoorOpeningsIntervalAggregate>>> GetDoorOpeningAggregatesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, string filter = null, string interval = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
@@ -730,7 +757,7 @@ namespace Platform.ApiClient.Models
         /// <param name="filter">Applies to **[EventsRawData](#/components/schemas/EventsRawData)** schema fields.</param>
         /// <returns>Array of location raw data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<EventsRawData>>> GetEventsData2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<EventsRawData>>> GetEventsDataAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
@@ -743,7 +770,7 @@ namespace Platform.ApiClient.Models
         /// <param name="filter">Applies to **[EnchancedGplDataRaw](#/components/schemas/EnchancedGplDataRaw)** schema fields.</param>
         /// <returns>Array of location raw data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<EnchancedGplDataRaw>>> GetEnchancedGplDataRaw2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<EnchancedGplDataRaw>>> GetEnchancedGplDataRawAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -755,19 +782,19 @@ namespace Platform.ApiClient.Models
         /// <param name="select">Applies to **[DeviceCapabilitiesSummary](#/components/schemas/DeviceCapabilitiesSummary)** schema fields.</param>
         /// <param name="compute">Applies to **[DeviceCapabilitiesSummary](#/components/schemas/DeviceCapabilitiesSummary)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<DeviceCapabilitiesSummary>> GetDeviceCapabilities2Async(System.Guid deviceId, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, bool? includeUnavailable = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<DeviceCapabilitiesSummary>> GetDeviceCapabilitiesAsync(System.Guid deviceId, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, bool? includeUnavailable = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[DeviceCapabilityUi](#/components/schemas/DeviceCapabilityUi)** schema fields.</param>
         /// <param name="compute">Applies to **[DeviceCapabilityUi](#/components/schemas/DeviceCapabilityUi)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<DeviceCapabilityUi>> GetDevicePropertyCapabilityUi2Async(System.Guid deviceId, System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, bool? includeUnavailable = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<DeviceCapabilityUi>> GetDevicePropertyCapabilityUiAsync(System.Guid deviceId, System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, bool? includeUnavailable = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[DeviceCapabilityUi](#/components/schemas/DeviceCapabilityUi)** schema fields.</param>
         /// <param name="compute">Applies to **[DeviceCapabilityUi](#/components/schemas/DeviceCapabilityUi)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<DeviceCapabilityUi>> GetDeviceCommandCapabilityUi2Async(System.Guid deviceId, System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, bool? includeUnavailable = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<DeviceCapabilityUi>> GetDeviceCommandCapabilityUiAsync(System.Guid deviceId, System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, bool? includeUnavailable = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[Device](#/components/schemas/Device)** schema fields.</param>
@@ -775,7 +802,7 @@ namespace Platform.ApiClient.Models
         /// <param name="distinct">Applies to **[Device](#/components/schemas/Device)** schema fields.</param>
         /// <param name="sort">Applies to **[Device](#/components/schemas/Device)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Device>>> GetDevicesBySerial2Async(string serial, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Device>>> GetDevicesBySerialAsync(string serial, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[Device](#/components/schemas/Device)** schema fields.</param>
@@ -783,7 +810,7 @@ namespace Platform.ApiClient.Models
         /// <param name="distinct">Applies to **[Device](#/components/schemas/Device)** schema fields.</param>
         /// <param name="sort">Applies to **[Device](#/components/schemas/Device)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Device>>> GetDevicesBySerial4Async(string serial, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Device>>> GetDevicesBySerialWithoutAssetTypeValueAsync(string serial, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[Device](#/components/schemas/Device)** schema fields.</param>
@@ -792,33 +819,29 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[Device](#/components/schemas/Device)** schema fields.</param>
         /// <param name="filter">Applies to **[Device](#/components/schemas/Device)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Device>>> GetDevices2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Device>>> GetDevicesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<Device>> CreateDevice2Async(DeviceCreate deviceCreateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<Device>> CreateDeviceAsync(DeviceCreate deviceCreateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<IFileResultDeviceImport>> ImportDevicesForm2Async(System.Guid? vendorId = null, System.Guid? modelId = null, System.Guid? firmwareId = null, System.Guid? simProviderId = null, string batchId = null, byte[] file_ImageData = null, string file_ContentType = null, string file_ContentDisposition = null, long? file_Length = null, string file_Name = null, string file_FileName = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<IFileResultDeviceImport>> ImportDevicesFormAsync(System.Guid? vendorId = null, System.Guid? modelId = null, System.Guid? firmwareId = null, System.Guid? simProviderId = null, string batchId = null, byte[] file_ImageData = null, string file_ContentType = null, string file_ContentDisposition = null, long? file_Length = null, string file_Name = null, string file_FileName = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[Device](#/components/schemas/Device)** schema fields.</param>
         /// <param name="compute">Applies to **[Device](#/components/schemas/Device)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<Device>> GetDeviceById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<Device>> GetDeviceByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> UpdateDevice2Async(System.Guid id, DeviceUpdate deviceUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> UpdateDeviceAsync(System.Guid id, DeviceUpdate deviceUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> PartiallyUpdateDevice2Async(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> DeleteDevice2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> PartiallyUpdateDeviceAsync(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[Command](#/components/schemas/Command)** schema fields.</param>
@@ -827,43 +850,43 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[Command](#/components/schemas/Command)** schema fields.</param>
         /// <param name="filter">Applies to **[Command](#/components/schemas/Command)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Command>>> GetDeviceCommands2Async(System.Guid deviceId, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Command>>> GetDeviceCommandsAsync(System.Guid deviceId, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<Command>> CreateCommand2Async(System.Guid deviceId, CommandCreate commandCreateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<Command>> CreateCommandAsync(System.Guid deviceId, CommandCreate commandCreateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[Command](#/components/schemas/Command)** schema fields.</param>
         /// <param name="compute">Applies to **[Command](#/components/schemas/Command)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<Command>> GetCommandById2Async(System.Guid deviceId, System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<Command>> GetCommandByIdAsync(System.Guid deviceId, System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<Command>> CreateCommand4Async(System.Guid deviceId, DevicePropertyChange newProperty = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<Command>> CreateCommandPropertiesAsync(System.Guid deviceId, DevicePropertyChange newProperty = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<Command>> CreateCommandFreeText2Async(System.Guid deviceId, CommandCreateFreeText commandCreateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<Command>> CreateCommandFreeTextAsync(System.Guid deviceId, CommandCreateFreeText commandCreateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> UnpairDevices2Async(UnpairDevices devicesUnpairDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> UnpairDevicesAsync(UnpairDevices devicesUnpairDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> AssignDevicesToCustomer2Async(AssignDevicesToCustomer devicesToCustomerDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> AssignDevicesToCustomerAsync(AssignDevicesToCustomer devicesToCustomerDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> UpdateDevicesOwner2Async(AssignDevicesToCustomer devicesToCustomerDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> UpdateDevicesOwnerAsync(AssignDevicesToCustomer devicesToCustomerDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[DeviceSecret](#/components/schemas/DeviceSecret)** schema fields.</param>
         /// <param name="compute">Applies to **[DeviceSecret](#/components/schemas/DeviceSecret)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<Device>> GetDeviceById4Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<Device>> GetDeviceByIdSecretAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -875,32 +898,19 @@ namespace Platform.ApiClient.Models
         /// <param name="select">Applies to **[PointOfInterestGroup](#/components/schemas/PointOfInterestGroup)** schema fields.</param>
         /// <param name="compute">Applies to **[PointOfInterestGroup](#/components/schemas/PointOfInterestGroup)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<PointOfInterestGroup>> GetPointOfInterestGroupById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<PointOfInterestGroup>> GetPointOfInterestGroupByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> UpdatePointOfInterestGroup2Async(System.Guid id, PointOfInterestGroupUpdate pointOfInterestGroupToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> UpdatePointOfInterestGroupAsync(System.Guid id, PointOfInterestGroupUpdate pointOfInterestGroupToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> PartiallyUpdatePointOfInterestGroup2Async(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> PartiallyUpdatePointOfInterestGroupAsync(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> DeletePointOfInterestGroup2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <param name="select">Applies to **[PointOfInterestGroup](#/components/schemas/PointOfInterestGroup)** schema fields.</param>
-        /// <param name="compute">Applies to **[PointOfInterestGroup](#/components/schemas/PointOfInterestGroup)** schema fields.</param>
-        /// <param name="distinct">Applies to **[PointOfInterestGroup](#/components/schemas/PointOfInterestGroup)** schema fields.</param>
-        /// <param name="sort">Applies to **[PointOfInterestGroup](#/components/schemas/PointOfInterestGroup)** schema fields.</param>
-        /// <param name="filter">Applies to **[PointOfInterestGroup](#/components/schemas/PointOfInterestGroup)** schema fields.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterestGroup>>> GetPointOfInterestGroup2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<PointOfInterestGroup>> CreatePointOfInterestGroup2Async(PointOfInterestGroupCreate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> DeletePointOfInterestGroupAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[PointOfInterestGroup](#/components/schemas/PointOfInterestGroup)** schema fields.</param>
@@ -909,7 +919,20 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[PointOfInterestGroup](#/components/schemas/PointOfInterestGroup)** schema fields.</param>
         /// <param name="filter">Applies to **[PointOfInterestGroup](#/components/schemas/PointOfInterestGroup)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterestGroup>>> GetPointOfInterestGroupAssignedToUsers2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterestGroup>>> GetPointOfInterestGroupAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<ApiResponse<PointOfInterestGroup>> CreatePointOfInterestGroupAsync(PointOfInterestGroupCreate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <param name="select">Applies to **[PointOfInterestGroup](#/components/schemas/PointOfInterestGroup)** schema fields.</param>
+        /// <param name="compute">Applies to **[PointOfInterestGroup](#/components/schemas/PointOfInterestGroup)** schema fields.</param>
+        /// <param name="distinct">Applies to **[PointOfInterestGroup](#/components/schemas/PointOfInterestGroup)** schema fields.</param>
+        /// <param name="sort">Applies to **[PointOfInterestGroup](#/components/schemas/PointOfInterestGroup)** schema fields.</param>
+        /// <param name="filter">Applies to **[PointOfInterestGroup](#/components/schemas/PointOfInterestGroup)** schema fields.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterestGroup>>> GetPointOfInterestGroupAssignedToUsersAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -924,33 +947,33 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[PointOfInterestAppliedType](#/components/schemas/PointOfInterestAppliedType)** schema fields.</param>
         /// <param name="filter">Applies to **[PointOfInterestAppliedType](#/components/schemas/PointOfInterestAppliedType)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterestAppliedType>>> GetPointOfInterestAppliedTypes2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, bool? selectionOnly = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterestAppliedType>>> GetPointOfInterestAppliedTypesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, bool? selectionOnly = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<PointOfInterestAppliedType>> CreatePointOfInterestAppliedType2Async(PointOfInterestAppliedTypeCreateUpdate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<PointOfInterestAppliedType>> CreatePointOfInterestAppliedTypeAsync(PointOfInterestAppliedTypeCreateUpdate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[PointOfInterestAppliedType](#/components/schemas/PointOfInterestAppliedType)** schema fields.</param>
         /// <param name="compute">Applies to **[PointOfInterestAppliedType](#/components/schemas/PointOfInterestAppliedType)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<PointOfInterestAppliedType>> GetPointOfInterestAppliedTypeById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<PointOfInterestAppliedType>> GetPointOfInterestAppliedTypeByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> UpdatePointOfInterestAppliedType2Async(System.Guid id, PointOfInterestAppliedTypeCreateUpdate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> UpdatePointOfInterestAppliedTypeAsync(System.Guid id, PointOfInterestAppliedTypeCreateUpdate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> PatchPointOfInterestAppliedType2Async(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> PatchPointOfInterestAppliedTypeAsync(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> DeletePointOfInterestAppliedType2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> DeletePointOfInterestAppliedTypeAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> MergePointOfInterestAppliedTypes2Async(PointOfInterestAppliedTypeMerge dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> MergePointOfInterestAppliedTypesAsync(PointOfInterestAppliedTypeMerge dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -965,13 +988,13 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="filter">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetPointOfInterestTypes2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetPointOfInterestTypesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="compute">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetPointOfInterestTypesById2Async(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetPointOfInterestTypesByIdAsync(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -983,29 +1006,25 @@ namespace Platform.ApiClient.Models
         /// <param name="select">Applies to **[PointOfInterest](#/components/schemas/PointOfInterest)** schema fields.</param>
         /// <param name="compute">Applies to **[PointOfInterest](#/components/schemas/PointOfInterest)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<PointOfInterest>> GetPointOfInterestById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<PointOfInterest>> GetPointOfInterestByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> UpdatePointOfInterest2Async(System.Guid id, PointOfInterestUpdate pointOfInterestToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> UpdatePointOfInterestAsync(System.Guid id, PointOfInterestUpdate pointOfInterestToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> PartiallyUpdatePointOfInterest2Async(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> DeletePointOfInterest2Async(System.Guid id, System.Guid? pointOfInterestToAssignAssetsId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> PartiallyUpdatePointOfInterestAsync(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[PointOfInterest](#/components/schemas/PointOfInterest)** schema fields.</param>
         /// <param name="compute">Applies to **[PointOfInterest](#/components/schemas/PointOfInterest)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<PointOfInterest>> GetPointOfInterestByIdWithDistance2Async(System.Guid id, double latitude, double longitude, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<PointOfInterest>> GetPointOfInterestByIdWithDistanceAsync(System.Guid id, double latitude, double longitude, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterestMapSimplified>>> GetPointsOfInterestForMap2Async(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterestMapSimplified>>> GetPointsOfInterestForMapAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[PointOfInterestContactInfo](#/components/schemas/PointOfInterestContactInfo)** schema fields.</param>
@@ -1014,7 +1033,7 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[PointOfInterestContactInfo](#/components/schemas/PointOfInterestContactInfo)** schema fields.</param>
         /// <param name="filter">Applies to **[PointOfInterestContactInfo](#/components/schemas/PointOfInterestContactInfo)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<PointOfInterestContactInfo>> GetContactInfo2Async(System.Guid id, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<PointOfInterestContactInfo>> GetContactInfoAsync(System.Guid id, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[PointOfInterest](#/components/schemas/PointOfInterest)** schema fields.</param>
@@ -1023,11 +1042,11 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[PointOfInterest](#/components/schemas/PointOfInterest)** schema fields.</param>
         /// <param name="filter">Applies to **[PointOfInterest](#/components/schemas/PointOfInterest)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterest>>> GetPointsOfInterest2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Guid? excludeCustomerTreeForCustomerId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterest>>> GetPointsOfInterestAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Guid? excludeCustomerTreeForCustomerId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<PointOfInterest>> CreatePointOfInterest2Async(PointOfInterestCreate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<PointOfInterest>> CreatePointOfInterestAsync(PointOfInterestCreate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[PointOfInterest](#/components/schemas/PointOfInterest)** schema fields.</param>
@@ -1036,11 +1055,11 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[PointOfInterest](#/components/schemas/PointOfInterest)** schema fields.</param>
         /// <param name="filter">Applies to **[PointOfInterest](#/components/schemas/PointOfInterest)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterest>>> GetPointsOfInterestWithDistance2Async(double latitude, double longitude, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Guid? excludeCustomerTreeForCustomerId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterest>>> GetPointsOfInterestWithDistanceAsync(double latitude, double longitude, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Guid? excludeCustomerTreeForCustomerId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> AssignPointOfInterestGroups2Async(PointOfInterestAssignPointOfInterestGroups command = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> AssignPointOfInterestGroupsAsync(PointOfInterestAssignPointOfInterestGroups command = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -1055,13 +1074,13 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[RoleCategory](#/components/schemas/RoleCategory)** schema fields.</param>
         /// <param name="filter">Applies to **[RoleCategory](#/components/schemas/RoleCategory)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<RoleCategory>>> GetRoleCategories2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<RoleCategory>>> GetRoleCategoriesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[RoleCategory](#/components/schemas/RoleCategory)** schema fields.</param>
         /// <param name="compute">Applies to **[RoleCategory](#/components/schemas/RoleCategory)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<RoleCategory>> GetRoleCategoryById2Async(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<RoleCategory>> GetRoleCategoryByIdAsync(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -1076,29 +1095,29 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[Role](#/components/schemas/Role)** schema fields.</param>
         /// <param name="filter">Applies to **[Role](#/components/schemas/Role)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Role>>> GetRoles2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Role>>> GetRolesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<Role>> CreateRole2Async(RoleCreate role = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<Role>> CreateRoleAsync(RoleCreate role = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[Role](#/components/schemas/Role)** schema fields.</param>
         /// <param name="compute">Applies to **[Role](#/components/schemas/Role)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<Role>> GetRoleById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<Role>> GetRoleByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> UpdateRole2Async(System.Guid id, RoleUpdate roleToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> UpdateRoleAsync(System.Guid id, RoleUpdate roleToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> PartiallyUpdateRole2Async(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> PartiallyUpdateRoleAsync(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> DeleteRole2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> DeleteRoleAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -1113,73 +1132,69 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[User](#/components/schemas/User)** schema fields.</param>
         /// <param name="filter">Applies to **[User](#/components/schemas/User)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<User>>> GetUsers2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<User>>> GetUsersAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<User>> CreateUser2Async(UserCreate user = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<User>> CreateUserAsync(UserCreate user = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[User](#/components/schemas/User)** schema fields.</param>
         /// <param name="compute">Applies to **[User](#/components/schemas/User)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<User>> GetUserById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<User>> GetUserByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> UpdateUser2Async(System.Guid id, UserUpdate userToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> UpdateUserAsync(System.Guid id, UserUpdate userToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> PartiallyUpdateUser2Async(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> PartiallyUpdateUserAsync(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> DeleteUser2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> GetEmailExistsAsync(string email, System.Guid? excludeUserId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> GetEmailExists2Async(string email, System.Guid? excludeUserId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> EnableUsersAsync(UsersEnableDisable userRequest = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> EnableUsers2Async(UsersEnableDisable userRequest = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> DisableUsersAsync(UsersEnableDisable userRequest = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> DisableUsers2Async(UsersEnableDisable userRequest = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> ResetUsersLoginStateAsync(UsersEnableDisable userRequest = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> ResetUsersLoginState2Async(UsersEnableDisable userRequest = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> AssignPointOfInterestGroupsAsync(UserAssignPointOfInterestGroups command = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> AssignPointOfInterestGroups2Async(UserAssignPointOfInterestGroups command = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<UserActionLink>> CreateFirstLoginBackupLinkAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<UserActionLink>> CreateFirstLoginBackupLink2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<UserActionLink>> CreateResetPasswordBackupLinkAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<UserActionLink>> CreateResetPasswordBackupLink2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<UserActionLink>> CreatePasswordBackupLinkAsync(System.Guid id, System.Uri returnUrl = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<UserActionLink>> CreatePasswordBackupLink2Async(System.Guid id, System.Uri returnUrl = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> SendPasswordEmailAsync(System.Guid id, System.Uri returnUrl = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> SendPasswordEmail2Async(System.Guid id, System.Uri returnUrl = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<UserActionLinkSummary>>> GetBackupLinksAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<UserActionLinkSummary>>> GetBackupLinks2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse> RevokeBackupLink2Async(System.Guid id, System.Guid linkId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse> RevokeBackupLinkAsync(System.Guid id, System.Guid linkId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -1215,13 +1230,13 @@ namespace Platform.ApiClient.Models
         /// <param name="sort">Applies to **[EventType](#/components/schemas/EventType)** schema fields.</param>
         /// <param name="filter">Applies to **[EventType](#/components/schemas/EventType)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<EventType>>> GetEventTypes2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<EventType>>> GetEventTypesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[EventType](#/components/schemas/EventType)** schema fields.</param>
         /// <param name="compute">Applies to **[EventType](#/components/schemas/EventType)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiResponse<EventType>> GetEventTypeById2Async(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ApiResponse<EventType>> GetEventTypeByIdAsync(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -1277,6 +1292,55 @@ namespace Platform.ApiClient.Models
 
         [System.Runtime.Serialization.EnumMember(Value = @"None")]
         None = 4,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsCountry
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class AsyncExportCreateResult
+    {
+
+        [Newtonsoft.Json.JsonProperty("exportId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid ExportId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("createdAtUtc", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.DateTimeOffset CreatedAtUtc { get; set; }
 
     }
 
@@ -1353,6 +1417,12 @@ namespace Platform.ApiClient.Models
         [Newtonsoft.Json.JsonProperty("status", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Status { get; set; }
 
+        [Newtonsoft.Json.JsonProperty("createdAtUtc", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.DateTimeOffset CreatedAtUtc { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("fileFormat", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string FileFormat { get; set; }
+
         [Newtonsoft.Json.JsonProperty("error", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Error { get; set; }
 
@@ -1364,6 +1434,377 @@ namespace Platform.ApiClient.Models
 
         [Newtonsoft.Json.JsonProperty("expiresAtUtc", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.DateTimeOffset? ExpiresAtUtc { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class MasterDataDeletionResult
+    {
+
+        [Newtonsoft.Json.JsonProperty("operationId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid OperationId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("rootEntityType", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public MasterDataEntityType RootEntityType { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("rootEntityIds", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<System.Guid> RootEntityIds { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("appliedImpact", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<MasterDataImpactItem> AppliedImpact { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("alreadyApplied", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool AlreadyApplied { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum MasterDataEntityType
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Customer")]
+        Customer = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Outlet")]
+        Outlet = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Asset")]
+        Asset = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Device")]
+        Device = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"SimCard")]
+        SimCard = 4,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"User")]
+        User = 5,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"AssetGroup")]
+        AssetGroup = 6,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"OutletGroup")]
+        OutletGroup = 7,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"UserGroup")]
+        UserGroup = 8,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"NotificationSetting")]
+        NotificationSetting = 9,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"AssetVendor")]
+        AssetVendor = 10,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"AssetModel")]
+        AssetModel = 11,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"AssetModelProfile")]
+        AssetModelProfile = 12,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"OutletAppliedType")]
+        OutletAppliedType = 13,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"DeviceModel")]
+        DeviceModel = 14,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class MasterDataImpactItem
+    {
+
+        [Newtonsoft.Json.JsonProperty("entityType", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public MasterDataEntityType EntityType { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("entityId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid EntityId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("displayName", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string DisplayName { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("businessIdentifiers", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.IDictionary<string, string> BusinessIdentifiers { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("modifiedDateTime", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.DateTimeOffset ModifiedDateTime { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("relationship", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Relationship { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("parentEntityType", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public MasterDataEntityType? ParentEntityType { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("parentEntityId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid? ParentEntityId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("allowedActions", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore, ItemConverterType = typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public System.Collections.Generic.ICollection<MasterDataDeletionAction> AllowedActions { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("decisionRequired", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool DecisionRequired { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("requiredWhen", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<MasterDataDecisionCondition> RequiredWhen { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum MasterDataDeletionAction
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Delete")]
+        Delete = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Unassign")]
+        Unassign = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Reassign")]
+        Reassign = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Transfer")]
+        Transfer = 3,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class MasterDataDecisionCondition
+    {
+
+        [Newtonsoft.Json.JsonProperty("entityType", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public MasterDataEntityType EntityType { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("entityId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid EntityId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("action", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public MasterDataDeletionAction Action { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class MasterDataDeletionRequest
+    {
+
+        [Newtonsoft.Json.JsonProperty("operationId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid OperationId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("expectedImpact", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<MasterDataExpectedEntity> ExpectedImpact { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("decisions", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<MasterDataDeletionDecision> Decisions { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class MasterDataExpectedEntity
+    {
+
+        [Newtonsoft.Json.JsonProperty("entityType", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public MasterDataEntityType EntityType { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("entityId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid EntityId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("modifiedDateTime", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.DateTimeOffset ModifiedDateTime { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class MasterDataDeletionDecision
+    {
+
+        [Newtonsoft.Json.JsonProperty("entityType", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public MasterDataEntityType EntityType { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("entityId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid EntityId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("action", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public MasterDataDeletionAction Action { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("targetEntityId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid? TargetEntityId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("targetOutletId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid? TargetOutletId { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class MasterDataBulkDeletionRequest
+    {
+
+        [Newtonsoft.Json.JsonProperty("operationId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid OperationId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("expectedImpact", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<MasterDataExpectedEntity> ExpectedImpact { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("decisions", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<MasterDataDeletionDecision> Decisions { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("rootEntityIds", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<System.Guid> RootEntityIds { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("selectionMode", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public MasterDataBulkSelectionMode? SelectionMode { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("excludedRootEntityIds", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<System.Guid> ExcludedRootEntityIds { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("expectedCount", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? ExpectedCount { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum MasterDataBulkSelectionMode
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Ids")]
+        Ids = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Query")]
+        Query = 1,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class MasterDataRestoreResult
+    {
+
+        [Newtonsoft.Json.JsonProperty("restoreOperationId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid RestoreOperationId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("deletionOperationId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid DeletionOperationId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("restoredImpact", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<MasterDataImpactItem> RestoredImpact { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("alreadyApplied", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool AlreadyApplied { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class MasterDataRestoreRequest
+    {
+
+        [Newtonsoft.Json.JsonProperty("restoreOperationId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid RestoreOperationId { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class MasterDataDeletionOperationPage
+    {
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("take", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int Take { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("totalCount", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int TotalCount { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("items", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<MasterDataDeletionOperationSummary> Items { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class MasterDataDeletionOperationSummary
+    {
+
+        [Newtonsoft.Json.JsonProperty("operationId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid OperationId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("rootEntityType", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public MasterDataEntityType RootEntityType { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("rootEntityIds", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<System.Guid> RootEntityIds { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("actorUserId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid ActorUserId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("onBehalfCustomerId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid OnBehalfCustomerId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("createdDateTime", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.DateTimeOffset CreatedDateTime { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("affectedEntityCount", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int AffectedEntityCount { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("isRestored", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool IsRestored { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("restoreOperationId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid? RestoreOperationId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("restoreActorUserId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid? RestoreActorUserId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("restoredDateTime", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.DateTimeOffset? RestoredDateTime { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class MasterDataDeletionOperationDetails
+    {
+
+        [Newtonsoft.Json.JsonProperty("summary", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public MasterDataDeletionOperationSummary Summary { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("appliedImpact", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<MasterDataImpactItem> AppliedImpact { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("entries", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<MasterDataDeletionAuditEntry> Entries { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class MasterDataDeletionAuditEntry
+    {
+
+        [Newtonsoft.Json.JsonProperty("sequence", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int Sequence { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("entityType", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public MasterDataEntityType EntityType { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("entityId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid EntityId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("relationship", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Relationship { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("actions", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<string> Actions { get; set; }
 
     }
 
@@ -1407,6 +1848,43 @@ namespace Platform.ApiClient.Models
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsTimezone
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ValueDisplayNameInt32
     {
 
@@ -1415,6 +1893,43 @@ namespace Platform.ApiClient.Models
 
         [Newtonsoft.Json.JsonProperty("value", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int Value { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsValueDisplayNameInt32
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
 
     }
 
@@ -1728,6 +2243,43 @@ namespace Platform.ApiClient.Models
 
         [Newtonsoft.Json.JsonProperty("businessName", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string BusinessName { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsAssetSubModel
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
 
     }
 
@@ -2203,11 +2755,94 @@ namespace Platform.ApiClient.Models
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsAsset
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class UnPairDeviceFromMachine
     {
 
         [Newtonsoft.Json.JsonProperty("assetIds", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<System.Guid> AssetIds { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class AssetBulkOwnerTransfer
+    {
+
+        [Newtonsoft.Json.JsonProperty("assetIds", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<System.Guid> AssetIds { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("customerId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid CustomerId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("transferPairedDevices", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool TransferPairedDevices { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("replacementPointOfInterestId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid? ReplacementPointOfInterestId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("selectionMode", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public AssetBulkSelectionMode? SelectionMode { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("excludedAssetIds", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<System.Guid> ExcludedAssetIds { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("expectedCount", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? ExpectedCount { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum AssetBulkSelectionMode
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Ids")]
+        Ids = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Query")]
+        Query = 1,
 
     }
 
@@ -2376,6 +3011,43 @@ namespace Platform.ApiClient.Models
             get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
             set { _additionalProperties = value; }
         }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsAssetVendor
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
 
     }
 
@@ -2747,6 +3419,43 @@ namespace Platform.ApiClient.Models
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsCustomer
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CustomerPreferences
     {
 
@@ -2967,6 +3676,161 @@ namespace Platform.ApiClient.Models
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsProfessions
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum ImageFileVariant
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Original")]
+        Original = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Best")]
+        Best = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Thumb")]
+        Thumb = 2,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ImageData
+    {
+
+        [Newtonsoft.Json.JsonProperty("packetId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string PacketId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sourceKey", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string SourceKey { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("deviceId", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid DeviceId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("deviceSerial", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string DeviceSerial { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("imei", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Imei { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("assetId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid? AssetId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("posId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid? PosId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("customerId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Guid? CustomerId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("deviceTimestamp", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.DateTimeOffset DeviceTimestamp { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("serverTimestamp", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.DateTimeOffset ServerTimestamp { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("firstServerTimestamp", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.DateTimeOffset FirstServerTimestamp { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("files", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<ImageFile> Files { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ImageFile
+    {
+
+        [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Id { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("variants", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<ImageFileVariant2> Variants { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ImageFileVariant2
+    {
+
+        [Newtonsoft.Json.JsonProperty("type", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Type { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("mediaType", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string MediaType { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsImageData
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ExtraInfoRawData
     {
 
@@ -3002,6 +3866,43 @@ namespace Platform.ApiClient.Models
 
         [Newtonsoft.Json.JsonProperty("serverTimestamp", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.DateTimeOffset ServerTimestamp { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsExtraInfoRawData
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
 
     }
 
@@ -3111,6 +4012,43 @@ namespace Platform.ApiClient.Models
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsBatteryPeriodRawData
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class LocationRawData
     {
 
@@ -3162,6 +4100,43 @@ namespace Platform.ApiClient.Models
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsLocationRawData
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class TemperaturesRawData
     {
 
@@ -3200,6 +4175,43 @@ namespace Platform.ApiClient.Models
 
         [Newtonsoft.Json.JsonProperty("sensorId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string SensorId { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsTemperaturesRawData
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
 
     }
 
@@ -3279,6 +4291,43 @@ namespace Platform.ApiClient.Models
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsDoorOpeningRawData
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class DoorOpeningsIntervalAggregate
     {
 
@@ -3350,6 +4399,43 @@ namespace Platform.ApiClient.Models
 
         [Newtonsoft.Json.JsonProperty("eventTypeValue", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int EventTypeValue { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsEventsRawData
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
 
     }
 
@@ -3438,6 +4524,43 @@ namespace Platform.ApiClient.Models
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsEnchancedGplDataRaw
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class DeviceModel
     {
 
@@ -3473,6 +4596,43 @@ namespace Platform.ApiClient.Models
             get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
             set { _additionalProperties = value; }
         }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsDeviceModel
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
 
     }
 
@@ -4058,6 +5218,43 @@ namespace Platform.ApiClient.Models
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsDevice
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public abstract partial class IFileResultDeviceImport
     {
 
@@ -4357,6 +5554,43 @@ namespace Platform.ApiClient.Models
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsCommand
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CommandCreate
     {
 
@@ -4508,6 +5742,43 @@ namespace Platform.ApiClient.Models
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsDeviceVendor
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class DeviceVendorCreate
     {
 
@@ -4587,6 +5858,43 @@ namespace Platform.ApiClient.Models
             get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
             set { _additionalProperties = value; }
         }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsPointOfInterestGroup
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
 
     }
 
@@ -4705,6 +6013,43 @@ namespace Platform.ApiClient.Models
 
         [Newtonsoft.Json.JsonProperty("assignedOutletsCount", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int AssignedOutletsCount { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsPointOfInterestAppliedType
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
 
     }
 
@@ -4909,6 +6254,80 @@ namespace Platform.ApiClient.Models
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsPointOfInterestContactInfo
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsPointOfInterest
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class PointOfInterestCreate
     {
 
@@ -5024,6 +6443,43 @@ namespace Platform.ApiClient.Models
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsRoleCategory
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Role
     {
 
@@ -5074,6 +6530,43 @@ namespace Platform.ApiClient.Models
 
         [Newtonsoft.Json.JsonProperty("assignedUsersCount", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int AssignedUsersCount { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsRole
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
 
     }
 
@@ -5233,6 +6726,43 @@ namespace Platform.ApiClient.Models
 
         [Newtonsoft.Json.JsonProperty("category", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public ValueDisplayNameInt32 Category { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsUser
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
 
     }
 
@@ -5464,6 +6994,43 @@ namespace Platform.ApiClient.Models
 
         [Newtonsoft.Json.JsonProperty("assetTypes", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<ValueDisplayNameInt32> AssetTypes { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract partial class IQueryOptionsEventType
+    {
+
+        [Newtonsoft.Json.JsonProperty("select", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Select { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compute", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Compute { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("distinct", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Distinct { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("export", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ExportType? Export { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exportAsync", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ExportAsync { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("skip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Skip { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("top", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Top { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("count", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Count { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter { get; set; }
 
     }
 

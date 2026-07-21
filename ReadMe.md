@@ -1096,6 +1096,14 @@ Other client generators can read the same swagger documents:
 - [Swagger Codegen](https://github.com/swagger-api/swagger-codegen)
 - [Swagger Editor](https://editor.swagger.io/)
 
+Regenerate the checked-in `Platform.ApiClient` from a locally running Platform API with the pinned NSwag version:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\generate-platform-api-client.ps1
+```
+
+The process-scoped execution-policy override does not change the machine or user policy. The script defaults to `http://127.0.0.1:15700/swagger/data-v1/swagger.json`, stages both generated files under the ignored `.tmp` directory, and replaces the tracked client only after NSwag succeeds. A remote Swagger URL requires the explicit `-AllowRemoteSwagger` switch.
+
 ![Swagger Editor Languages](Images/swagger_editor_languages.png)
 
 ## License
