@@ -73,7 +73,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Countries"
                     urlBuilder_.Append("api/Countries");
                     urlBuilder_.Append('?');
@@ -95,7 +95,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -150,6 +150,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<Country>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -250,7 +260,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Countries/{twoLetter}"
                     urlBuilder_.Append("api/Countries/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(twoLetter, System.Globalization.CultureInfo.InvariantCulture)));
@@ -269,7 +279,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -304,6 +314,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<Country>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -477,7 +497,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -489,7 +509,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -562,7 +582,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/exports/{id}"
                     urlBuilder_.Append("api/exports/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -681,6 +701,136 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<ApiResponse> CancelExportAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        {
+            if (id == null)
+                throw new System.ArgumentNullException("id");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Content = new System.Net.Http.StringContent(string.Empty, System.Text.Encoding.UTF8, "application/json");
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+
+                    // Operation Path: "api/exports/{id}/cancel"
+                    urlBuilder_.Append("api/exports/");
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
+                    urlBuilder_.Append("/cancel");
+
+                    await PrepareRequestAsync(client_, request_, urlBuilder_, cancellationToken).ConfigureAwait(false);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    await PrepareRequestAsync(client_, request_, url_, cancellationToken).ConfigureAwait(false);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        await ProcessResponseAsync(client_, response_, cancellationToken).ConfigureAwait(false);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 202)
+                        {
+                            return new ApiResponse(status_, headers_);
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 403)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Forbidden", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 422)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ValidationProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ValidationProblemDetails>("Unprocessable Entity", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Internal Server Error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
         public virtual async System.Threading.Tasks.Task<FileResponse> DownloadExportAsync(System.Guid id, System.Guid downloadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
@@ -699,11 +849,153 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/octet-stream"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/exports/{id}/download/{downloadId}"
                     urlBuilder_.Append("api/exports/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
                     urlBuilder_.Append("/download/");
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(downloadId, System.Globalization.CultureInfo.InvariantCulture)));
+
+                    await PrepareRequestAsync(client_, request_, urlBuilder_, cancellationToken).ConfigureAwait(false);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    await PrepareRequestAsync(client_, request_, url_, cancellationToken).ConfigureAwait(false);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        await ProcessResponseAsync(client_, response_, cancellationToken).ConfigureAwait(false);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200 || status_ == 206)
+                        {
+                            var responseStream_ = response_.Content == null ? System.IO.Stream.Null : await ReadAsStreamAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            var fileResponse_ = new FileResponse(status_, headers_, responseStream_, null, response_);
+                            disposeClient_ = false; disposeResponse_ = false; // response and client are disposed by FileResponse
+                            return fileResponse_;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 403)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Forbidden", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 410)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("A server side error occurred.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 422)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ValidationProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ValidationProblemDetails>("Unprocessable Entity", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Internal Server Error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<FileResponse> DownloadExportByDownloadIdAsync(System.Guid downloadId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        {
+            if (downloadId == null)
+                throw new System.ArgumentNullException("downloadId");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/octet-stream"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+
+                    // Operation Path: "api/exports/download/{downloadId}"
+                    urlBuilder_.Append("api/exports/download/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(downloadId, System.Globalization.CultureInfo.InvariantCulture)));
 
                     await PrepareRequestAsync(client_, request_, urlBuilder_, cancellationToken).ConfigureAwait(false);
@@ -918,7 +1210,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -930,7 +1222,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -1005,7 +1297,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Timezones"
                     urlBuilder_.Append("api/Timezones");
                     urlBuilder_.Append('?');
@@ -1027,7 +1319,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -1082,6 +1374,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<Timezone>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -1182,7 +1484,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Timezones/{id}"
                     urlBuilder_.Append("api/Timezones/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -1201,7 +1503,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -1236,6 +1538,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<Country>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -1409,7 +1721,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -1421,7 +1733,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -1484,7 +1796,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="filter">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAssetConnectivities2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAssetConnectivitiesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -1496,7 +1808,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetConnectivities"
                     urlBuilder_.Append("api/AssetConnectivities");
                     urlBuilder_.Append('?');
@@ -1518,7 +1830,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -1573,6 +1885,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -1658,7 +1980,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="compute">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetAssetConnectivityById2Async(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetAssetConnectivityByIdAsync(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -1673,7 +1995,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetConnectivities/{id}"
                     urlBuilder_.Append("api/AssetConnectivities/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -1692,7 +2014,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -1727,6 +2049,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<ValueDisplayNameInt32>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -1900,7 +2232,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -1912,7 +2244,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -1970,7 +2302,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetModelProfile>>> GetProfiles2Async(bool? includeDeleted = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetModelProfile>>> GetProfilesAsync(bool? includeDeleted = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -1982,7 +2314,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetModelProfiles"
                     urlBuilder_.Append("api/AssetModelProfiles");
                     urlBuilder_.Append('?');
@@ -2106,7 +2438,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<AssetModelProfile>> CreateProfile2Async(AssetModelProfileCreateUpdate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<AssetModelProfile>> CreateProfileAsync(AssetModelProfileCreateUpdate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -2122,7 +2454,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetModelProfiles"
                     urlBuilder_.Append("api/AssetModelProfiles");
 
@@ -2240,7 +2572,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<AssetModelProfile>> GetProfileById2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<AssetModelProfile>> GetProfileByIdAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -2255,7 +2587,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetModelProfiles/{id}"
                     urlBuilder_.Append("api/AssetModelProfiles/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -2374,7 +2706,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateProfile2Async(System.Guid id, AssetModelProfileCreateUpdate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateProfileAsync(System.Guid id, AssetModelProfileCreateUpdate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -2392,7 +2724,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetModelProfiles/{id}"
                     urlBuilder_.Append("api/AssetModelProfiles/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -2506,7 +2838,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> DeleteProfile2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> DeleteProfileAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -2520,7 +2852,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("DELETE");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetModelProfiles/{id}"
                     urlBuilder_.Append("api/AssetModelProfiles/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -2634,7 +2966,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetModelProfileMobileCommand>>> GetMobileCommands2Async(System.Guid? assetId = null, System.Guid? deviceId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetModelProfileMobileCommand>>> GetMobileCommandsAsync(System.Guid? assetId = null, System.Guid? deviceId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -2646,7 +2978,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetModelProfiles/mobile-commands"
                     urlBuilder_.Append("api/AssetModelProfiles/mobile-commands");
                     urlBuilder_.Append('?');
@@ -2864,7 +3196,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -2876,7 +3208,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -2939,7 +3271,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[AssetSubModel](#/components/schemas/AssetSubModel)** schema fields.</param>
         /// <param name="filter">Applies to **[AssetSubModel](#/components/schemas/AssetSubModel)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetSubModel>>> GetAssetModels2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetSubModel>>> GetAssetModelsAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -2951,7 +3283,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetModels"
                     urlBuilder_.Append("api/AssetModels");
                     urlBuilder_.Append('?');
@@ -2973,7 +3305,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -3028,6 +3360,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<AssetSubModel>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -3111,7 +3453,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<AssetSubModel>> CreateAssetModelBody2Async(AssetModelCreateUpdate assetModelCreateCreateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<AssetSubModel>> CreateAssetModelBodyAsync(AssetModelCreateUpdate assetModelCreateCreateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -3127,7 +3469,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetModels"
                     urlBuilder_.Append("api/AssetModels");
 
@@ -3247,7 +3589,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[AssetSubModel](#/components/schemas/AssetSubModel)** schema fields.</param>
         /// <param name="compute">Applies to **[AssetSubModel](#/components/schemas/AssetSubModel)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<AssetSubModel>> GetAssetModelById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<AssetSubModel>> GetAssetModelByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -3262,7 +3604,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetModels/{id}"
                     urlBuilder_.Append("api/AssetModels/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -3281,7 +3623,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -3318,6 +3660,16 @@ namespace Platform.ApiClient
                             return new ApiResponse<AssetSubModel>(status_, headers_, objectResponse_.Object);
                         }
                         else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
                         if (status_ == 400)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
@@ -3399,7 +3751,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateAssetModel2Async(System.Guid id, AssetModelCreateUpdate assetModelUpdateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateAssetModelAsync(System.Guid id, AssetModelCreateUpdate assetModelUpdateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -3417,7 +3769,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetModels/{id}"
                     urlBuilder_.Append("api/AssetModels/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -3541,7 +3893,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> PatchAssetModel2Async(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> PatchAssetModelAsync(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -3559,7 +3911,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PATCH");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetModels/{id}"
                     urlBuilder_.Append("api/AssetModels/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -3683,7 +4035,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> DeleteAssetModel2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> DeleteAssetModelAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -3697,7 +4049,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("DELETE");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetModels/{id}"
                     urlBuilder_.Append("api/AssetModels/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -3811,7 +4163,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> MergeAssetModels2Async(AssetSubModelMerge dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> MergeAssetModelsAsync(AssetSubModelMerge dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -3826,7 +4178,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("POST");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetModels/merge"
                     urlBuilder_.Append("api/AssetModels/merge");
 
@@ -3939,7 +4291,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<FileResponse> GetModelPhoto2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<FileResponse> GetModelPhotoAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -3954,7 +4306,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/octet-stream"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetModels/{id}/Photo"
                     urlBuilder_.Append("api/AssetModels/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -4162,7 +4514,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -4174,7 +4526,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -4237,7 +4589,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="filter">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAssetModes2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAssetModesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -4249,7 +4601,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetModes"
                     urlBuilder_.Append("api/AssetModes");
                     urlBuilder_.Append('?');
@@ -4271,7 +4623,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -4326,6 +4678,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -4411,7 +4773,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="compute">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetAssetModesById2Async(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetAssetModesByIdAsync(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -4426,7 +4788,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetModes/{id}"
                     urlBuilder_.Append("api/AssetModes/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -4445,7 +4807,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -4480,6 +4842,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<ValueDisplayNameInt32>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -4653,7 +5025,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -4665,7 +5037,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -4728,7 +5100,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="filter">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAPowerLines2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAPowerLinesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -4740,7 +5112,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetPowerlines"
                     urlBuilder_.Append("api/AssetPowerlines");
                     urlBuilder_.Append('?');
@@ -4762,7 +5134,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -4817,6 +5189,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -4902,7 +5284,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="compute">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetAssetPowerLineById2Async(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetAssetPowerLineByIdAsync(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -4917,7 +5299,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetPowerlines/{id}"
                     urlBuilder_.Append("api/AssetPowerlines/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -4936,7 +5318,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -4971,6 +5353,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<ValueDisplayNameInt32>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -5144,7 +5536,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -5156,7 +5548,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -5219,7 +5611,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="filter">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssets2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -5231,7 +5623,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Assets"
                     urlBuilder_.Append("api/Assets");
                     urlBuilder_.Append('?');
@@ -5253,7 +5645,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -5310,6 +5702,16 @@ namespace Platform.ApiClient
                             return new ApiResponse<System.Collections.Generic.ICollection<Asset>>(status_, headers_, objectResponse_.Object);
                         }
                         else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
                         if (status_ == 400)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
@@ -5395,7 +5797,7 @@ namespace Platform.ApiClient
         /// <param name="distinct">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsBySerial2Async(string serial, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsBySerialAsync(string serial, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (serial == null)
                 throw new System.ArgumentNullException("serial");
@@ -5410,7 +5812,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Assets/serialsearch/{serial}"
                     urlBuilder_.Append("api/Assets/serialsearch/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(serial, System.Globalization.CultureInfo.InvariantCulture)));
@@ -5433,7 +5835,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -5446,6 +5848,10 @@ namespace Platform.ApiClient
                     if (top != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("$top")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(top, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (exportAllPages != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAllPages")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAllPages, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (count != null)
                     {
@@ -5486,6 +5892,16 @@ namespace Platform.ApiClient
                             return new ApiResponse<System.Collections.Generic.ICollection<Asset>>(status_, headers_, objectResponse_.Object);
                         }
                         else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
                         if (status_ == 400)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
@@ -5571,7 +5987,7 @@ namespace Platform.ApiClient
         /// <param name="distinct">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsBySerial4Async(string serial, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsBySerialAssetTypeValueAsync(string serial, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (serial == null)
                 throw new System.ArgumentNullException("serial");
@@ -5589,7 +6005,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Assets/serialsearch/{serial}/{assetypevalue}"
                     urlBuilder_.Append("api/Assets/serialsearch/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(serial, System.Globalization.CultureInfo.InvariantCulture)));
@@ -5614,7 +6030,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -5627,6 +6043,10 @@ namespace Platform.ApiClient
                     if (top != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("$top")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(top, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (exportAllPages != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAllPages")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAllPages, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (count != null)
                     {
@@ -5665,6 +6085,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<Asset>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -5752,7 +6182,7 @@ namespace Platform.ApiClient
         /// <param name="distinct">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsByBarcode2Async(string barCode, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsByBarcodeAsync(string barCode, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (barCode == null)
                 throw new System.ArgumentNullException("barCode");
@@ -5770,7 +6200,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Assets/barcodesearch/{barCode}/{assetypevalue}"
                     urlBuilder_.Append("api/Assets/barcodesearch/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(barCode, System.Globalization.CultureInfo.InvariantCulture)));
@@ -5795,7 +6225,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -5808,6 +6238,10 @@ namespace Platform.ApiClient
                     if (top != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("$top")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(top, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (exportAllPages != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAllPages")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAllPages, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (count != null)
                     {
@@ -5846,6 +6280,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<Asset>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -5933,7 +6377,7 @@ namespace Platform.ApiClient
         /// <param name="distinct">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsByBarcode4Async(string barCode, int? assetypevalue = null, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsByBarcodeWithoutAssetTypeValueAsync(string barCode, int? assetypevalue = null, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (barCode == null)
                 throw new System.ArgumentNullException("barCode");
@@ -5948,7 +6392,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Assets/barcodesearch/{barCode}"
                     urlBuilder_.Append("api/Assets/barcodesearch/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(barCode, System.Globalization.CultureInfo.InvariantCulture)));
@@ -5975,7 +6419,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -5988,6 +6432,10 @@ namespace Platform.ApiClient
                     if (top != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("$top")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(top, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (exportAllPages != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAllPages")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAllPages, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (count != null)
                     {
@@ -6026,6 +6474,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<Asset>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -6111,7 +6569,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="compute">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<Asset>> GetAssetById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<Asset>> GetAssetByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -6126,7 +6584,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Assets/{id}"
                     urlBuilder_.Append("api/Assets/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -6145,7 +6603,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -6182,6 +6640,16 @@ namespace Platform.ApiClient
                             return new ApiResponse<Asset>(status_, headers_, objectResponse_.Object);
                         }
                         else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
                         if (status_ == 400)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
@@ -6263,7 +6731,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> UnpairDevices2Async(UnPairDeviceFromMachine cmQuickActionDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> UnpairDevicesAsync(UnPairDeviceFromMachine cmQuickActionDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -6278,7 +6746,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Assets/UnpairDevices"
                     urlBuilder_.Append("api/Assets/UnpairDevices");
 
@@ -6391,8 +6859,136 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateAssetsOwnerAsync(AssetBulkOwnerTransfer assetsToCustomerDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(assetsToCustomerDto, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.StringContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("PUT");
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+
+                    // Operation Path: "api/Assets/changeowner"
+                    urlBuilder_.Append("api/Assets/changeowner");
+
+                    await PrepareRequestAsync(client_, request_, urlBuilder_, cancellationToken).ConfigureAwait(false);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    await PrepareRequestAsync(client_, request_, url_, cancellationToken).ConfigureAwait(false);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        await ProcessResponseAsync(client_, response_, cancellationToken).ConfigureAwait(false);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 204)
+                        {
+                            return new ApiResponse(status_, headers_);
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 403)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Forbidden", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 422)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ValidationProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ValidationProblemDetails>("Unprocessable Entity", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Internal Server Error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
         [System.Obsolete]
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetMapSimplified>>> GetAssetsForMap2Async(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetMapSimplified>>> GetAssetsForMapAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -6404,7 +7000,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Assets/map"
                     urlBuilder_.Append("api/Assets/map");
 
@@ -6523,7 +7119,7 @@ namespace Platform.ApiClient
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="filter">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<MapExtent>> GetAssetsMapExtent2Async(int? width = null, int? height = null, int? padding = null, int? maxZoom = null, int? minZoom = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<MapExtent>> GetAssetsMapExtentAsync(int? width = null, int? height = null, int? padding = null, int? maxZoom = null, int? minZoom = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -6535,7 +7131,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Assets/mapextent"
                     urlBuilder_.Append("api/Assets/mapextent");
                     urlBuilder_.Append('?');
@@ -6680,7 +7276,7 @@ namespace Platform.ApiClient
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="filter">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<AssetMapFeatureCollection>> GetAssetsMapFeatures2Async(int zoom, double west, double south, double east, double north, int? clusterPx = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<AssetMapFeatureCollection>> GetAssetsMapFeaturesAsync(int zoom, double west, double south, double east, double north, int? clusterPx = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (zoom == null)
                 throw new System.ArgumentNullException("zoom");
@@ -6707,7 +7303,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Assets/map/{zoom}/{west}/{south}/{east}/{north}"
                     urlBuilder_.Append("api/Assets/map/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(zoom, System.Globalization.CultureInfo.InvariantCulture)));
@@ -6845,7 +7441,7 @@ namespace Platform.ApiClient
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="filter">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<ModelCountWrapper>> GetAssetsModelDistribution2Async(string filter = null, int? top = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<ModelCountWrapper>> GetAssetsModelDistributionAsync(string filter = null, int? top = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -6857,7 +7453,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Assets/modeldistribution"
                     urlBuilder_.Append("api/Assets/modeldistribution");
                     urlBuilder_.Append('?');
@@ -7075,7 +7671,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -7087,7 +7683,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -7150,7 +7746,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="filter">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAssetStatuses2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAssetStatusesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -7162,7 +7758,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetStatuses"
                     urlBuilder_.Append("api/AssetStatuses");
                     urlBuilder_.Append('?');
@@ -7184,7 +7780,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -7239,6 +7835,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -7324,7 +7930,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="compute">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetAssetStatusesById2Async(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetAssetStatusesByIdAsync(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -7339,7 +7945,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetStatuses/{id}"
                     urlBuilder_.Append("api/AssetStatuses/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -7358,7 +7964,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -7393,6 +7999,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<ValueDisplayNameInt32>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -7566,7 +8182,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -7578,7 +8194,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -7641,7 +8257,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="filter">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAssetTypes2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAssetTypesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -7653,7 +8269,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetTypes"
                     urlBuilder_.Append("api/AssetTypes");
                     urlBuilder_.Append('?');
@@ -7675,7 +8291,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -7730,6 +8346,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -7818,7 +8444,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="filter">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAvailableAssetTypes2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetAvailableAssetTypesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -7830,7 +8456,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetTypes/Available"
                     urlBuilder_.Append("api/AssetTypes/Available");
                     urlBuilder_.Append('?');
@@ -7852,7 +8478,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -7907,6 +8533,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -7992,7 +8628,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="compute">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetAssetTypesById2Async(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetAssetTypesByIdAsync(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -8007,7 +8643,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetTypes/{id}"
                     urlBuilder_.Append("api/AssetTypes/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -8026,7 +8662,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -8061,6 +8697,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<ValueDisplayNameInt32>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -8234,7 +8880,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -8246,7 +8892,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -8309,7 +8955,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[AssetVendor](#/components/schemas/AssetVendor)** schema fields.</param>
         /// <param name="filter">Applies to **[AssetVendor](#/components/schemas/AssetVendor)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetVendor>>> GetAssetVendors2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetVendor>>> GetAssetVendorsAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -8321,7 +8967,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetVendors"
                     urlBuilder_.Append("api/AssetVendors");
                     urlBuilder_.Append('?');
@@ -8343,7 +8989,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -8398,6 +9044,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<AssetVendor>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -8481,7 +9137,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<AssetVendor>> CreateAssetVendor2Async(AssetVendorCreateUpdate assetVendorAssetVendorCreateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<AssetVendor>> CreateAssetVendorAsync(AssetVendorCreateUpdate assetVendorAssetVendorCreateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -8497,7 +9153,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetVendors"
                     urlBuilder_.Append("api/AssetVendors");
 
@@ -8617,7 +9273,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[AssetVendor](#/components/schemas/AssetVendor)** schema fields.</param>
         /// <param name="compute">Applies to **[AssetVendor](#/components/schemas/AssetVendor)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<AssetVendor>> GetAssetVendorById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<AssetVendor>> GetAssetVendorByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -8632,7 +9288,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetVendors/{id}"
                     urlBuilder_.Append("api/AssetVendors/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -8651,7 +9307,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -8686,6 +9342,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<AssetVendor>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -8769,7 +9435,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateAssetVendor2Async(System.Guid id, AssetVendorCreateUpdate assetVendorToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateAssetVendorAsync(System.Guid id, AssetVendorCreateUpdate assetVendorToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -8787,7 +9453,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetVendors/{id}"
                     urlBuilder_.Append("api/AssetVendors/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -8911,7 +9577,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> PartiallyUpdateAssetVendor2Async(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> PartiallyUpdateAssetVendorAsync(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -8929,7 +9595,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PATCH");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetVendors/{id}"
                     urlBuilder_.Append("api/AssetVendors/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -9043,7 +9709,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> DeleteAssetVendor2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> DeleteAssetVendorAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -9057,7 +9723,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("DELETE");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/AssetVendors/{id}"
                     urlBuilder_.Append("api/AssetVendors/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -9261,7 +9927,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -9273,7 +9939,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -9336,7 +10002,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="filter">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssets2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -9348,7 +10014,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Coolers"
                     urlBuilder_.Append("api/Coolers");
                     urlBuilder_.Append('?');
@@ -9370,7 +10036,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -9425,6 +10091,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<Asset>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -9508,7 +10184,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<Asset>> CreateCooler2Async(AssetCreate asset = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<Asset>> CreateCoolerAsync(AssetCreate asset = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -9524,7 +10200,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Coolers"
                     urlBuilder_.Append("api/Coolers");
 
@@ -9646,7 +10322,7 @@ namespace Platform.ApiClient
         /// <param name="distinct">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsBySerialOrOther2Async(string key, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsBySerialOrOtherAsync(string key, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (key == null)
                 throw new System.ArgumentNullException("key");
@@ -9664,7 +10340,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Coolers/keyssearch/{key}/{assetypevalue}"
                     urlBuilder_.Append("api/Coolers/keyssearch/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(key, System.Globalization.CultureInfo.InvariantCulture)));
@@ -9689,7 +10365,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -9702,6 +10378,10 @@ namespace Platform.ApiClient
                     if (top != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("$top")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(top, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (exportAllPages != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAllPages")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAllPages, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (count != null)
                     {
@@ -9740,6 +10420,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<Asset>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -9827,7 +10517,7 @@ namespace Platform.ApiClient
         /// <param name="distinct">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsBySerialOrOther4Async(string key, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetAssetsBySerialOrOtherWithoutAssetTypeValueAsync(string key, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (key == null)
                 throw new System.ArgumentNullException("key");
@@ -9842,7 +10532,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Coolers/keyssearch/{key}"
                     urlBuilder_.Append("api/Coolers/keyssearch/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(key, System.Globalization.CultureInfo.InvariantCulture)));
@@ -9865,7 +10555,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -9878,6 +10568,10 @@ namespace Platform.ApiClient
                     if (top != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("$top")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(top, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (exportAllPages != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAllPages")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAllPages, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (count != null)
                     {
@@ -9916,6 +10610,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<Asset>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -10003,7 +10707,7 @@ namespace Platform.ApiClient
         /// <param name="distinct">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetCoolersBySerial2Async(string serial, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetCoolersBySerialAsync(string serial, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (serial == null)
                 throw new System.ArgumentNullException("serial");
@@ -10021,7 +10725,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Coolers/serialsearch/{serial}/{assetypevalue}"
                     urlBuilder_.Append("api/Coolers/serialsearch/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(serial, System.Globalization.CultureInfo.InvariantCulture)));
@@ -10046,7 +10750,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -10059,6 +10763,10 @@ namespace Platform.ApiClient
                     if (top != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("$top")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(top, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (exportAllPages != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAllPages")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAllPages, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (count != null)
                     {
@@ -10097,6 +10805,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<Asset>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -10184,7 +10902,7 @@ namespace Platform.ApiClient
         /// <param name="distinct">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetCoolersBySerial4Async(string serial, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetCoolersBySerialWithoutAssetTypeValueAsync(string serial, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (serial == null)
                 throw new System.ArgumentNullException("serial");
@@ -10199,7 +10917,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Coolers/serialsearch/{serial}"
                     urlBuilder_.Append("api/Coolers/serialsearch/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(serial, System.Globalization.CultureInfo.InvariantCulture)));
@@ -10222,7 +10940,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -10235,6 +10953,10 @@ namespace Platform.ApiClient
                     if (top != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("$top")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(top, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (exportAllPages != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAllPages")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAllPages, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (count != null)
                     {
@@ -10273,6 +10995,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<Asset>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -10360,7 +11092,7 @@ namespace Platform.ApiClient
         /// <param name="distinct">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetCoolersByBarcode2Async(string barCode, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetCoolersByBarcodeAsync(string barCode, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (barCode == null)
                 throw new System.ArgumentNullException("barCode");
@@ -10378,7 +11110,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Coolers/barcodesearch/{barCode}/{assetypevalue}"
                     urlBuilder_.Append("api/Coolers/barcodesearch/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(barCode, System.Globalization.CultureInfo.InvariantCulture)));
@@ -10403,7 +11135,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -10416,6 +11148,10 @@ namespace Platform.ApiClient
                     if (top != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("$top")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(top, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (exportAllPages != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAllPages")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAllPages, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (count != null)
                     {
@@ -10454,6 +11190,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<Asset>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -10541,7 +11287,7 @@ namespace Platform.ApiClient
         /// <param name="distinct">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="sort">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetCoolersByBarcode4Async(string barCode, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Asset>>> GetCoolersByBarcodeWithoutAssetTypeValueAsync(string barCode, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (barCode == null)
                 throw new System.ArgumentNullException("barCode");
@@ -10556,7 +11302,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Coolers/barcodesearch/{barCode}"
                     urlBuilder_.Append("api/Coolers/barcodesearch/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(barCode, System.Globalization.CultureInfo.InvariantCulture)));
@@ -10579,7 +11325,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -10592,6 +11338,10 @@ namespace Platform.ApiClient
                     if (top != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("$top")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(top, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (exportAllPages != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAllPages")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAllPages, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (count != null)
                     {
@@ -10630,6 +11380,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<Asset>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -10713,7 +11473,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateCooler2Async(System.Guid id, UpdateAsset asset = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateCoolerAsync(System.Guid id, UpdateAsset asset = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -10731,7 +11491,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Coolers/{id}"
                     urlBuilder_.Append("api/Coolers/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -10857,7 +11617,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <param name="compute">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<Asset>> GetCoolerById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<Asset>> GetCoolerByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -10872,7 +11632,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Coolers/{id}"
                     urlBuilder_.Append("api/Coolers/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -10891,7 +11651,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -10928,132 +11688,14 @@ namespace Platform.ApiClient
                             return new ApiResponse<Asset>(status_, headers_, objectResponse_.Object);
                         }
                         else
-                        if (status_ == 400)
+                        if (status_ == 202)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 401)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 403)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Forbidden", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 404)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 422)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<ValidationProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<ValidationProblemDetails>("Unprocessable Entity", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 500)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Internal Server Error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        {
-                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
-                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
-                        }
-                    }
-                    finally
-                    {
-                        if (disposeResponse_)
-                            response_.Dispose();
-                    }
-                }
-            }
-            finally
-            {
-                if (disposeClient_)
-                    client_.Dispose();
-            }
-        }
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> DeleteCooler2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
-        {
-            if (id == null)
-                throw new System.ArgumentNullException("id");
-
-            var client_ = _httpClient;
-            var disposeClient_ = false;
-            try
-            {
-                using (var request_ = new System.Net.Http.HttpRequestMessage())
-                {
-                    request_.Method = new System.Net.Http.HttpMethod("DELETE");
-
-                    var urlBuilder_ = new System.Text.StringBuilder();
-                
-                    // Operation Path: "api/Coolers/{id}"
-                    urlBuilder_.Append("api/Coolers/");
-                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
-
-                    await PrepareRequestAsync(client_, request_, urlBuilder_, cancellationToken).ConfigureAwait(false);
-
-                    var url_ = urlBuilder_.ToString();
-                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
-
-                    await PrepareRequestAsync(client_, request_, url_, cancellationToken).ConfigureAwait(false);
-
-                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-                    var disposeResponse_ = true;
-                    try
-                    {
-                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
-                        foreach (var item_ in response_.Headers)
-                            headers_[item_.Key] = item_.Value;
-                        if (response_.Content != null && response_.Content.Headers != null)
-                        {
-                            foreach (var item_ in response_.Content.Headers)
-                                headers_[item_.Key] = item_.Value;
-                        }
-
-                        await ProcessResponseAsync(client_, response_, cancellationToken).ConfigureAwait(false);
-
-                        var status_ = (int)response_.StatusCode;
-                        if (status_ == 204)
-                        {
-                            return new ApiResponse(status_, headers_);
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -11137,7 +11779,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> PartiallyUpdateCooler2Async(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> PartiallyUpdateCoolerAsync(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -11155,7 +11797,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PATCH");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Coolers/{id}"
                     urlBuilder_.Append("api/Coolers/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -11269,7 +11911,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<FileResponse> GetAssetPhotoById2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<FileResponse> GetAssetPhotoByIdAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -11284,7 +11926,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/octet-stream"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Coolers/{id}/photo"
                     urlBuilder_.Append("api/Coolers/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -11402,7 +12044,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> UnpairDevices2Async(UnPairDeviceFromMachine cmQuickActionDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> UnpairDevicesAsync(UnPairDeviceFromMachine cmQuickActionDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -11417,7 +12059,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Coolers/UnpairDevices"
                     urlBuilder_.Append("api/Coolers/UnpairDevices");
 
@@ -11530,7 +12172,135 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdatePointOfInterestForMachine2Async(System.Guid id, System.Guid poiId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateAssetsOwnerAsync(AssetBulkOwnerTransfer assetsToCustomerDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(assetsToCustomerDto, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.StringContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("PUT");
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+
+                    // Operation Path: "api/Coolers/changeowner"
+                    urlBuilder_.Append("api/Coolers/changeowner");
+
+                    await PrepareRequestAsync(client_, request_, urlBuilder_, cancellationToken).ConfigureAwait(false);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    await PrepareRequestAsync(client_, request_, url_, cancellationToken).ConfigureAwait(false);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        await ProcessResponseAsync(client_, response_, cancellationToken).ConfigureAwait(false);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 204)
+                        {
+                            return new ApiResponse(status_, headers_);
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 403)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Forbidden", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 422)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ValidationProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ValidationProblemDetails>("Unprocessable Entity", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Internal Server Error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdatePointOfInterestForMachineAsync(System.Guid id, System.Guid poiId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -11548,7 +12318,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Coolers/{id}/Assignpoi/{poiId}"
                     urlBuilder_.Append("api/Coolers/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -11664,7 +12434,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> PairAssetWithDevice2Async(System.Guid id, System.Guid deviceId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> PairAssetWithDeviceAsync(System.Guid id, System.Guid deviceId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -11682,7 +12452,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Coolers/{id}/pairdevice/{deviceId}"
                     urlBuilder_.Append("api/Coolers/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -11798,7 +12568,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> UnpairAssetFromDevice2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> UnpairAssetFromDeviceAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -11813,7 +12583,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Coolers/{id}/unpairdevice"
                     urlBuilder_.Append("api/Coolers/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -11928,7 +12698,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdatePointOfInterestForMachines2Async(AssignAssetsToPoiQuickAction cmQuickActionDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdatePointOfInterestForMachinesAsync(AssignAssetsToPoiQuickAction cmQuickActionDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -11943,7 +12713,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Coolers/Assignpoi"
                     urlBuilder_.Append("api/Coolers/Assignpoi");
 
@@ -12057,7 +12827,7 @@ namespace Platform.ApiClient
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="filter">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<MapExtent>> GetAssetsMapExtent2Async(int? width = null, int? height = null, int? padding = null, int? maxZoom = null, int? minZoom = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<MapExtent>> GetAssetsMapExtentAsync(int? width = null, int? height = null, int? padding = null, int? maxZoom = null, int? minZoom = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -12069,7 +12839,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Coolers/mapextent"
                     urlBuilder_.Append("api/Coolers/mapextent");
                     urlBuilder_.Append('?');
@@ -12214,7 +12984,7 @@ namespace Platform.ApiClient
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="filter">Applies to **[Asset](#/components/schemas/Asset)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<AssetMapFeatureCollection>> GetAssetsMapFeatures2Async(int zoom, double west, double south, double east, double north, int? clusterPx = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<AssetMapFeatureCollection>> GetAssetsMapFeaturesAsync(int zoom, double west, double south, double east, double north, int? clusterPx = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (zoom == null)
                 throw new System.ArgumentNullException("zoom");
@@ -12241,7 +13011,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Coolers/map/{zoom}/{west}/{south}/{east}/{north}"
                     urlBuilder_.Append("api/Coolers/map/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(zoom, System.Globalization.CultureInfo.InvariantCulture)));
@@ -12379,7 +13149,7 @@ namespace Platform.ApiClient
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         [System.Obsolete]
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetMapSimplified>>> GetAssetsForMap2Async(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<AssetMapSimplified>>> GetAssetsForMapAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -12391,7 +13161,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Coolers/map"
                     urlBuilder_.Append("api/Coolers/map");
 
@@ -12599,7 +13369,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -12611,7 +13381,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -12674,7 +13444,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[Customer](#/components/schemas/Customer)** schema fields.</param>
         /// <param name="filter">Applies to **[Customer](#/components/schemas/Customer)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Customer>>> GetCustomers2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Customer>>> GetCustomersAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -12686,7 +13456,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Customers"
                     urlBuilder_.Append("api/Customers");
                     urlBuilder_.Append('?');
@@ -12708,7 +13478,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -12763,6 +13533,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<Customer>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -12846,7 +13626,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<Customer>> CreateCustomer2Async(CustomerCreate customer = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<Customer>> CreateCustomerAsync(CustomerCreate customer = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -12862,7 +13642,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Customers"
                     urlBuilder_.Append("api/Customers");
 
@@ -12982,7 +13762,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[Customer](#/components/schemas/Customer)** schema fields.</param>
         /// <param name="compute">Applies to **[Customer](#/components/schemas/Customer)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<Customer>> GetCustomerByPath2Async(string path = null, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<Customer>> GetCustomerByPathAsync(string path = null, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -12994,7 +13774,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Customers/bypath"
                     urlBuilder_.Append("api/Customers/bypath");
                     urlBuilder_.Append('?');
@@ -13016,7 +13796,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -13051,6 +13831,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<Customer>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -13136,7 +13926,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[Customer](#/components/schemas/Customer)** schema fields.</param>
         /// <param name="compute">Applies to **[Customer](#/components/schemas/Customer)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<Customer>> GetCustomerById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<Customer>> GetCustomerByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -13151,7 +13941,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Customers/{id}"
                     urlBuilder_.Append("api/Customers/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -13170,7 +13960,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -13205,6 +13995,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<Customer>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -13288,7 +14088,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateCustomer2Async(System.Guid id, CustomerUpdate customerToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateCustomerAsync(System.Guid id, CustomerUpdate customerToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -13306,7 +14106,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Customers/{id}"
                     urlBuilder_.Append("api/Customers/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -13430,141 +14230,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> DeleteCustomer2Async(System.Guid id, System.Guid? pointOfInterestToAssignAssetsId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
-        {
-            if (id == null)
-                throw new System.ArgumentNullException("id");
-
-            var client_ = _httpClient;
-            var disposeClient_ = false;
-            try
-            {
-                using (var request_ = new System.Net.Http.HttpRequestMessage())
-                {
-                    request_.Method = new System.Net.Http.HttpMethod("DELETE");
-
-                    var urlBuilder_ = new System.Text.StringBuilder();
-                
-                    // Operation Path: "api/Customers/{id}"
-                    urlBuilder_.Append("api/Customers/");
-                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
-                    urlBuilder_.Append('?');
-                    if (pointOfInterestToAssignAssetsId != null)
-                    {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("pointOfInterestToAssignAssetsId")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(pointOfInterestToAssignAssetsId, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
-                    }
-                    urlBuilder_.Length--;
-
-                    await PrepareRequestAsync(client_, request_, urlBuilder_, cancellationToken).ConfigureAwait(false);
-
-                    var url_ = urlBuilder_.ToString();
-                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
-
-                    await PrepareRequestAsync(client_, request_, url_, cancellationToken).ConfigureAwait(false);
-
-                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-                    var disposeResponse_ = true;
-                    try
-                    {
-                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
-                        foreach (var item_ in response_.Headers)
-                            headers_[item_.Key] = item_.Value;
-                        if (response_.Content != null && response_.Content.Headers != null)
-                        {
-                            foreach (var item_ in response_.Content.Headers)
-                                headers_[item_.Key] = item_.Value;
-                        }
-
-                        await ProcessResponseAsync(client_, response_, cancellationToken).ConfigureAwait(false);
-
-                        var status_ = (int)response_.StatusCode;
-                        if (status_ == 204)
-                        {
-                            return new ApiResponse(status_, headers_);
-                        }
-                        else
-                        if (status_ == 400)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 401)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 403)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Forbidden", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 404)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 422)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<ValidationProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<ValidationProblemDetails>("Unprocessable Entity", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 500)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Internal Server Error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        {
-                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
-                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
-                        }
-                    }
-                    finally
-                    {
-                        if (disposeResponse_)
-                            response_.Dispose();
-                    }
-                }
-            }
-            finally
-            {
-                if (disposeClient_)
-                    client_.Dispose();
-            }
-        }
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<CustomerPreferences>> GetCustomerPreferences2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<CustomerPreferences>> GetCustomerPreferencesAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -13579,7 +14245,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Customers/{id}/preferences"
                     urlBuilder_.Append("api/Customers/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -13699,7 +14365,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateCustomerPreferences2Async(System.Guid id, CustomerPreferencesUpdate preferences = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateCustomerPreferencesAsync(System.Guid id, CustomerPreferencesUpdate preferences = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -13717,7 +14383,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Customers/{id}/preferences"
                     urlBuilder_.Append("api/Customers/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -13922,7 +14588,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -13934,7 +14600,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -13997,7 +14663,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="filter">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetCustomerTypes2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetCustomerTypesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -14009,7 +14675,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/CustomerTypes"
                     urlBuilder_.Append("api/CustomerTypes");
                     urlBuilder_.Append('?');
@@ -14031,7 +14697,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -14086,6 +14752,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -14171,7 +14847,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="compute">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetCustomerTypeById2Async(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetCustomerTypeByIdAsync(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -14186,7 +14862,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/CustomerTypes/{id}"
                     urlBuilder_.Append("api/CustomerTypes/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -14205,7 +14881,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -14240,6 +14916,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<ValueDisplayNameInt32>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -14413,7 +15099,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -14425,7 +15111,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -14488,7 +15174,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[Professions](#/components/schemas/Professions)** schema fields.</param>
         /// <param name="filter">Applies to **[Professions](#/components/schemas/Professions)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Professions>>> GetProfessions2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Professions>>> GetProfessionsAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -14500,7 +15186,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Professions"
                     urlBuilder_.Append("api/Professions");
                     urlBuilder_.Append('?');
@@ -14522,7 +15208,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -14577,6 +15263,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<Professions>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -14750,7 +15446,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -14762,7 +15458,305 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
+            {
+                return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
+            }
+            else if (value is byte[])
+            {
+                return System.Convert.ToBase64String((byte[]) value);
+            }
+            else if (value is string[])
+            {
+                return string.Join(",", (string[])value);
+            }
+            else if (value.GetType().IsArray)
+            {
+                var valueArray = (System.Array)value;
+                var valueTextArray = new string[valueArray.Length];
+                for (var i = 0; i < valueArray.Length; i++)
+                {
+                    valueTextArray[i] = ConvertToString(valueArray.GetValue(i), cultureInfo);
+                }
+                return string.Join(",", valueTextArray);
+            }
+
+            var result = System.Convert.ToString(value, cultureInfo);
+            return result == null ? "" : result;
+        }
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ImageClient : BaseClient, IImageClient
+    {
+        private System.Net.Http.HttpClient _httpClient;
+        private static System.Lazy<Newtonsoft.Json.JsonSerializerSettings> _settings = new System.Lazy<Newtonsoft.Json.JsonSerializerSettings>(CreateSerializerSettings, true);
+        private Newtonsoft.Json.JsonSerializerSettings _instanceSettings;
+
+    #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+        public ImageClient(IClientSettings configuration, System.Net.Http.HttpClient httpClient) : base(configuration)
+    #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+        {
+            _httpClient = httpClient;
+            Initialize();
+        }
+
+        private static Newtonsoft.Json.JsonSerializerSettings CreateSerializerSettings()
+        {
+            var settings = new Newtonsoft.Json.JsonSerializerSettings();
+            UpdateJsonSerializerSettings(settings);
+            return settings;
+        }
+
+        public Newtonsoft.Json.JsonSerializerSettings JsonSerializerSettings { get { return _instanceSettings ?? _settings.Value; } }
+
+        static partial void UpdateJsonSerializerSettings(Newtonsoft.Json.JsonSerializerSettings settings);
+
+        partial void Initialize();
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<FileResponse> DownloadImageFileAsync(string id, ImageFileVariant? variant = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        {
+            if (id == null)
+                throw new System.ArgumentNullException("id");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("image/jpeg"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+
+                    // Operation Path: "api/file/image/{id}"
+                    urlBuilder_.Append("api/file/image/");
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
+                    urlBuilder_.Append('?');
+                    if (variant != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("variant")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(variant, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    urlBuilder_.Length--;
+
+                    await PrepareRequestAsync(client_, request_, urlBuilder_, cancellationToken).ConfigureAwait(false);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    await PrepareRequestAsync(client_, request_, url_, cancellationToken).ConfigureAwait(false);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        await ProcessResponseAsync(client_, response_, cancellationToken).ConfigureAwait(false);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200 || status_ == 206)
+                        {
+                            var responseStream_ = response_.Content == null ? System.IO.Stream.Null : await ReadAsStreamAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            var fileResponse_ = new FileResponse(status_, headers_, responseStream_, null, response_);
+                            disposeClient_ = false; disposeResponse_ = false; // response and client are disposed by FileResponse
+                            return fileResponse_;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 403)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Forbidden", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 422)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ValidationProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ValidationProblemDetails>("Unprocessable Entity", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Internal Server Error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        protected struct ObjectResponseResult<T>
+        {
+            public ObjectResponseResult(T responseObject, string responseText)
+            {
+                this.Object = responseObject;
+                this.Text = responseText;
+            }
+
+            public T Object { get; }
+
+            public string Text { get; }
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        private static System.Threading.Tasks.Task<string> ReadAsStringAsync(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken)
+        {
+    #if NET5_0_OR_GREATER
+            return content.ReadAsStringAsync(cancellationToken);
+    #else
+            return content.ReadAsStringAsync();
+    #endif
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        private static System.Threading.Tasks.Task<System.IO.Stream> ReadAsStreamAsync(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken)
+        {
+    #if NET5_0_OR_GREATER
+            return content.ReadAsStreamAsync(cancellationToken);
+    #else
+            return content.ReadAsStreamAsync();
+    #endif
+        }
+
+        public bool ReadResponseAsString { get; set; }
+
+        protected virtual async System.Threading.Tasks.Task<ObjectResponseResult<T>> ReadObjectResponseAsync<T>(System.Net.Http.HttpResponseMessage response, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, System.Threading.CancellationToken cancellationToken)
+        {
+            if (response == null || response.Content == null)
+            {
+                return new ObjectResponseResult<T>(default(T), string.Empty);
+            }
+
+            if (ReadResponseAsString)
+            {
+                var responseText = await ReadAsStringAsync(response.Content, cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    var typedBody = Newtonsoft.Json.JsonConvert.DeserializeObject<T>(responseText, JsonSerializerSettings);
+                    return new ObjectResponseResult<T>(typedBody, responseText);
+                }
+                catch (Newtonsoft.Json.JsonException exception)
+                {
+                    var message = "Could not deserialize the response body string as " + typeof(T).FullName + ".";
+                    throw new ApiException(message, (int)response.StatusCode, responseText, headers, exception);
+                }
+            }
+            else
+            {
+                try
+                {
+                    using (var responseStream = await ReadAsStreamAsync(response.Content, cancellationToken).ConfigureAwait(false))
+                    using (var streamReader = new System.IO.StreamReader(responseStream))
+                    using (var jsonTextReader = new Newtonsoft.Json.JsonTextReader(streamReader))
+                    {
+                        var serializer = Newtonsoft.Json.JsonSerializer.Create(JsonSerializerSettings);
+                        var typedBody = serializer.Deserialize<T>(jsonTextReader);
+                        return new ObjectResponseResult<T>(typedBody, string.Empty);
+                    }
+                }
+                catch (Newtonsoft.Json.JsonException exception)
+                {
+                    var message = "Could not deserialize the response body stream as " + typeof(T).FullName + ".";
+                    throw new ApiException(message, (int)response.StatusCode, string.Empty, headers, exception);
+                }
+            }
+        }
+
+        private string ConvertToString(object value, System.Globalization.CultureInfo cultureInfo)
+        {
+            if (value == null)
+            {
+                return "";
+            }
+
+            if (value is System.Enum)
+            {
+                var name = System.Enum.GetName(value.GetType(), value);
+                if (name != null)
+                {
+                    var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
+                    if (field_ != null)
+                    {
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
+                            as System.Runtime.Serialization.EnumMemberAttribute;
+                        if (attribute != null)
+                        {
+                            return attribute.Value != null ? attribute.Value : name;
+                        }
+                    }
+
+                    var converted = System.Convert.ToString(System.Convert.ChangeType(value, System.Enum.GetUnderlyingType(value.GetType()), cultureInfo));
+                    return converted == null ? string.Empty : converted;
+                }
+            }
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -14819,6 +15813,193 @@ namespace Platform.ApiClient
         partial void Initialize();
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <param name="select">Applies to **[ImageData](#/components/schemas/ImageData)** schema fields.</param>
+        /// <param name="compute">Applies to **[ImageData](#/components/schemas/ImageData)** schema fields.</param>
+        /// <param name="distinct">Applies to **[ImageData](#/components/schemas/ImageData)** schema fields.</param>
+        /// <param name="sort">Applies to **[ImageData](#/components/schemas/ImageData)** schema fields.</param>
+        /// <param name="filter">Applies to **[ImageData](#/components/schemas/ImageData)** schema fields.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ImageData>>> GetImagesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+
+                    // Operation Path: "api/RawData/images"
+                    urlBuilder_.Append("api/RawData/images");
+                    urlBuilder_.Append('?');
+                    if (select != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$select")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(select, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (compute != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$compute")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(compute, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (distinct != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$distinct")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(distinct, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (export != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$export")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(export, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (exportAsync != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (sort != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$orderby")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(sort, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (skip != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$skip")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(skip, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (top != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$top")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(top, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (count != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$count")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(count, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (filter != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$filter")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(filter, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    urlBuilder_.Length--;
+
+                    await PrepareRequestAsync(client_, request_, urlBuilder_, cancellationToken).ConfigureAwait(false);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    await PrepareRequestAsync(client_, request_, url_, cancellationToken).ConfigureAwait(false);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        await ProcessResponseAsync(client_, response_, cancellationToken).ConfigureAwait(false);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<ImageData>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return new ApiResponse<System.Collections.Generic.ICollection<ImageData>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 403)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Forbidden", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 422)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ValidationProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ValidationProblemDetails>("Unprocessable Entity", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Internal Server Error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
         /// Get all extra info data
         /// </summary>
@@ -14832,7 +16013,7 @@ namespace Platform.ApiClient
         /// <param name="filter">Applies to **[ExtraInfoRawData](#/components/schemas/ExtraInfoRawData)** schema fields.</param>
         /// <returns>Array of extra info raw data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ExtraInfoRawData>>> GetExtraInfoData2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ExtraInfoRawData>>> GetExtraInfoDataAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -14844,7 +16025,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/RawData/extrainfodata"
                     urlBuilder_.Append("api/RawData/extrainfodata");
                     urlBuilder_.Append('?');
@@ -14866,7 +16047,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -14921,6 +16102,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<ExtraInfoRawData>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -15013,7 +16204,7 @@ namespace Platform.ApiClient
         /// <param name="filter">Applies to **[DataEntity](#/components/schemas/DataEntity)** schema fields.</param>
         /// <returns>Array of daily communication data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ExtraInfoDailyCom>>> GetExtraInfoDailyCom2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ExtraInfoDailyCom>>> GetExtraInfoDailyComAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -15025,7 +16216,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/RawData/communicationdaily"
                     urlBuilder_.Append("api/RawData/communicationdaily");
                     urlBuilder_.Append('?');
@@ -15047,7 +16238,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -15060,6 +16251,10 @@ namespace Platform.ApiClient
                     if (top != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("$top")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(top, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (exportAllPages != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAllPages")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAllPages, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (count != null)
                     {
@@ -15102,6 +16297,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<ExtraInfoDailyCom>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -15194,7 +16399,7 @@ namespace Platform.ApiClient
         /// <param name="filter">Applies to **[DataEntity](#/components/schemas/DataEntity)** schema fields.</param>
         /// <returns>Array of daily power on seconds data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ExtraInfoDailyPowerOn>>> GetExtraInfoDailyPowerOn2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ExtraInfoDailyPowerOn>>> GetExtraInfoDailyPowerOnAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -15206,7 +16411,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/RawData/powerondaily"
                     urlBuilder_.Append("api/RawData/powerondaily");
                     urlBuilder_.Append('?');
@@ -15228,7 +16433,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -15241,6 +16446,10 @@ namespace Platform.ApiClient
                     if (top != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("$top")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(top, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (exportAllPages != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAllPages")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAllPages, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (count != null)
                     {
@@ -15283,6 +16492,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<ExtraInfoDailyPowerOn>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -15378,7 +16597,7 @@ namespace Platform.ApiClient
         /// <param name="filter">Applies to **[BatteryPeriodRawData](#/components/schemas/BatteryPeriodRawData)** schema fields.</param>
         /// <returns>Array of extra info raw data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<BatteryPeriodRawData>>> GetBatteryPeriodData2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<BatteryPeriodRawData>>> GetBatteryPeriodDataAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -15390,7 +16609,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/RawData/batteryperiods"
                     urlBuilder_.Append("api/RawData/batteryperiods");
                     urlBuilder_.Append('?');
@@ -15412,7 +16631,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -15467,6 +16686,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<BatteryPeriodRawData>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -15559,7 +16788,7 @@ namespace Platform.ApiClient
         /// <param name="filter">Applies to **[LocationRawData](#/components/schemas/LocationRawData)** schema fields.</param>
         /// <returns>Array of location raw data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<LocationRawData>>> GetLocationData2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<LocationRawData>>> GetLocationDataAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -15571,7 +16800,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/RawData/locationdata"
                     urlBuilder_.Append("api/RawData/locationdata");
                     urlBuilder_.Append('?');
@@ -15593,7 +16822,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -15648,6 +16877,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<LocationRawData>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -15740,7 +16979,7 @@ namespace Platform.ApiClient
         /// <param name="filter">Applies to **[TemperaturesRawData](#/components/schemas/TemperaturesRawData)** schema fields.</param>
         /// <returns>Array of temperature raw data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<TemperaturesRawData>>> GetTemperatureData2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<TemperaturesRawData>>> GetTemperatureDataAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -15752,7 +16991,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/RawData/temperaturedata"
                     urlBuilder_.Append("api/RawData/temperaturedata");
                     urlBuilder_.Append('?');
@@ -15774,7 +17013,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -15829,6 +17068,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<TemperaturesRawData>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -15922,7 +17171,7 @@ namespace Platform.ApiClient
         /// <param name="interval">day, week, month, year</param>
         /// <returns>Array of aggregated temperature data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<TemperatureIntervalAggregate>>> GetTemperatureAggregates2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, string interval = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<TemperatureIntervalAggregate>>> GetTemperatureAggregatesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, string filter = null, string interval = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -15934,7 +17183,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/RawData/temperatureaggregates"
                     urlBuilder_.Append("api/RawData/temperatureaggregates");
                     urlBuilder_.Append('?');
@@ -15956,7 +17205,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -15969,6 +17218,10 @@ namespace Platform.ApiClient
                     if (top != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("$top")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(top, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (exportAllPages != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAllPages")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAllPages, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (count != null)
                     {
@@ -16015,6 +17268,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<TemperatureIntervalAggregate>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -16107,7 +17370,7 @@ namespace Platform.ApiClient
         /// <param name="filter">Applies to **[DoorOpeningRawData](#/components/schemas/DoorOpeningRawData)** schema fields.</param>
         /// <returns>Array of dooropening raw data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<DoorOpeningRawData>>> GetDoorOpeningData2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<DoorOpeningRawData>>> GetDoorOpeningDataAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -16119,7 +17382,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/RawData/dooropeningdata"
                     urlBuilder_.Append("api/RawData/dooropeningdata");
                     urlBuilder_.Append('?');
@@ -16141,7 +17404,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -16196,6 +17459,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<DoorOpeningRawData>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -16289,7 +17562,7 @@ namespace Platform.ApiClient
         /// <param name="interval">day, week, month, year</param>
         /// <returns>Array of aggregated door openings data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<DoorOpeningsIntervalAggregate>>> GetDoorOpeningAggregates2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, string interval = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<DoorOpeningsIntervalAggregate>>> GetDoorOpeningAggregatesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, string filter = null, string interval = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -16301,7 +17574,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/RawData/dooropeningaggregates"
                     urlBuilder_.Append("api/RawData/dooropeningaggregates");
                     urlBuilder_.Append('?');
@@ -16323,7 +17596,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -16336,6 +17609,10 @@ namespace Platform.ApiClient
                     if (top != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("$top")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(top, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (exportAllPages != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAllPages")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAllPages, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (count != null)
                     {
@@ -16382,6 +17659,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<DoorOpeningsIntervalAggregate>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -16474,7 +17761,7 @@ namespace Platform.ApiClient
         /// <param name="filter">Applies to **[EventsRawData](#/components/schemas/EventsRawData)** schema fields.</param>
         /// <returns>Array of location raw data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<EventsRawData>>> GetEventsData2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<EventsRawData>>> GetEventsDataAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -16486,7 +17773,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/RawData/eventdata"
                     urlBuilder_.Append("api/RawData/eventdata");
                     urlBuilder_.Append('?');
@@ -16508,7 +17795,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -16563,6 +17850,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<EventsRawData>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -16655,7 +17952,7 @@ namespace Platform.ApiClient
         /// <param name="filter">Applies to **[EnchancedGplDataRaw](#/components/schemas/EnchancedGplDataRaw)** schema fields.</param>
         /// <returns>Array of location raw data</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<EnchancedGplDataRaw>>> GetEnchancedGplDataRaw2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<EnchancedGplDataRaw>>> GetEnchancedGplDataRawAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -16667,7 +17964,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/RawData/enchancedgpldata"
                     urlBuilder_.Append("api/RawData/enchancedgpldata");
                     urlBuilder_.Append('?');
@@ -16689,7 +17986,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -16744,6 +18041,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<EnchancedGplDataRaw>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -16917,7 +18224,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -16929,7 +18236,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -16989,7 +18296,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[DeviceCapabilitiesSummary](#/components/schemas/DeviceCapabilitiesSummary)** schema fields.</param>
         /// <param name="compute">Applies to **[DeviceCapabilitiesSummary](#/components/schemas/DeviceCapabilitiesSummary)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<DeviceCapabilitiesSummary>> GetDeviceCapabilities2Async(System.Guid deviceId, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, bool? includeUnavailable = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<DeviceCapabilitiesSummary>> GetDeviceCapabilitiesAsync(System.Guid deviceId, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, bool? includeUnavailable = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (deviceId == null)
                 throw new System.ArgumentNullException("deviceId");
@@ -17004,7 +18311,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Devices/{deviceId}/capabilities"
                     urlBuilder_.Append("api/Devices/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(deviceId, System.Globalization.CultureInfo.InvariantCulture)));
@@ -17024,7 +18331,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (includeUnavailable != null)
                     {
@@ -17065,6 +18372,16 @@ namespace Platform.ApiClient
                             return new ApiResponse<DeviceCapabilitiesSummary>(status_, headers_, objectResponse_.Object);
                         }
                         else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
                         if (status_ == 400)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
@@ -17148,7 +18465,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[DeviceCapabilityUi](#/components/schemas/DeviceCapabilityUi)** schema fields.</param>
         /// <param name="compute">Applies to **[DeviceCapabilityUi](#/components/schemas/DeviceCapabilityUi)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<DeviceCapabilityUi>> GetDevicePropertyCapabilityUi2Async(System.Guid deviceId, System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, bool? includeUnavailable = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<DeviceCapabilityUi>> GetDevicePropertyCapabilityUiAsync(System.Guid deviceId, System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, bool? includeUnavailable = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (deviceId == null)
                 throw new System.ArgumentNullException("deviceId");
@@ -17166,7 +18483,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Devices/{deviceId}/capabilities/property/{id}/ui"
                     urlBuilder_.Append("api/Devices/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(deviceId, System.Globalization.CultureInfo.InvariantCulture)));
@@ -17188,7 +18505,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (includeUnavailable != null)
                     {
@@ -17227,6 +18544,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<DeviceCapabilityUi>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -17312,7 +18639,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[DeviceCapabilityUi](#/components/schemas/DeviceCapabilityUi)** schema fields.</param>
         /// <param name="compute">Applies to **[DeviceCapabilityUi](#/components/schemas/DeviceCapabilityUi)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<DeviceCapabilityUi>> GetDeviceCommandCapabilityUi2Async(System.Guid deviceId, System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, bool? includeUnavailable = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<DeviceCapabilityUi>> GetDeviceCommandCapabilityUiAsync(System.Guid deviceId, System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, bool? includeUnavailable = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (deviceId == null)
                 throw new System.ArgumentNullException("deviceId");
@@ -17330,7 +18657,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Devices/{deviceId}/capabilities/command/{id}/ui"
                     urlBuilder_.Append("api/Devices/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(deviceId, System.Globalization.CultureInfo.InvariantCulture)));
@@ -17352,7 +18679,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (includeUnavailable != null)
                     {
@@ -17391,6 +18718,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<DeviceCapabilityUi>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -17478,7 +18815,7 @@ namespace Platform.ApiClient
         /// <param name="distinct">Applies to **[Device](#/components/schemas/Device)** schema fields.</param>
         /// <param name="sort">Applies to **[Device](#/components/schemas/Device)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Device>>> GetDevicesBySerial2Async(string serial, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Device>>> GetDevicesBySerialAsync(string serial, int assetypevalue, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (serial == null)
                 throw new System.ArgumentNullException("serial");
@@ -17496,7 +18833,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Devices/serialsearch/{serial}/{assetypevalue}"
                     urlBuilder_.Append("api/Devices/serialsearch/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(serial, System.Globalization.CultureInfo.InvariantCulture)));
@@ -17521,7 +18858,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -17534,6 +18871,10 @@ namespace Platform.ApiClient
                     if (top != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("$top")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(top, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (exportAllPages != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAllPages")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAllPages, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (count != null)
                     {
@@ -17572,6 +18913,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<Device>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -17659,7 +19010,7 @@ namespace Platform.ApiClient
         /// <param name="distinct">Applies to **[Device](#/components/schemas/Device)** schema fields.</param>
         /// <param name="sort">Applies to **[Device](#/components/schemas/Device)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Device>>> GetDevicesBySerial4Async(string serial, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Device>>> GetDevicesBySerialWithoutAssetTypeValueAsync(string serial, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? exportAllPages = null, bool? count = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (serial == null)
                 throw new System.ArgumentNullException("serial");
@@ -17674,7 +19025,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Devices/serialsearch/{serial}"
                     urlBuilder_.Append("api/Devices/serialsearch/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(serial, System.Globalization.CultureInfo.InvariantCulture)));
@@ -17697,7 +19048,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -17710,6 +19061,10 @@ namespace Platform.ApiClient
                     if (top != null)
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("$top")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(top, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (exportAllPages != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAllPages")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAllPages, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (count != null)
                     {
@@ -17748,6 +19103,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<Device>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -17836,7 +19201,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[Device](#/components/schemas/Device)** schema fields.</param>
         /// <param name="filter">Applies to **[Device](#/components/schemas/Device)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Device>>> GetDevices2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Device>>> GetDevicesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -17848,7 +19213,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Devices"
                     urlBuilder_.Append("api/Devices");
                     urlBuilder_.Append('?');
@@ -17870,7 +19235,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -17925,6 +19290,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<Device>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -18008,7 +19383,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<Device>> CreateDevice2Async(DeviceCreate deviceCreateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<Device>> CreateDeviceAsync(DeviceCreate deviceCreateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -18024,7 +19399,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Devices"
                     urlBuilder_.Append("api/Devices");
 
@@ -18142,7 +19517,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<IFileResultDeviceImport>> ImportDevicesForm2Async(System.Guid? vendorId = null, System.Guid? modelId = null, System.Guid? firmwareId = null, System.Guid? simProviderId = null, string batchId = null, byte[] file_ImageData = null, string file_ContentType = null, string file_ContentDisposition = null, long? file_Length = null, string file_Name = null, string file_FileName = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<IFileResultDeviceImport>> ImportDevicesFormAsync(System.Guid? vendorId = null, System.Guid? modelId = null, System.Guid? firmwareId = null, System.Guid? simProviderId = null, string batchId = null, byte[] file_ImageData = null, string file_ContentType = null, string file_ContentDisposition = null, long? file_Length = null, string file_Name = null, string file_FileName = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -18220,7 +19595,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Devices/import"
                     urlBuilder_.Append("api/Devices/import");
 
@@ -18340,7 +19715,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[Device](#/components/schemas/Device)** schema fields.</param>
         /// <param name="compute">Applies to **[Device](#/components/schemas/Device)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<Device>> GetDeviceById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<Device>> GetDeviceByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -18355,7 +19730,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Devices/{id}"
                     urlBuilder_.Append("api/Devices/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -18374,7 +19749,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -18411,6 +19786,16 @@ namespace Platform.ApiClient
                             return new ApiResponse<Device>(status_, headers_, objectResponse_.Object);
                         }
                         else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
                         if (status_ == 400)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
@@ -18492,7 +19877,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateDevice2Async(System.Guid id, DeviceUpdate deviceUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateDeviceAsync(System.Guid id, DeviceUpdate deviceUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -18510,7 +19895,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Devices/{id}"
                     urlBuilder_.Append("api/Devices/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -18634,7 +20019,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> PartiallyUpdateDevice2Async(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> PartiallyUpdateDeviceAsync(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -18652,7 +20037,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PATCH");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Devices/{id}"
                     urlBuilder_.Append("api/Devices/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -18690,134 +20075,6 @@ namespace Platform.ApiClient
                             throw new ApiException<Device>("A server side error occurred.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
-                        if (status_ == 204)
-                        {
-                            return new ApiResponse(status_, headers_);
-                        }
-                        else
-                        if (status_ == 400)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 401)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 403)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Forbidden", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 404)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 422)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<ValidationProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<ValidationProblemDetails>("Unprocessable Entity", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 500)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Internal Server Error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        {
-                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
-                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
-                        }
-                    }
-                    finally
-                    {
-                        if (disposeResponse_)
-                            response_.Dispose();
-                    }
-                }
-            }
-            finally
-            {
-                if (disposeClient_)
-                    client_.Dispose();
-            }
-        }
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> DeleteDevice2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
-        {
-            if (id == null)
-                throw new System.ArgumentNullException("id");
-
-            var client_ = _httpClient;
-            var disposeClient_ = false;
-            try
-            {
-                using (var request_ = new System.Net.Http.HttpRequestMessage())
-                {
-                    request_.Method = new System.Net.Http.HttpMethod("DELETE");
-
-                    var urlBuilder_ = new System.Text.StringBuilder();
-                
-                    // Operation Path: "api/Devices/{id}"
-                    urlBuilder_.Append("api/Devices/");
-                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
-
-                    await PrepareRequestAsync(client_, request_, urlBuilder_, cancellationToken).ConfigureAwait(false);
-
-                    var url_ = urlBuilder_.ToString();
-                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
-
-                    await PrepareRequestAsync(client_, request_, url_, cancellationToken).ConfigureAwait(false);
-
-                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-                    var disposeResponse_ = true;
-                    try
-                    {
-                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
-                        foreach (var item_ in response_.Headers)
-                            headers_[item_.Key] = item_.Value;
-                        if (response_.Content != null && response_.Content.Headers != null)
-                        {
-                            foreach (var item_ in response_.Content.Headers)
-                                headers_[item_.Key] = item_.Value;
-                        }
-
-                        await ProcessResponseAsync(client_, response_, cancellationToken).ConfigureAwait(false);
-
-                        var status_ = (int)response_.StatusCode;
                         if (status_ == 204)
                         {
                             return new ApiResponse(status_, headers_);
@@ -18909,7 +20166,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[Command](#/components/schemas/Command)** schema fields.</param>
         /// <param name="filter">Applies to **[Command](#/components/schemas/Command)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Command>>> GetDeviceCommands2Async(System.Guid deviceId, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Command>>> GetDeviceCommandsAsync(System.Guid deviceId, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (deviceId == null)
                 throw new System.ArgumentNullException("deviceId");
@@ -18924,7 +20181,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Devices/{deviceId}/commands"
                     urlBuilder_.Append("api/Devices/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(deviceId, System.Globalization.CultureInfo.InvariantCulture)));
@@ -18948,7 +20205,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -19003,6 +20260,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<Command>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -19086,7 +20353,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<Command>> CreateCommand2Async(System.Guid deviceId, CommandCreate commandCreateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<Command>> CreateCommandAsync(System.Guid deviceId, CommandCreate commandCreateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (deviceId == null)
                 throw new System.ArgumentNullException("deviceId");
@@ -19105,7 +20372,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Devices/{deviceId}/commands"
                     urlBuilder_.Append("api/Devices/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(deviceId, System.Globalization.CultureInfo.InvariantCulture)));
@@ -19227,7 +20494,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[Command](#/components/schemas/Command)** schema fields.</param>
         /// <param name="compute">Applies to **[Command](#/components/schemas/Command)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<Command>> GetCommandById2Async(System.Guid deviceId, System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<Command>> GetCommandByIdAsync(System.Guid deviceId, System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (deviceId == null)
                 throw new System.ArgumentNullException("deviceId");
@@ -19245,7 +20512,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Devices/{deviceId}/commands/{id}"
                     urlBuilder_.Append("api/Devices/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(deviceId, System.Globalization.CultureInfo.InvariantCulture)));
@@ -19266,7 +20533,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -19301,6 +20568,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<Command>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -19384,7 +20661,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<Command>> CreateCommand4Async(System.Guid deviceId, DevicePropertyChange newProperty = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<Command>> CreateCommandPropertiesAsync(System.Guid deviceId, DevicePropertyChange newProperty = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (deviceId == null)
                 throw new System.ArgumentNullException("deviceId");
@@ -19403,7 +20680,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Devices/{deviceId}/properties"
                     urlBuilder_.Append("api/Devices/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(deviceId, System.Globalization.CultureInfo.InvariantCulture)));
@@ -19523,7 +20800,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<Command>> CreateCommandFreeText2Async(System.Guid deviceId, CommandCreateFreeText commandCreateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<Command>> CreateCommandFreeTextAsync(System.Guid deviceId, CommandCreateFreeText commandCreateDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (deviceId == null)
                 throw new System.ArgumentNullException("deviceId");
@@ -19542,7 +20819,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Devices/{deviceId}/commandsfreetext"
                     urlBuilder_.Append("api/Devices/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(deviceId, System.Globalization.CultureInfo.InvariantCulture)));
@@ -19662,7 +20939,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> UnpairDevices2Async(UnpairDevices devicesUnpairDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> UnpairDevicesAsync(UnpairDevices devicesUnpairDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -19677,7 +20954,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Devices/unpair"
                     urlBuilder_.Append("api/Devices/unpair");
 
@@ -19790,7 +21067,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> AssignDevicesToCustomer2Async(AssignDevicesToCustomer devicesToCustomerDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> AssignDevicesToCustomerAsync(AssignDevicesToCustomer devicesToCustomerDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -19805,7 +21082,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Devices/changeassignee"
                     urlBuilder_.Append("api/Devices/changeassignee");
 
@@ -19918,7 +21195,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateDevicesOwner2Async(AssignDevicesToCustomer devicesToCustomerDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateDevicesOwnerAsync(AssignDevicesToCustomer devicesToCustomerDto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -19933,7 +21210,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Devices/changeowner"
                     urlBuilder_.Append("api/Devices/changeowner");
 
@@ -20048,7 +21325,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[DeviceSecret](#/components/schemas/DeviceSecret)** schema fields.</param>
         /// <param name="compute">Applies to **[DeviceSecret](#/components/schemas/DeviceSecret)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<Device>> GetDeviceById4Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<Device>> GetDeviceByIdSecretAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -20063,7 +21340,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Devices/{id}/secret"
                     urlBuilder_.Append("api/Devices/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -20083,7 +21360,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -20118,6 +21395,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<Device>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -20291,7 +21578,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -20303,7 +21590,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -20363,7 +21650,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[PointOfInterestGroup](#/components/schemas/PointOfInterestGroup)** schema fields.</param>
         /// <param name="compute">Applies to **[PointOfInterestGroup](#/components/schemas/PointOfInterestGroup)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<PointOfInterestGroup>> GetPointOfInterestGroupById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<PointOfInterestGroup>> GetPointOfInterestGroupByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -20378,7 +21665,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointOfInterestGroup/{id}"
                     urlBuilder_.Append("api/PointOfInterestGroup/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -20397,7 +21684,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -20434,6 +21721,16 @@ namespace Platform.ApiClient
                             return new ApiResponse<PointOfInterestGroup>(status_, headers_, objectResponse_.Object);
                         }
                         else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
                         if (status_ == 400)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
@@ -20515,7 +21812,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdatePointOfInterestGroup2Async(System.Guid id, PointOfInterestGroupUpdate pointOfInterestGroupToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdatePointOfInterestGroupAsync(System.Guid id, PointOfInterestGroupUpdate pointOfInterestGroupToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -20533,7 +21830,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointOfInterestGroup/{id}"
                     urlBuilder_.Append("api/PointOfInterestGroup/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -20652,7 +21949,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> PartiallyUpdatePointOfInterestGroup2Async(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> PartiallyUpdatePointOfInterestGroupAsync(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -20670,7 +21967,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PATCH");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointOfInterestGroup/{id}"
                     urlBuilder_.Append("api/PointOfInterestGroup/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -20789,7 +22086,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> DeletePointOfInterestGroup2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> DeletePointOfInterestGroupAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -20803,7 +22100,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("DELETE");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointOfInterestGroup/{id}"
                     urlBuilder_.Append("api/PointOfInterestGroup/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -20922,7 +22219,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[PointOfInterestGroup](#/components/schemas/PointOfInterestGroup)** schema fields.</param>
         /// <param name="filter">Applies to **[PointOfInterestGroup](#/components/schemas/PointOfInterestGroup)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterestGroup>>> GetPointOfInterestGroup2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterestGroup>>> GetPointOfInterestGroupAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -20934,7 +22231,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointOfInterestGroup"
                     urlBuilder_.Append("api/PointOfInterestGroup");
                     urlBuilder_.Append('?');
@@ -20956,7 +22253,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -21013,6 +22310,16 @@ namespace Platform.ApiClient
                             return new ApiResponse<System.Collections.Generic.ICollection<PointOfInterestGroup>>(status_, headers_, objectResponse_.Object);
                         }
                         else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
                         if (status_ == 400)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
@@ -21094,7 +22401,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<PointOfInterestGroup>> CreatePointOfInterestGroup2Async(PointOfInterestGroupCreate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<PointOfInterestGroup>> CreatePointOfInterestGroupAsync(PointOfInterestGroupCreate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -21110,7 +22417,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointOfInterestGroup"
                     urlBuilder_.Append("api/PointOfInterestGroup");
 
@@ -21233,7 +22540,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[PointOfInterestGroup](#/components/schemas/PointOfInterestGroup)** schema fields.</param>
         /// <param name="filter">Applies to **[PointOfInterestGroup](#/components/schemas/PointOfInterestGroup)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterestGroup>>> GetPointOfInterestGroupAssignedToUsers2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterestGroup>>> GetPointOfInterestGroupAssignedToUsersAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -21245,7 +22552,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointOfInterestGroup/canBeAssignedToUsers"
                     urlBuilder_.Append("api/PointOfInterestGroup/canBeAssignedToUsers");
                     urlBuilder_.Append('?');
@@ -21267,7 +22574,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -21322,6 +22629,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<PointOfInterestGroup>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -21495,7 +22812,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -21507,7 +22824,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -21570,7 +22887,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[PointOfInterestAppliedType](#/components/schemas/PointOfInterestAppliedType)** schema fields.</param>
         /// <param name="filter">Applies to **[PointOfInterestAppliedType](#/components/schemas/PointOfInterestAppliedType)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterestAppliedType>>> GetPointOfInterestAppliedTypes2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, bool? selectionOnly = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterestAppliedType>>> GetPointOfInterestAppliedTypesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, bool? selectionOnly = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -21582,7 +22899,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointOfInterestAppliedTypes"
                     urlBuilder_.Append("api/PointOfInterestAppliedTypes");
                     urlBuilder_.Append('?');
@@ -21604,7 +22921,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -21663,6 +22980,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<PointOfInterestAppliedType>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -21746,7 +23073,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<PointOfInterestAppliedType>> CreatePointOfInterestAppliedType2Async(PointOfInterestAppliedTypeCreateUpdate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<PointOfInterestAppliedType>> CreatePointOfInterestAppliedTypeAsync(PointOfInterestAppliedTypeCreateUpdate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -21762,7 +23089,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointOfInterestAppliedTypes"
                     urlBuilder_.Append("api/PointOfInterestAppliedTypes");
 
@@ -21882,7 +23209,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[PointOfInterestAppliedType](#/components/schemas/PointOfInterestAppliedType)** schema fields.</param>
         /// <param name="compute">Applies to **[PointOfInterestAppliedType](#/components/schemas/PointOfInterestAppliedType)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<PointOfInterestAppliedType>> GetPointOfInterestAppliedTypeById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<PointOfInterestAppliedType>> GetPointOfInterestAppliedTypeByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -21897,7 +23224,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointOfInterestAppliedTypes/{id}"
                     urlBuilder_.Append("api/PointOfInterestAppliedTypes/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -21916,7 +23243,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -21953,6 +23280,16 @@ namespace Platform.ApiClient
                             return new ApiResponse<PointOfInterestAppliedType>(status_, headers_, objectResponse_.Object);
                         }
                         else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
                         if (status_ == 400)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
@@ -22034,7 +23371,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdatePointOfInterestAppliedType2Async(System.Guid id, PointOfInterestAppliedTypeCreateUpdate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdatePointOfInterestAppliedTypeAsync(System.Guid id, PointOfInterestAppliedTypeCreateUpdate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -22052,7 +23389,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointOfInterestAppliedTypes/{id}"
                     urlBuilder_.Append("api/PointOfInterestAppliedTypes/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -22176,7 +23513,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> PatchPointOfInterestAppliedType2Async(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> PatchPointOfInterestAppliedTypeAsync(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -22194,7 +23531,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PATCH");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointOfInterestAppliedTypes/{id}"
                     urlBuilder_.Append("api/PointOfInterestAppliedTypes/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -22318,7 +23655,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> DeletePointOfInterestAppliedType2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> DeletePointOfInterestAppliedTypeAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -22332,7 +23669,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("DELETE");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointOfInterestAppliedTypes/{id}"
                     urlBuilder_.Append("api/PointOfInterestAppliedTypes/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -22446,7 +23783,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> MergePointOfInterestAppliedTypes2Async(PointOfInterestAppliedTypeMerge dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> MergePointOfInterestAppliedTypesAsync(PointOfInterestAppliedTypeMerge dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -22461,7 +23798,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("POST");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointOfInterestAppliedTypes/merge"
                     urlBuilder_.Append("api/PointOfInterestAppliedTypes/merge");
 
@@ -22664,7 +24001,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -22676,7 +24013,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -22739,7 +24076,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="filter">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetPointOfInterestTypes2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>> GetPointOfInterestTypesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -22751,7 +24088,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointOfInterestTypes"
                     urlBuilder_.Append("api/PointOfInterestTypes");
                     urlBuilder_.Append('?');
@@ -22773,7 +24110,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -22828,6 +24165,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -22913,7 +24260,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <param name="compute">Applies to **[ValueDisplayNameInt32](#/components/schemas/ValueDisplayNameInt32)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetPointOfInterestTypesById2Async(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<ValueDisplayNameInt32>> GetPointOfInterestTypesByIdAsync(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -22928,7 +24275,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointOfInterestTypes/{id}"
                     urlBuilder_.Append("api/PointOfInterestTypes/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -22947,7 +24294,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -22982,6 +24329,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<ValueDisplayNameInt32>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -23155,7 +24512,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -23167,7 +24524,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -23227,7 +24584,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[PointOfInterest](#/components/schemas/PointOfInterest)** schema fields.</param>
         /// <param name="compute">Applies to **[PointOfInterest](#/components/schemas/PointOfInterest)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<PointOfInterest>> GetPointOfInterestById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<PointOfInterest>> GetPointOfInterestByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -23242,7 +24599,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointsOfInterest/{id}"
                     urlBuilder_.Append("api/PointsOfInterest/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -23261,7 +24618,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -23296,6 +24653,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<PointOfInterest>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -23379,7 +24746,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdatePointOfInterest2Async(System.Guid id, PointOfInterestUpdate pointOfInterestToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdatePointOfInterestAsync(System.Guid id, PointOfInterestUpdate pointOfInterestToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -23397,7 +24764,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointsOfInterest/{id}"
                     urlBuilder_.Append("api/PointsOfInterest/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -23521,7 +24888,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> PartiallyUpdatePointOfInterest2Async(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> PartiallyUpdatePointOfInterestAsync(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -23539,7 +24906,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PATCH");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointsOfInterest/{id}"
                     urlBuilder_.Append("api/PointsOfInterest/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -23657,144 +25024,10 @@ namespace Platform.ApiClient
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> DeletePointOfInterest2Async(System.Guid id, System.Guid? pointOfInterestToAssignAssetsId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
-        {
-            if (id == null)
-                throw new System.ArgumentNullException("id");
-
-            var client_ = _httpClient;
-            var disposeClient_ = false;
-            try
-            {
-                using (var request_ = new System.Net.Http.HttpRequestMessage())
-                {
-                    request_.Method = new System.Net.Http.HttpMethod("DELETE");
-
-                    var urlBuilder_ = new System.Text.StringBuilder();
-                
-                    // Operation Path: "api/PointsOfInterest/{id}"
-                    urlBuilder_.Append("api/PointsOfInterest/");
-                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
-                    urlBuilder_.Append('?');
-                    if (pointOfInterestToAssignAssetsId != null)
-                    {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("pointOfInterestToAssignAssetsId")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(pointOfInterestToAssignAssetsId, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
-                    }
-                    urlBuilder_.Length--;
-
-                    await PrepareRequestAsync(client_, request_, urlBuilder_, cancellationToken).ConfigureAwait(false);
-
-                    var url_ = urlBuilder_.ToString();
-                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
-
-                    await PrepareRequestAsync(client_, request_, url_, cancellationToken).ConfigureAwait(false);
-
-                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-                    var disposeResponse_ = true;
-                    try
-                    {
-                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
-                        foreach (var item_ in response_.Headers)
-                            headers_[item_.Key] = item_.Value;
-                        if (response_.Content != null && response_.Content.Headers != null)
-                        {
-                            foreach (var item_ in response_.Content.Headers)
-                                headers_[item_.Key] = item_.Value;
-                        }
-
-                        await ProcessResponseAsync(client_, response_, cancellationToken).ConfigureAwait(false);
-
-                        var status_ = (int)response_.StatusCode;
-                        if (status_ == 204)
-                        {
-                            return new ApiResponse(status_, headers_);
-                        }
-                        else
-                        if (status_ == 400)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 401)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 403)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Forbidden", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 404)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 422)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<ValidationProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<ValidationProblemDetails>("Unprocessable Entity", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 500)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Internal Server Error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        {
-                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
-                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
-                        }
-                    }
-                    finally
-                    {
-                        if (disposeResponse_)
-                            response_.Dispose();
-                    }
-                }
-            }
-            finally
-            {
-                if (disposeClient_)
-                    client_.Dispose();
-            }
-        }
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="select">Applies to **[PointOfInterest](#/components/schemas/PointOfInterest)** schema fields.</param>
         /// <param name="compute">Applies to **[PointOfInterest](#/components/schemas/PointOfInterest)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<PointOfInterest>> GetPointOfInterestByIdWithDistance2Async(System.Guid id, double latitude, double longitude, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<PointOfInterest>> GetPointOfInterestByIdWithDistanceAsync(System.Guid id, double latitude, double longitude, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -23815,7 +25048,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointsOfInterest/{id}/{longitude}/{latitude}"
                     urlBuilder_.Append("api/PointsOfInterest/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -23838,7 +25071,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -23875,6 +25108,16 @@ namespace Platform.ApiClient
                             return new ApiResponse<PointOfInterest>(status_, headers_, objectResponse_.Object);
                         }
                         else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
                         if (status_ == 400)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
@@ -23956,7 +25199,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterestMapSimplified>>> GetPointsOfInterestForMap2Async(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterestMapSimplified>>> GetPointsOfInterestForMapAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -23968,7 +25211,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointsOfInterest/connected"
                     urlBuilder_.Append("api/PointsOfInterest/connected");
 
@@ -24091,7 +25334,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[PointOfInterestContactInfo](#/components/schemas/PointOfInterestContactInfo)** schema fields.</param>
         /// <param name="filter">Applies to **[PointOfInterestContactInfo](#/components/schemas/PointOfInterestContactInfo)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<PointOfInterestContactInfo>> GetContactInfo2Async(System.Guid id, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<PointOfInterestContactInfo>> GetContactInfoAsync(System.Guid id, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -24106,7 +25349,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointsOfInterest/{id}/contactinfos"
                     urlBuilder_.Append("api/PointsOfInterest/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -24130,7 +25373,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -24185,6 +25428,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<PointOfInterestContactInfo>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -24273,7 +25526,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[PointOfInterest](#/components/schemas/PointOfInterest)** schema fields.</param>
         /// <param name="filter">Applies to **[PointOfInterest](#/components/schemas/PointOfInterest)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterest>>> GetPointsOfInterest2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Guid? excludeCustomerTreeForCustomerId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterest>>> GetPointsOfInterestAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Guid? excludeCustomerTreeForCustomerId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -24285,7 +25538,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointsOfInterest"
                     urlBuilder_.Append("api/PointsOfInterest");
                     urlBuilder_.Append('?');
@@ -24307,7 +25560,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -24366,6 +25619,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<PointOfInterest>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -24449,7 +25712,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<PointOfInterest>> CreatePointOfInterest2Async(PointOfInterestCreate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<PointOfInterest>> CreatePointOfInterestAsync(PointOfInterestCreate dto = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -24465,7 +25728,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointsOfInterest"
                     urlBuilder_.Append("api/PointsOfInterest");
 
@@ -24588,7 +25851,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[PointOfInterest](#/components/schemas/PointOfInterest)** schema fields.</param>
         /// <param name="filter">Applies to **[PointOfInterest](#/components/schemas/PointOfInterest)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterest>>> GetPointsOfInterestWithDistance2Async(double latitude, double longitude, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Guid? excludeCustomerTreeForCustomerId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<PointOfInterest>>> GetPointsOfInterestWithDistanceAsync(double latitude, double longitude, string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Guid? excludeCustomerTreeForCustomerId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (latitude == null)
                 throw new System.ArgumentNullException("latitude");
@@ -24606,7 +25869,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointsOfInterest/{longitude}/{latitude}"
                     urlBuilder_.Append("api/PointsOfInterest/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(longitude, System.Globalization.CultureInfo.InvariantCulture)));
@@ -24631,7 +25894,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -24690,6 +25953,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<PointOfInterest>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -24773,7 +26046,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> AssignPointOfInterestGroups2Async(PointOfInterestAssignPointOfInterestGroups command = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> AssignPointOfInterestGroupsAsync(PointOfInterestAssignPointOfInterestGroups command = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -24788,7 +26061,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/PointsOfInterest/assignpointOfInterestGroups"
                     urlBuilder_.Append("api/PointsOfInterest/assignpointOfInterestGroups");
 
@@ -24991,7 +26264,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -25003,7 +26276,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -25066,7 +26339,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[RoleCategory](#/components/schemas/RoleCategory)** schema fields.</param>
         /// <param name="filter">Applies to **[RoleCategory](#/components/schemas/RoleCategory)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<RoleCategory>>> GetRoleCategories2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<RoleCategory>>> GetRoleCategoriesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -25078,7 +26351,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/RoleCategories"
                     urlBuilder_.Append("api/RoleCategories");
                     urlBuilder_.Append('?');
@@ -25100,7 +26373,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -25155,6 +26428,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<RoleCategory>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -25240,7 +26523,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[RoleCategory](#/components/schemas/RoleCategory)** schema fields.</param>
         /// <param name="compute">Applies to **[RoleCategory](#/components/schemas/RoleCategory)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<RoleCategory>> GetRoleCategoryById2Async(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<RoleCategory>> GetRoleCategoryByIdAsync(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -25255,7 +26538,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/RoleCategories/{id}"
                     urlBuilder_.Append("api/RoleCategories/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -25274,7 +26557,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -25309,6 +26592,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<RoleCategory>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -25482,7 +26775,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -25494,7 +26787,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -25557,7 +26850,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[Role](#/components/schemas/Role)** schema fields.</param>
         /// <param name="filter">Applies to **[Role](#/components/schemas/Role)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Role>>> GetRoles2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<Role>>> GetRolesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -25569,7 +26862,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Roles"
                     urlBuilder_.Append("api/Roles");
                     urlBuilder_.Append('?');
@@ -25591,7 +26884,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -25646,6 +26939,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<Role>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -25729,7 +27032,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<Role>> CreateRole2Async(RoleCreate role = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<Role>> CreateRoleAsync(RoleCreate role = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -25745,7 +27048,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Roles"
                     urlBuilder_.Append("api/Roles");
 
@@ -25865,7 +27168,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[Role](#/components/schemas/Role)** schema fields.</param>
         /// <param name="compute">Applies to **[Role](#/components/schemas/Role)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<Role>> GetRoleById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<Role>> GetRoleByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -25880,7 +27183,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Roles/{id}"
                     urlBuilder_.Append("api/Roles/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -25899,7 +27202,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -25936,6 +27239,16 @@ namespace Platform.ApiClient
                             return new ApiResponse<Role>(status_, headers_, objectResponse_.Object);
                         }
                         else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
                         if (status_ == 400)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
@@ -26017,7 +27330,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateRole2Async(System.Guid id, RoleUpdate roleToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateRoleAsync(System.Guid id, RoleUpdate roleToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -26035,7 +27348,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Roles/{id}"
                     urlBuilder_.Append("api/Roles/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -26159,7 +27472,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> PartiallyUpdateRole2Async(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> PartiallyUpdateRoleAsync(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -26177,7 +27490,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PATCH");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Roles/{id}"
                     urlBuilder_.Append("api/Roles/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -26301,7 +27614,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> DeleteRole2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> DeleteRoleAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -26315,7 +27628,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("DELETE");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Roles/{id}"
                     urlBuilder_.Append("api/Roles/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -26519,7 +27832,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -26531,7 +27844,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -26594,7 +27907,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[User](#/components/schemas/User)** schema fields.</param>
         /// <param name="filter">Applies to **[User](#/components/schemas/User)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<User>>> GetUsers2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<User>>> GetUsersAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -26606,7 +27919,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Users"
                     urlBuilder_.Append("api/Users");
                     urlBuilder_.Append('?');
@@ -26628,7 +27941,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -26683,6 +27996,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<User>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -26766,7 +28089,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<User>> CreateUser2Async(UserCreate user = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<User>> CreateUserAsync(UserCreate user = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -26782,7 +28105,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Users"
                     urlBuilder_.Append("api/Users");
 
@@ -26902,7 +28225,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[User](#/components/schemas/User)** schema fields.</param>
         /// <param name="compute">Applies to **[User](#/components/schemas/User)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<User>> GetUserById2Async(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<User>> GetUserByIdAsync(System.Guid id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -26917,7 +28240,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Users/{id}"
                     urlBuilder_.Append("api/Users/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -26936,7 +28259,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -26973,6 +28296,16 @@ namespace Platform.ApiClient
                             return new ApiResponse<User>(status_, headers_, objectResponse_.Object);
                         }
                         else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
                         if (status_ == 400)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
@@ -27054,7 +28387,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateUser2Async(System.Guid id, UserUpdate userToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> UpdateUserAsync(System.Guid id, UserUpdate userToUpdate = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -27072,7 +28405,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Users/{id}"
                     urlBuilder_.Append("api/Users/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -27196,7 +28529,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> PartiallyUpdateUser2Async(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> PartiallyUpdateUserAsync(System.Guid id, System.Collections.Generic.IEnumerable<Operation> patchDocument = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -27214,7 +28547,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PATCH");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Users/{id}"
                     urlBuilder_.Append("api/Users/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -27338,135 +28671,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> DeleteUser2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
-        {
-            if (id == null)
-                throw new System.ArgumentNullException("id");
-
-            var client_ = _httpClient;
-            var disposeClient_ = false;
-            try
-            {
-                using (var request_ = new System.Net.Http.HttpRequestMessage())
-                {
-                    request_.Method = new System.Net.Http.HttpMethod("DELETE");
-
-                    var urlBuilder_ = new System.Text.StringBuilder();
-                
-                    // Operation Path: "api/Users/{id}"
-                    urlBuilder_.Append("api/Users/");
-                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
-
-                    await PrepareRequestAsync(client_, request_, urlBuilder_, cancellationToken).ConfigureAwait(false);
-
-                    var url_ = urlBuilder_.ToString();
-                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
-
-                    await PrepareRequestAsync(client_, request_, url_, cancellationToken).ConfigureAwait(false);
-
-                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-                    var disposeResponse_ = true;
-                    try
-                    {
-                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
-                        foreach (var item_ in response_.Headers)
-                            headers_[item_.Key] = item_.Value;
-                        if (response_.Content != null && response_.Content.Headers != null)
-                        {
-                            foreach (var item_ in response_.Content.Headers)
-                                headers_[item_.Key] = item_.Value;
-                        }
-
-                        await ProcessResponseAsync(client_, response_, cancellationToken).ConfigureAwait(false);
-
-                        var status_ = (int)response_.StatusCode;
-                        if (status_ == 204)
-                        {
-                            return new ApiResponse(status_, headers_);
-                        }
-                        else
-                        if (status_ == 400)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 401)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 403)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Forbidden", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 404)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 422)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<ValidationProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<ValidationProblemDetails>("Unprocessable Entity", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 500)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.IDictionary<string, object>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<System.Collections.Generic.IDictionary<string, object>>("Internal Server Error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        {
-                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
-                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
-                        }
-                    }
-                    finally
-                    {
-                        if (disposeResponse_)
-                            response_.Dispose();
-                    }
-                }
-            }
-            finally
-            {
-                if (disposeClient_)
-                    client_.Dispose();
-            }
-        }
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> GetEmailExists2Async(string email, System.Guid? excludeUserId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> GetEmailExistsAsync(string email, System.Guid? excludeUserId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (email == null)
                 throw new System.ArgumentNullException("email");
@@ -27480,7 +28685,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("GET");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Users/exists/email/{email}"
                     urlBuilder_.Append("api/Users/exists/email/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(email, System.Globalization.CultureInfo.InvariantCulture)));
@@ -27600,7 +28805,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> EnableUsers2Async(UsersEnableDisable userRequest = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> EnableUsersAsync(UsersEnableDisable userRequest = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -27615,7 +28820,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Users/enable"
                     urlBuilder_.Append("api/Users/enable");
 
@@ -27728,7 +28933,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> DisableUsers2Async(UsersEnableDisable userRequest = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> DisableUsersAsync(UsersEnableDisable userRequest = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -27743,7 +28948,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Users/disable"
                     urlBuilder_.Append("api/Users/disable");
 
@@ -27856,7 +29061,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> ResetUsersLoginState2Async(UsersEnableDisable userRequest = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> ResetUsersLoginStateAsync(UsersEnableDisable userRequest = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -27871,7 +29076,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Users/reset-login-state"
                     urlBuilder_.Append("api/Users/reset-login-state");
 
@@ -27984,7 +29189,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> AssignPointOfInterestGroups2Async(UserAssignPointOfInterestGroups command = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> AssignPointOfInterestGroupsAsync(UserAssignPointOfInterestGroups command = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -27999,7 +29204,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Users/assignPointOfInterestGroups"
                     urlBuilder_.Append("api/Users/assignPointOfInterestGroups");
 
@@ -28112,7 +29317,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<UserActionLink>> CreateFirstLoginBackupLink2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<UserActionLink>> CreateFirstLoginBackupLinkAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -28128,7 +29333,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Users/{id}/backup-links/first-login"
                     urlBuilder_.Append("api/Users/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -28248,7 +29453,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<UserActionLink>> CreateResetPasswordBackupLink2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<UserActionLink>> CreateResetPasswordBackupLinkAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -28264,7 +29469,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Users/{id}/backup-links/reset-password"
                     urlBuilder_.Append("api/Users/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -28384,7 +29589,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<UserActionLink>> CreatePasswordBackupLink2Async(System.Guid id, System.Uri returnUrl = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<UserActionLink>> CreatePasswordBackupLinkAsync(System.Guid id, System.Uri returnUrl = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -28400,7 +29605,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Users/{id}/backup-links/password-link"
                     urlBuilder_.Append("api/Users/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -28526,7 +29731,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> SendPasswordEmail2Async(System.Guid id, System.Uri returnUrl = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> SendPasswordEmailAsync(System.Guid id, System.Uri returnUrl = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -28541,7 +29746,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("POST");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Users/{id}/backup-links/password-link/send-email"
                     urlBuilder_.Append("api/Users/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -28662,7 +29867,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<UserActionLinkSummary>>> GetBackupLinks2Async(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<UserActionLinkSummary>>> GetBackupLinksAsync(System.Guid id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -28677,7 +29882,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Users/{id}/backup-links"
                     urlBuilder_.Append("api/Users/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -28797,7 +30002,7 @@ namespace Platform.ApiClient
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse> RevokeBackupLink2Async(System.Guid id, System.Guid linkId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse> RevokeBackupLinkAsync(System.Guid id, System.Guid linkId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -28814,7 +30019,7 @@ namespace Platform.ApiClient
                     request_.Method = new System.Net.Http.HttpMethod("DELETE");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/Users/{id}/backup-links/{linkId}"
                     urlBuilder_.Append("api/Users/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -29020,7 +30225,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -29032,7 +30237,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -29107,7 +30312,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/UserStatus"
                     urlBuilder_.Append("api/UserStatus");
                     urlBuilder_.Append('?');
@@ -29129,7 +30334,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -29184,6 +30389,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<ValueDisplayNameInt32>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -29284,7 +30499,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/UserStatus/{id}"
                     urlBuilder_.Append("api/UserStatus/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -29303,7 +30518,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -29338,6 +30553,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<ValueDisplayNameInt32>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -29511,7 +30736,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -29523,7 +30748,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -29586,7 +30811,7 @@ namespace Platform.ApiClient
         /// <param name="sort">Applies to **[EventType](#/components/schemas/EventType)** schema fields.</param>
         /// <param name="filter">Applies to **[EventType](#/components/schemas/EventType)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<EventType>>> GetEventTypes2Async(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<System.Collections.Generic.ICollection<EventType>>> GetEventTypesAsync(string select = null, string compute = null, string distinct = null, ExportType? export = null, bool? exportAsync = null, string sort = null, int? skip = null, int? top = null, bool? count = null, string filter = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -29598,7 +30823,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/EventTypes"
                     urlBuilder_.Append("api/EventTypes");
                     urlBuilder_.Append('?');
@@ -29620,7 +30845,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     if (sort != null)
                     {
@@ -29675,6 +30900,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<System.Collections.Generic.ICollection<EventType>>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -29760,7 +30995,7 @@ namespace Platform.ApiClient
         /// <param name="select">Applies to **[EventType](#/components/schemas/EventType)** schema fields.</param>
         /// <param name="compute">Applies to **[EventType](#/components/schemas/EventType)** schema fields.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiResponse<EventType>> GetEventTypeById2Async(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ApiResponse<EventType>> GetEventTypeByIdAsync(int id, string select = null, string compute = null, ExportType? export = null, bool? exportAsync = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -29775,7 +31010,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "api/EventTypes/{id}"
                     urlBuilder_.Append("api/EventTypes/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
@@ -29794,7 +31029,7 @@ namespace Platform.ApiClient
                     }
                     if (exportAsync != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("$exportAsync")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(exportAsync, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -29829,6 +31064,16 @@ namespace Platform.ApiClient
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return new ApiResponse<EventType>(status_, headers_, objectResponse_.Object);
+                        }
+                        else
+                        if (status_ == 202)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<AsyncExportCreateResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<AsyncExportCreateResult>("Accepted", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
@@ -30002,7 +31247,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -30014,7 +31259,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -30084,7 +31329,7 @@ namespace Platform.ApiClient
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/octet-stream"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
-                
+
                     // Operation Path: "version/all"
                     urlBuilder_.Append("version/all");
 
@@ -30290,7 +31535,7 @@ namespace Platform.ApiClient
                     var field_ = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field_ != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field_, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -30302,7 +31547,7 @@ namespace Platform.ApiClient
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
