@@ -94,6 +94,7 @@ public sealed class RelationalSyncSinkTests
     public async Task PrepareAsync_AppliesSafeSchemaChangesAndSavesChangedManifest()
     {
         var connection = new RecordingDbConnection();
+        EnqueueExistingTableAndColumns(connection, includeForeignKey: false);
         var manifestStore = new RecordingRelationalSchemaManifestStore(isCurrent: false);
         var sink = new RelationalSyncSink(
             StorageProvider.Postgres,
@@ -104,15 +105,41 @@ public sealed class RelationalSyncSinkTests
 
         await sink.PrepareAsync(manifest, [AssetTable()], CancellationToken.None);
 
-        var executed = Assert.Single(connection.ExecutedCommands);
-        Assert.StartsWith("CREATE TABLE IF NOT EXISTS", executed.Sql);
-        Assert.False(executed.HadTransaction);
+        Assert.StartsWith("CREATE TABLE IF NOT EXISTS", connection.ExecutedCommands[0].Sql);
+        Assert.All(connection.ExecutedCommands, executed => Assert.False(executed.HadTransaction));
         Assert.Single(manifestStore.CheckedManifests);
         Assert.Equal([manifest], manifestStore.SavedManifests);
     }
 
     [Fact]
-    public async Task PrepareAsync_AddsMissingFlexibleForeignKeys()
+    public async Task PrepareAsync_AddsMissingNullableNonKeyColumnBeforeSavingManifest()
+    {
+        var connection = new RecordingDbConnection();
+        connection.ScalarResults.Enqueue(1L);
+        connection.ScalarResults.Enqueue(0L);
+        connection.ScalarResults.Enqueue(1L);
+        connection.ScalarResults.Enqueue(1L);
+        connection.ScalarResults.Enqueue(1L);
+        var manifestStore = new RecordingRelationalSchemaManifestStore(isCurrent: false);
+        var sink = new RelationalSyncSink(
+            StorageProvider.Postgres,
+            () => connection,
+            StorageSchemaMode.ApplySafeChanges,
+            manifestStore);
+
+        await sink.PrepareAsync(AssetManifest(), [AssetTable()], CancellationToken.None);
+
+        var alter = Assert.Single(
+            connection.ExecutedCommands,
+            command => command.Sql.StartsWith(
+                "ALTER TABLE \"assets\" ADD COLUMN",
+                StringComparison.Ordinal));
+        Assert.Contains("\"owner_customer_id\" text NULL", alter.Sql);
+        Assert.Single(manifestStore.SavedManifests);
+    }
+
+    [Fact]
+    public async Task PrepareAsync_DoesNotAddMissingPrimaryKeyColumn()
     {
         var connection = new RecordingDbConnection();
         connection.ScalarResults.Enqueue(0L);
@@ -123,19 +150,23 @@ public sealed class RelationalSyncSinkTests
             StorageSchemaMode.ApplySafeChanges,
             manifestStore);
 
-        await sink.PrepareAsync(AssetManifest(), [AssetTableWithForeignKey()], CancellationToken.None);
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            sink.PrepareAsync(AssetManifest(), [AssetTable()], CancellationToken.None));
 
-        Assert.Equal(3, connection.ExecutedCommands.Count);
-        Assert.StartsWith("CREATE TABLE IF NOT EXISTS", connection.ExecutedCommands[0].Sql);
-        Assert.Contains("pg_constraint", connection.ExecutedCommands[1].Sql);
-        Assert.StartsWith("ALTER TABLE \"assets\"", connection.ExecutedCommands[2].Sql);
-        Assert.Contains("fk_assets_owner_customer_id", connection.ExecutedCommands[2].Sql);
+        Assert.Contains("will not add or change primary keys automatically", exception.Message);
+        Assert.Empty(manifestStore.SavedManifests);
     }
 
     [Fact]
-    public async Task PrepareAsync_SkipsExistingFlexibleForeignKeys()
+    public async Task PrepareAsync_AddsMissingFlexibleForeignKeys()
     {
         var connection = new RecordingDbConnection();
+        connection.ScalarResults.Enqueue(1L);
+        connection.ScalarResults.Enqueue(1L);
+        connection.ScalarResults.Enqueue(0L);
+        connection.ScalarResults.Enqueue(1L);
+        connection.ScalarResults.Enqueue(1L);
+        connection.ScalarResults.Enqueue(1L);
         connection.ScalarResults.Enqueue(1L);
         var manifestStore = new RecordingRelationalSchemaManifestStore(isCurrent: false);
         var sink = new RelationalSyncSink(
@@ -146,9 +177,40 @@ public sealed class RelationalSyncSinkTests
 
         await sink.PrepareAsync(AssetManifest(), [AssetTableWithForeignKey()], CancellationToken.None);
 
-        Assert.Equal(2, connection.ExecutedCommands.Count);
         Assert.StartsWith("CREATE TABLE IF NOT EXISTS", connection.ExecutedCommands[0].Sql);
-        Assert.Contains("pg_constraint", connection.ExecutedCommands[1].Sql);
+        Assert.Contains(connection.ExecutedCommands, command =>
+            command.Sql.Contains("pg_constraint", StringComparison.Ordinal));
+        var alter = Assert.Single(
+            connection.ExecutedCommands,
+            command => command.Sql.StartsWith(
+                "ALTER TABLE \"assets\"",
+                StringComparison.Ordinal));
+        Assert.Contains("fk_assets_owner_customer_id", alter.Sql);
+    }
+
+    [Fact]
+    public async Task PrepareAsync_SkipsExistingFlexibleForeignKeys()
+    {
+        var connection = new RecordingDbConnection();
+        connection.ScalarResults.Enqueue(1L);
+        connection.ScalarResults.Enqueue(1L);
+        connection.ScalarResults.Enqueue(1L);
+        connection.ScalarResults.Enqueue(1L);
+        connection.ScalarResults.Enqueue(1L);
+        connection.ScalarResults.Enqueue(1L);
+        connection.ScalarResults.Enqueue(1L);
+        var manifestStore = new RecordingRelationalSchemaManifestStore(isCurrent: false);
+        var sink = new RelationalSyncSink(
+            StorageProvider.Postgres,
+            () => connection,
+            StorageSchemaMode.ApplySafeChanges,
+            manifestStore);
+
+        await sink.PrepareAsync(AssetManifest(), [AssetTableWithForeignKey()], CancellationToken.None);
+
+        Assert.StartsWith("CREATE TABLE IF NOT EXISTS", connection.ExecutedCommands[0].Sql);
+        Assert.Contains(connection.ExecutedCommands, command =>
+            command.Sql.Contains("pg_constraint", StringComparison.Ordinal));
         Assert.DoesNotContain(connection.ExecutedCommands, command =>
             command.Sql.StartsWith("ALTER TABLE \"assets\"", StringComparison.Ordinal));
     }
@@ -253,6 +315,26 @@ public sealed class RelationalSyncSinkTests
             StorageProvider.Postgres,
             "sync-plan-hash",
             "schema-hash");
+    }
+
+    private static void EnqueueExistingTableAndColumns(
+        RecordingDbConnection connection,
+        bool includeForeignKey)
+    {
+        connection.ScalarResults.Enqueue(1L);
+        connection.ScalarResults.Enqueue(1L);
+        if (includeForeignKey)
+        {
+            connection.ScalarResults.Enqueue(1L);
+        }
+
+        connection.ScalarResults.Enqueue(1L);
+        connection.ScalarResults.Enqueue(1L);
+        connection.ScalarResults.Enqueue(1L);
+        if (includeForeignKey)
+        {
+            connection.ScalarResults.Enqueue(1L);
+        }
     }
 
     private sealed record ExecutedCommand(

@@ -26,6 +26,8 @@ public sealed class MongoDataSyncStorageProvider : IDataSyncStorageProvider
             new MongoSchemaManifestStore(sp.GetRequiredService<IMongoDatabase>()));
         services.AddSingleton<MongoSyncStateStore>(sp =>
             new MongoSyncStateStore(sp.GetRequiredService<IMongoDatabase>()));
+        services.AddSingleton<MongoSyncContractStore>(sp =>
+            new MongoSyncContractStore(sp.GetRequiredService<IMongoDatabase>()));
         services.AddSingleton<MongoSyncTargetDataStore>(sp =>
             new MongoSyncTargetDataStore(sp.GetRequiredService<IMongoDatabase>()));
         services.AddSingleton<MongoSyncSink>();
@@ -46,6 +48,11 @@ public sealed class MongoDataSyncStorageProvider : IDataSyncStorageProvider
     public ISyncTargetDataStore ResolveTargetDataStore(IServiceProvider services)
     {
         return services.GetRequiredService<MongoSyncTargetDataStore>();
+    }
+
+    public ISyncContractStore ResolveContractStore(IServiceProvider services)
+    {
+        return services.GetRequiredService<MongoSyncContractStore>();
     }
 
     private static IMongoDatabase CreateMongoDatabase(StorageOptions options)

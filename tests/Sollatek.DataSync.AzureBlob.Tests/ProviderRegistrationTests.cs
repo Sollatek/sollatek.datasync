@@ -59,6 +59,24 @@ public sealed class ProviderRegistrationTests
         Assert.IsType<AzureBlobSyncStateStore>(stateStore);
     }
 
+    [Fact]
+    public void AzureBlobProvider_UsesMatchingBlobContractStateWhenConfigured()
+    {
+        var azureBlobProvider = new AzureBlobDataSyncStorageProvider();
+        var services = CreateCommonServices(StorageProvider.AzureBlob);
+        services.AddSingleton(new StateOptions
+        {
+            Provider = StateProvider.AzureBlob,
+            RootPath = "_state"
+        });
+        azureBlobProvider.AddServices(services);
+
+        using var serviceProvider = services.BuildServiceProvider();
+        var contractStore = azureBlobProvider.ResolveContractStore(serviceProvider);
+
+        Assert.IsType<AzureBlobSyncContractStore>(contractStore);
+    }
+
     private static ServiceCollection CreateCommonServices(StorageProvider provider)
     {
         var services = new ServiceCollection();

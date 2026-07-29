@@ -3,6 +3,7 @@ using Sollatek.DataSync.Config;
 using Sollatek.DataSync.Execution;
 using Sollatek.DataSync.State;
 using Sollatek.DataSync.Storage;
+using Sollatek.DataSync.Sync.Contract;
 using Sollatek.DataSync.Sync.Metadata;
 
 namespace Sollatek.DataSync.Tests;
@@ -67,6 +68,8 @@ public sealed class DataSyncStorageProviderRegistryTests
 
         public ISyncStateStore StateStore { get; } = new RecordingSyncStateStore();
 
+        public ISyncContractStore ContractStore { get; } = new RecordingSyncContractStore();
+
         public ISyncTargetDataStore TargetDataStore { get; } = new RecordingSyncTargetDataStore();
 
         public void AddServices(IServiceCollection services)
@@ -87,6 +90,26 @@ public sealed class DataSyncStorageProviderRegistryTests
         public ISyncTargetDataStore ResolveTargetDataStore(IServiceProvider services)
         {
             return TargetDataStore;
+        }
+
+        public ISyncContractStore ResolveContractStore(IServiceProvider services)
+        {
+            return ContractStore;
+        }
+    }
+
+    private sealed class RecordingSyncContractStore : ISyncContractStore
+    {
+        public Task<SyncContractSnapshot?> LoadAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult<SyncContractSnapshot?>(null);
+        }
+
+        public Task SaveAsync(
+            SyncContractSnapshot snapshot,
+            CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
         }
     }
 

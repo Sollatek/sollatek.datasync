@@ -10,6 +10,7 @@ using Sollatek.DataSync.Monitoring;
 using Sollatek.DataSync.Notifications;
 using Sollatek.DataSync.State;
 using Sollatek.DataSync.Sync.Metadata;
+using Sollatek.DataSync.Sync.Contract;
 
 namespace Sollatek.DataSync.Tests;
 
@@ -22,6 +23,7 @@ public sealed class TimedHostedServiceTests
         var lifetime = new RecordingApplicationLifetime();
         var runner = new RecordingSyncJobRunner();
         var stateStore = new RecordingSyncStateStore();
+        var contractStore = new RecordingSyncContractStore();
         using var service = CreateService(
             httpClient,
             runner,
@@ -33,7 +35,8 @@ public sealed class TimedHostedServiceTests
                 RunOnStartup = true,
                 StopWhenFinished = true,
                 RunInterval = TimeSpan.FromHours(6)
-            });
+            },
+            contractStore: contractStore);
 
         await service.StartAsync(CancellationToken.None);
         await lifetime.StopRequested.Task.WaitAsync(TimeSpan.FromSeconds(5));
@@ -41,6 +44,7 @@ public sealed class TimedHostedServiceTests
 
         Assert.Single(runner.Runs);
         Assert.Contains(stateStore.Saves, save => save.EntityKey == "assets");
+        Assert.NotNull(contractStore.Snapshot);
     }
 
     [Fact]
@@ -52,6 +56,7 @@ public sealed class TimedHostedServiceTests
         {
             Failure = new InvalidOperationException("sync failed")
         };
+        var contractStore = new RecordingSyncContractStore();
         using var service = CreateService(
             httpClient,
             runner,
@@ -64,13 +69,50 @@ public sealed class TimedHostedServiceTests
                 StopWhenFinished = true,
                 RunInterval = TimeSpan.FromHours(6)
             },
-            new RetryOptions { MaxTries = 1 });
+            new RetryOptions { MaxTries = 1 },
+            contractStore: contractStore);
 
         await service.StartAsync(CancellationToken.None);
         await lifetime.StopRequested.Task.WaitAsync(TimeSpan.FromSeconds(5));
         await service.StopAsync(CancellationToken.None);
 
         Assert.Single(runner.Runs);
+        Assert.Null(contractStore.Snapshot);
+    }
+
+    [Fact]
+    public async Task ContractAcceptanceFailure_DoesNotAdvanceEntityCheckpoints()
+    {
+        using var httpClient = new HttpClient(new SwaggerResponseHandler());
+        var lifetime = new RecordingApplicationLifetime();
+        var runner = new RecordingSyncJobRunner();
+        var stateStore = new RecordingSyncStateStore();
+        var contractStore = new RecordingSyncContractStore
+        {
+            Failure = new InvalidOperationException("contract state unavailable")
+        };
+        using var service = CreateService(
+            httpClient,
+            runner,
+            stateStore,
+            lifetime,
+            new SyncOptions
+            {
+                StartFrom = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                RunOnStartup = true,
+                StopWhenFinished = true,
+                RunInterval = TimeSpan.FromHours(6)
+            },
+            new RetryOptions { MaxTries = 1 },
+            contractStore: contractStore);
+
+        await service.StartAsync(CancellationToken.None);
+        await lifetime.StopRequested.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await service.StopAsync(CancellationToken.None);
+
+        Assert.Single(runner.Runs);
+        Assert.Empty(stateStore.Saves);
+        Assert.Null(contractStore.Snapshot);
     }
 
     [Fact]
@@ -216,7 +258,8 @@ public sealed class TimedHostedServiceTests
         SyncOptions syncOptions,
         RetryOptions? retryOptions = null,
         IAsyncExportRowSource? asyncExportRowSource = null,
-        IFailureNotificationSender? failureNotificationSender = null)
+        IFailureNotificationSender? failureNotificationSender = null,
+        ISyncContractStore? contractStore = null)
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -238,6 +281,7 @@ public sealed class TimedHostedServiceTests
             new RecordingSyncMonitor(),
             runner,
             stateStore,
+            contractStore ?? new RecordingSyncContractStore(),
             new AlwaysHasDataSyncTargetDataStore(),
             lifetime,
             asyncExportRowSource ?? NoopAsyncExportRowSource.Instance,
@@ -370,6 +414,31 @@ public sealed class TimedHostedServiceTests
             CancellationToken cancellationToken)
         {
             Saves.Add((entityKey, end));
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class RecordingSyncContractStore : ISyncContractStore
+    {
+        public SyncContractSnapshot? Snapshot { get; private set; }
+
+        public Exception? Failure { get; init; }
+
+        public Task<SyncContractSnapshot?> LoadAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult(Snapshot);
+        }
+
+        public Task SaveAsync(
+            SyncContractSnapshot snapshot,
+            CancellationToken cancellationToken)
+        {
+            if (Failure is not null)
+            {
+                return Task.FromException(Failure);
+            }
+
+            Snapshot = snapshot;
             return Task.CompletedTask;
         }
     }

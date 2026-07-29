@@ -17,5 +17,7 @@ public interface IDataSyncStorageProvider
 
     ISyncStateStore ResolveStateStore(IServiceProvider services);
 
+    ISyncContractStore ResolveContractStore(IServiceProvider services);
+
     ISyncTargetDataStore ResolveTargetDataStore(IServiceProvider services);
 }

@@ -2,6 +2,8 @@ using System.Text;
 using Sollatek.DataSync.AzureBlob;
 using Sollatek.DataSync.Config;
 using Sollatek.DataSync.Fetch;
+using Sollatek.DataSync.Sync.Contract;
+using Sollatek.DataSync.Sync.Metadata;
 
 namespace Sollatek.DataSync.AzureBlob.Tests;
 
@@ -36,6 +38,40 @@ public sealed class AzureBlobStateStoreTests
         var saved = await store.GetLastSuccessfulEndAsync("assets", CancellationToken.None);
 
         Assert.Null(saved);
+    }
+
+    [Fact]
+    public async Task SyncContractStore_PersistsAcceptedContractUnderConfiguredRoot()
+    {
+        var container = new RecordingBlobStateContainer();
+        var store = new AzureBlobSyncContractStore(
+            container,
+            new StateOptions
+            {
+                RootPath = "jobs/datasync-state"
+            });
+        var snapshot = SyncContractSnapshot.Create(
+            "2",
+            [
+                new SwaggerSyncEntityMetadata
+                {
+                    Key = "assets",
+                    OperationIds = ["Assets_Get"],
+                    Operations = [],
+                    PrimaryKey = ["id"],
+                    ScalarFields = [],
+                    References = [],
+                    DocumentNames = ["data-v1"]
+                }
+            ]);
+
+        await store.SaveAsync(snapshot, CancellationToken.None);
+        var loaded = await store.LoadAsync(CancellationToken.None);
+
+        Assert.NotNull(loaded);
+        Assert.Equal(snapshot.ContractHash, loaded.ContractHash);
+        Assert.True(container.Blobs.ContainsKey(
+            "jobs/datasync-state/sync-contract.json"));
     }
 
     [Fact]
