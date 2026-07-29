@@ -29,4 +29,16 @@ internal static class RelationalSqlDialect
             _ => throw new InvalidOperationException($"Storage provider '{provider}' is not a relational provider.")
         };
     }
+
+    public static string LargeTextColumnType(StorageProvider provider)
+    {
+        return provider switch
+        {
+            StorageProvider.SqlServer => "nvarchar(max)",
+            StorageProvider.Postgres => "text",
+            StorageProvider.MySql => "longtext",
+            _ => throw new InvalidOperationException(
+                $"Storage provider '{provider}' is not a relational provider.")
+        };
+    }
 }

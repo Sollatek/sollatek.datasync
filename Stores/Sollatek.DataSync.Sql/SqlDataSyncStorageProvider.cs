@@ -50,6 +50,20 @@ public sealed class SqlDataSyncStorageProvider : IDataSyncStorageProvider
                 options.ConnectionString
                 ?? throw new InvalidOperationException("Storage:connectionString must be configured for relational storage."));
         });
+        services.AddSingleton<RelationalSyncContractStore>(sp =>
+        {
+            var options = sp.GetRequiredService<StorageOptions>();
+            if (options.Provider is not (StorageProvider.SqlServer or StorageProvider.Postgres or StorageProvider.MySql))
+            {
+                throw new InvalidOperationException(
+                    $"The configured storage provider '{options.Provider}' does not use the relational sync contract store.");
+            }
+
+            return new RelationalSyncContractStore(
+                options.Provider,
+                options.ConnectionString
+                ?? throw new InvalidOperationException("Storage:connectionString must be configured for relational storage."));
+        });
         services.AddSingleton<RelationalSyncTargetDataStore>(sp =>
         {
             var options = sp.GetRequiredService<StorageOptions>();
@@ -79,5 +93,10 @@ public sealed class SqlDataSyncStorageProvider : IDataSyncStorageProvider
     public ISyncTargetDataStore ResolveTargetDataStore(IServiceProvider services)
     {
         return services.GetRequiredService<RelationalSyncTargetDataStore>();
+    }
+
+    public ISyncContractStore ResolveContractStore(IServiceProvider services)
+    {
+        return services.GetRequiredService<RelationalSyncContractStore>();
     }
 }

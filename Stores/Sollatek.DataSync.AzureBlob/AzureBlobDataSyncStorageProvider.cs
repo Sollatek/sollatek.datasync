@@ -31,7 +31,9 @@ public sealed class AzureBlobDataSyncStorageProvider : IDataSyncStorageProvider
         services.AddSingleton<IBlobStateContainer, AzureBlobStateContainer>();
         services.AddSingleton<AzureBlobFileExportObjectSink>();
         services.AddSingleton<FilesystemSyncStateStore>();
+        services.AddSingleton<FilesystemSyncContractStore>();
         services.AddSingleton<AzureBlobSyncStateStore>();
+        services.AddSingleton<AzureBlobSyncContractStore>();
         services.AddSingleton<AzureBlobAsyncExportStateStore>();
         services.AddSingleton<AzureBlobSyncTargetDataStore>();
     }
@@ -54,5 +56,13 @@ public sealed class AzureBlobDataSyncStorageProvider : IDataSyncStorageProvider
     public ISyncTargetDataStore ResolveTargetDataStore(IServiceProvider services)
     {
         return services.GetRequiredService<AzureBlobSyncTargetDataStore>();
+    }
+
+    public ISyncContractStore ResolveContractStore(IServiceProvider services)
+    {
+        var stateOptions = services.GetRequiredService<StateOptions>();
+        return stateOptions.Provider == StateProvider.AzureBlob
+            ? services.GetRequiredService<AzureBlobSyncContractStore>()
+            : services.GetRequiredService<FilesystemSyncContractStore>();
     }
 }

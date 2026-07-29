@@ -29,6 +29,30 @@ public static class RelationalSchemaCommandBuilder
         return new RelationalCommand(sql, []);
     }
 
+    public static RelationalCommand BuildAddNullableColumn(
+        StorageProvider provider,
+        string tableName,
+        RelationalColumnPlan column)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
+        ArgumentNullException.ThrowIfNull(column);
+
+        if (provider is not (StorageProvider.SqlServer or StorageProvider.Postgres or StorageProvider.MySql))
+        {
+            throw new InvalidOperationException(
+                $"Storage provider '{provider}' is not a relational provider.");
+        }
+
+        var addKeyword = provider == StorageProvider.SqlServer
+            ? "ADD"
+            : "ADD COLUMN";
+        var sql =
+            $"ALTER TABLE {RelationalSqlDialect.Quote(provider, tableName)} {addKeyword} " +
+            $"{RelationalSqlDialect.Quote(provider, column.Name)} " +
+            $"{RelationalSqlDialect.FlexibleTextColumnType(provider)} NULL;";
+        return new RelationalCommand(sql, []);
+    }
+
     private static string BuildPostgres(RelationalTablePlan table)
     {
         return string.Join(

@@ -9,6 +9,7 @@ using Sollatek.DataSync.Monitoring;
 using Sollatek.DataSync.Notifications;
 using Sollatek.DataSync.State;
 using Sollatek.DataSync.Sync;
+using Sollatek.DataSync.Sync.Contract;
 
 namespace Sollatek.DataSync;
 
@@ -24,11 +25,13 @@ public class TimedHostedService : IHostedService, IDisposable
     private readonly ISyncMonitor _monitor;
     private readonly ISyncJobRunner _syncRunner;
     private readonly ISyncStateStore _syncStateStore;
+    private readonly ISyncContractStore _syncContractStore;
     private readonly ISyncTargetDataStore _syncTargetDataStore;
     private readonly IAsyncExportRowSource _asyncExportRowSource;
     private readonly IHostApplicationLifetime _applicationLifetime;
     private readonly IFailureNotificationSender _failureNotificationSender;
     private SwaggerBackedSyncPlan _syncPlan;
+    private SyncContractSnapshot _pendingSyncContract;
     private DateTimeOffset? _nextRangeEnd;
     private int _tryNumber = 1;
 
@@ -42,6 +45,7 @@ public class TimedHostedService : IHostedService, IDisposable
         ISyncMonitor monitor,
         ISyncJobRunner syncRunner,
         ISyncStateStore syncStateStore,
+        ISyncContractStore syncContractStore,
         ISyncTargetDataStore syncTargetDataStore,
         IHostApplicationLifetime applicationLifetime,
         IAsyncExportRowSource asyncExportRowSource,
@@ -56,6 +60,7 @@ public class TimedHostedService : IHostedService, IDisposable
         _monitor = monitor;
         _syncRunner = syncRunner;
         _syncStateStore = syncStateStore;
+        _syncContractStore = syncContractStore;
         _syncTargetDataStore = syncTargetDataStore;
         _asyncExportRowSource = asyncExportRowSource;
         _applicationLifetime = applicationLifetime;
@@ -64,11 +69,15 @@ public class TimedHostedService : IHostedService, IDisposable
 
     public async Task StartAsync(CancellationToken stoppingToken)
     {
-        var plan = await SwaggerBackedSyncPlanLoader.LoadAsync(
+        var loadResult = await SchemaAwareSyncPlanLoader.LoadAsync(
             _httpClientFactory.CreateClient(),
             _configuration,
+            SchemaContractOptions.FromConfiguration(_configuration),
+            _syncContractStore,
+            _logger,
             stoppingToken);
-        _syncPlan = plan;
+        _syncPlan = loadResult.Plan;
+        _pendingSyncContract = loadResult.PendingAcceptance;
 
         _logger.LogInformation(
             "Loaded swagger sync metadata for {EntityCount} selected entities: {Entities}",
@@ -105,6 +114,22 @@ public class TimedHostedService : IHostedService, IDisposable
                 syncJobs.Count);
 
             await _syncRunner.RunAsync(runId, syncJobs, cancellationToken);
+            if (_pendingSyncContract is not null)
+            {
+                var acceptedContract = _pendingSyncContract with
+                {
+                    AcceptedAtUtc = DateTimeOffset.UtcNow
+                };
+                await _syncContractStore.SaveAsync(
+                    acceptedContract,
+                    cancellationToken);
+                _pendingSyncContract = null;
+                _logger.LogInformation(
+                    "Accepted DataSync contract {ContractHash} at Schema:version {SchemaVersion}.",
+                    acceptedContract.ContractHash,
+                    acceptedContract.SchemaVersion);
+            }
+
             await SyncStateCoordinator.SaveSuccessfulEndsAsync(
                 _syncStateStore,
                 syncJobs,

@@ -131,6 +131,12 @@ using IHost host = Host.CreateDefaultBuilder(args).ConfigureLogging((context, lo
             var registry = sp.GetRequiredService<DataSyncStorageProviderRegistry>();
             return registry.GetRequired(provider).ResolveStateStore(sp);
         });
+        services.AddSingleton<ISyncContractStore>(sp =>
+        {
+            var provider = sp.GetRequiredService<StorageOptions>().Provider;
+            var registry = sp.GetRequiredService<DataSyncStorageProviderRegistry>();
+            return registry.GetRequired(provider).ResolveContractStore(sp);
+        });
         services.AddSingleton<ISyncTargetDataStore>(sp =>
         {
             var provider = sp.GetRequiredService<StorageOptions>().Provider;

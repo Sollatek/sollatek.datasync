@@ -296,6 +296,35 @@ Azure Blob managed identity example:
 
 `Storage:schemaMode` is only used by relational providers. `filesystem` and `azureBlobStorage` skip database migrations.
 
+### Schema Contract Safety
+
+DataSync persists the last accepted metadata contract selected from `x-sollatek-sync`. On each process startup it attempts to load the current Swagger documents. It does not reload Swagger before each scheduled cycle in the same process; a one-shot container job starts a new process for each execution, so it performs one startup check per job execution.
+
+- If Swagger is unavailable or invalid and an accepted contract exists, DataSync logs a warning and runs with that last-known-good contract only when `Schema:version` and the resolved `SyncPlan` are unchanged.
+- If no accepted contract exists yet, Swagger must load successfully.
+- A candidate contract is accepted only after the data run succeeds. DataSync saves the accepted contract before advancing successful-range checkpoints.
+- OpenAPI component-name changes such as `AssetSimple2` to a semantic name do not count as stored-data changes.
+- Nullable scalar/reference additions and relaxed nullability are compatible changes.
+- Removed or renamed fields, required additions, type or format changes (for example `integer/int64` to `integer/uint64`), primary-key or watermark changes, target table/collection changes, API operation changes, and `SyncPlan` membership/order changes are breaking changes.
+
+Breaking changes fail before data writes while `Schema:version` still matches the accepted contract. After reviewing database changes and file/document consumers, increment `Schema:version` to explicitly approve the new contract:
+
+```json
+{
+  "Schema": {
+    "version": "2"
+  }
+}
+```
+
+For containers, the equivalent setting is `SOL_Schema__version=2`. The default is `1`.
+
+Changing `Schema:version` is approval, not a data migration or backfill. With `Storage:schemaMode=applySafeChanges`, relational stores add missing nullable non-key text columns and then validate the complete planned schema before accepting the contract. DataSync never changes primary keys automatically. With `Storage:schemaMode=validate`, any missing column still fails before row writes.
+
+MongoDB replaces only documents touched by a run, so untouched documents can retain the older shape. Filesystem and Azure Blob async exports remain native portal files; existing and new partitions can therefore have different compatible schemas. Consumers that require one fixed physical file/document schema still need an explicit versioned projection or migration.
+
+The first successful run after deploying this feature establishes the initial baseline. Last-known-good fallback is available only after that baseline has been saved.
+
 ### Sync
 
 `Sync` controls startup behavior, scheduling, API paging, request timeouts, and the default initial-load policy.
@@ -545,10 +574,10 @@ For Azure Blob Storage, keep the same `Sync`, `SyncPlan`, and `FileExport` layou
 
 Provider state locations:
 
-- SQL Server, PostgreSQL, MySQL: `__sollatek_datasync_state`.
-- MongoDB: `__sollatek_datasync_state`.
-- Filesystem: `<FileExport:statePath>`, defaulting to `<app base>/_state/sync-state.json`.
-- Azure Blob with default state settings: `<FileExport:statePath>`, defaulting to `<app base>/_state/sync-state.json`.
+- SQL Server, PostgreSQL, MySQL: checkpoints in `__sollatek_datasync_state` and the accepted contract in `__sollatek_datasync_contract`.
+- MongoDB: checkpoints in `__sollatek_datasync_state` and the accepted contract in `__sollatek_datasync_contract`.
+- Filesystem: checkpoints at `<FileExport:statePath>` and `sync-contract.json` in the same directory.
+- Azure Blob with default state settings: the same local filesystem locations.
 - Azure Blob with `State:provider` set to `azureBlobStorage`: blobs under `<State:rootPath>` in the same configured export container.
 
 This state store is DataSync-owned operational metadata. It must be writable even when relational `Storage:schemaMode` is `validate`.
@@ -567,6 +596,7 @@ This state store is DataSync-owned operational metadata. It must be writable eve
 With blob-backed state, DataSync writes:
 
 - `_state/sync-state.json` for successful range checkpoints.
+- `_state/sync-contract.json` for the accepted Swagger sync contract.
 - `_state/async-exports/state/<request-key>.json` for pending async portal export requests.
 
 Downloaded portal export files are still temporary local files under `AsyncExport:statePath/downloads` while the current process reads them. If the process restarts after a state document is saved but the temporary file is gone, DataSync polls the existing export request and downloads the file again when the portal still has it.

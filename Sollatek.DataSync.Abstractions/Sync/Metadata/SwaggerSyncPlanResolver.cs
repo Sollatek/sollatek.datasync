@@ -12,14 +12,26 @@ public static class SwaggerSyncPlanResolver
     {
         ArgumentNullException.ThrowIfNull(registry);
 
+        return Resolve(registry.OrderedEntities, configuredKeys);
+    }
+
+    public static IReadOnlyList<SwaggerSyncEntityMetadata> Resolve(
+        IReadOnlyList<SwaggerSyncEntityMetadata> availableEntities,
+        IEnumerable<string>? configuredKeys)
+    {
+        ArgumentNullException.ThrowIfNull(availableEntities);
+
         var keys = configuredKeys?.Select(x => x?.Trim() ?? string.Empty).ToArray();
 
         if (keys is not { Length: > 0 })
         {
-            return registry.OrderedEntities;
+            return availableEntities;
         }
 
-        var lookup = BuildLookup(registry.OrderedEntities);
+        var entities = availableEntities.ToDictionary(
+            x => x.Key,
+            StringComparer.OrdinalIgnoreCase);
+        var lookup = BuildLookup(availableEntities);
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var resolved = new List<SwaggerSyncEntityMetadata>(keys.Length);
 
@@ -30,7 +42,7 @@ public static class SwaggerSyncPlanResolver
                 throw new InvalidOperationException("SyncPlan contains an empty entity key.");
             }
 
-            var entity = ResolveEntity(registry, lookup, key);
+            var entity = ResolveEntity(entities, lookup, key);
             if (!seen.Add(entity.Key))
             {
                 throw new InvalidOperationException(
@@ -44,11 +56,11 @@ public static class SwaggerSyncPlanResolver
     }
 
     private static SwaggerSyncEntityMetadata ResolveEntity(
-        SwaggerSyncMetadataRegistry registry,
+        IReadOnlyDictionary<string, SwaggerSyncEntityMetadata> entities,
         IReadOnlyDictionary<string, IReadOnlyList<SwaggerSyncEntityMetadata>> lookup,
         string key)
     {
-        if (registry.Entities.TryGetValue(key, out var exactEntity))
+        if (entities.TryGetValue(key, out var exactEntity))
         {
             return exactEntity;
         }
@@ -71,7 +83,7 @@ public static class SwaggerSyncPlanResolver
         }
 
         throw new InvalidOperationException(
-            $"Unknown sync entity '{key}' in SyncPlan. Use a swagger sync entity key or operation path. Available entities: {string.Join(", ", registry.Entities.Keys.OrderBy(x => x, StringComparer.OrdinalIgnoreCase))}.");
+            $"Unknown sync entity '{key}' in SyncPlan. Use a swagger sync entity key or operation path. Available entities: {string.Join(", ", entities.Keys.OrderBy(x => x, StringComparer.OrdinalIgnoreCase))}.");
     }
 
     private static IReadOnlyDictionary<string, IReadOnlyList<SwaggerSyncEntityMetadata>> BuildLookup(

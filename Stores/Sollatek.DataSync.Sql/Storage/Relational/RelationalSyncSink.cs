@@ -93,9 +93,15 @@ public sealed class RelationalSyncSink : IRelationalSyncSink
 
         foreach (var table in tables)
         {
+            await ApplyMissingColumnsAsync(connection, table, cancellationToken);
+        }
+
+        foreach (var table in tables)
+        {
             await ApplyMissingForeignKeysAsync(connection, table, cancellationToken);
         }
 
+        await ValidateSchemaAsync(connection, tables, cancellationToken);
         await _schemaManifestStore.SaveAsync(_provider, connection, manifest, cancellationToken);
     }
 
@@ -177,7 +183,7 @@ public sealed class RelationalSyncSink : IRelationalSyncSink
                 if (!await ColumnExistsAsync(connection, table, column, cancellationToken))
                 {
                     throw new InvalidOperationException(
-                        $"Relational column '{column.Name}' does not exist on table '{table.TableName}'. Update the table before running in validate mode; applySafeChanges creates missing tables and flexible FKs but does not alter existing table columns yet.");
+                        $"Relational column '{column.Name}' does not exist on table '{table.TableName}'. Update the table before running in validate mode, or set Storage:schemaMode to applySafeChanges to add missing nullable non-key columns safely.");
                 }
             }
 
@@ -234,6 +240,37 @@ public sealed class RelationalSyncSink : IRelationalSyncSink
                 transaction: null,
                 command);
 
+            await dbCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+    }
+
+    private async Task ApplyMissingColumnsAsync(
+        DbConnection connection,
+        RelationalTablePlan table,
+        CancellationToken cancellationToken)
+    {
+        foreach (var column in table.Columns)
+        {
+            if (await ColumnExistsAsync(connection, table, column, cancellationToken))
+            {
+                continue;
+            }
+
+            if (column.Role == RelationalColumnRole.PrimaryKey)
+            {
+                throw new InvalidOperationException(
+                    $"Relational primary-key column '{column.Name}' is missing from existing table '{table.TableName}'. DataSync will not add or change primary keys automatically; apply an explicit database migration first.");
+            }
+
+            var command = RelationalSchemaCommandBuilder.BuildAddNullableColumn(
+                _provider,
+                table.TableName,
+                column);
+            await using var dbCommand = RelationalCommandBinder.CreateCommand(
+                _provider,
+                connection,
+                transaction: null,
+                command);
             await dbCommand.ExecuteNonQueryAsync(cancellationToken);
         }
     }

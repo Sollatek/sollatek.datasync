@@ -63,6 +63,32 @@ public sealed class RelationalSchemaCommandBuilderTests
             command.Sql);
     }
 
+    [Theory]
+    [InlineData(
+        StorageProvider.Postgres,
+        "ALTER TABLE \"assets\" ADD COLUMN \"firmware_version\" text NULL;")]
+    [InlineData(
+        StorageProvider.MySql,
+        "ALTER TABLE `assets` ADD COLUMN `firmware_version` varchar(512) NULL;")]
+    [InlineData(
+        StorageProvider.SqlServer,
+        "ALTER TABLE [assets] ADD [firmware_version] nvarchar(450) NULL;")]
+    public void BuildAddNullableColumn_UsesProviderSyntax(
+        StorageProvider provider,
+        string expected)
+    {
+        var command = RelationalSchemaCommandBuilder.BuildAddNullableColumn(
+            provider,
+            "assets",
+            new RelationalColumnPlan(
+                "firmware_version",
+                "firmwareVersion",
+                RelationalColumnRole.Scalar));
+
+        SqlAssert.Equal(expected, command.Sql);
+        Assert.Empty(command.Parameters);
+    }
+
     private static RelationalTablePlan AssetTable()
     {
         return new RelationalTablePlan(

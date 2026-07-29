@@ -21,6 +21,7 @@ public sealed class FilesystemDataSyncStorageProvider : IDataSyncStorageProvider
         services.AddSingleton<IExportDateProvider, SystemExportDateProvider>();
         services.AddSingleton<ParquetFileExportSink>();
         services.AddSingleton<FilesystemSyncStateStore>();
+        services.AddSingleton<FilesystemSyncContractStore>();
         services.AddSingleton<FilesystemSyncTargetDataStore>();
     }
 
@@ -39,5 +40,10 @@ public sealed class FilesystemDataSyncStorageProvider : IDataSyncStorageProvider
     public ISyncTargetDataStore ResolveTargetDataStore(IServiceProvider services)
     {
         return services.GetRequiredService<FilesystemSyncTargetDataStore>();
+    }
+
+    public ISyncContractStore ResolveContractStore(IServiceProvider services)
+    {
+        return services.GetRequiredService<FilesystemSyncContractStore>();
     }
 }
