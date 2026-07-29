@@ -12,12 +12,15 @@ public sealed class SwaggerSyncMetadataRegistry
     private SwaggerSyncMetadataRegistry(
         IReadOnlyDictionary<string, SwaggerSyncEntityMetadata> entities,
         IReadOnlyList<SwaggerSyncEntityMetadata> orderedEntities,
-        IReadOnlyDictionary<string, SwaggerSyncSchemaMetadata> schemas,
+        Dictionary<string, Dictionary<string, SwaggerSyncSchemaMetadata>> schemasByDocument,
         IReadOnlyList<SwaggerSyncSchemaMetadata> orderedSchemas)
     {
         Entities = entities;
         OrderedEntities = orderedEntities;
-        Schemas = schemas;
+        SchemasByDocument = schemasByDocument.ToDictionary(
+            x => x.Key,
+            x => (IReadOnlyDictionary<string, SwaggerSyncSchemaMetadata>)x.Value,
+            StringComparer.OrdinalIgnoreCase);
         OrderedSchemas = orderedSchemas;
     }
 
@@ -25,7 +28,7 @@ public sealed class SwaggerSyncMetadataRegistry
 
     public IReadOnlyList<SwaggerSyncEntityMetadata> OrderedEntities { get; }
 
-    public IReadOnlyDictionary<string, SwaggerSyncSchemaMetadata> Schemas { get; }
+    public IReadOnlyDictionary<string, IReadOnlyDictionary<string, SwaggerSyncSchemaMetadata>> SchemasByDocument { get; }
 
     public IReadOnlyList<SwaggerSyncSchemaMetadata> OrderedSchemas { get; }
 
@@ -35,19 +38,22 @@ public sealed class SwaggerSyncMetadataRegistry
 
         var entities = new Dictionary<string, SwaggerSyncEntityMetadata>(StringComparer.OrdinalIgnoreCase);
         var entityOrder = new List<string>();
-        var schemas = new Dictionary<string, SwaggerSyncSchemaMetadata>(StringComparer.OrdinalIgnoreCase);
-        var schemaOrder = new List<string>();
+        var schemasByDocument =
+            new Dictionary<string, Dictionary<string, SwaggerSyncSchemaMetadata>>(StringComparer.OrdinalIgnoreCase);
+        var schemaOrder = new List<(string DocumentName, string SchemaName)>();
 
         foreach (var document in documents)
         {
-            LoadDocument(document, entities, entityOrder, schemas, schemaOrder);
+            LoadDocument(document, entities, entityOrder, schemasByDocument, schemaOrder);
         }
 
         return new SwaggerSyncMetadataRegistry(
             entities,
             entityOrder.Select(key => entities[key]).ToArray(),
-            schemas,
-            schemaOrder.Select(schemaName => schemas[schemaName]).ToArray());
+            schemasByDocument,
+            schemaOrder
+                .Select(key => schemasByDocument[key.DocumentName][key.SchemaName])
+                .ToArray());
     }
 
     public bool ContainsEntity(string key)
@@ -67,12 +73,40 @@ public sealed class SwaggerSyncMetadataRegistry
 
     public SwaggerSyncSchemaMetadata GetSchema(string schemaName)
     {
-        if (Schemas.TryGetValue(schemaName, out var schema))
+        var matches = SchemasByDocument
+            .SelectMany(document => document.Value
+                .Where(schema => string.Equals(schema.Key, schemaName, StringComparison.OrdinalIgnoreCase))
+                .Select(schema => (DocumentName: document.Key, Schema: schema.Value)))
+            .ToArray();
+
+        if (matches.Length == 1)
+        {
+            return matches[0].Schema;
+        }
+
+        if (matches.Length > 1)
+        {
+            var documentNames = string.Join(
+                "', '",
+                matches.Select(x => x.DocumentName).Order(StringComparer.OrdinalIgnoreCase));
+            throw new InvalidOperationException(
+                $"Ambiguous sync read schema '{schemaName}' is defined in Swagger documents '{documentNames}'. " +
+                "Specify the Swagger document name.");
+        }
+
+        throw new InvalidOperationException($"Unknown sync read schema '{schemaName}'.");
+    }
+
+    public SwaggerSyncSchemaMetadata GetSchema(string documentName, string schemaName)
+    {
+        if (SchemasByDocument.TryGetValue(documentName, out var documentSchemas) &&
+            documentSchemas.TryGetValue(schemaName, out var schema))
         {
             return schema;
         }
 
-        throw new InvalidOperationException($"Unknown sync read schema '{schemaName}'.");
+        throw new InvalidOperationException(
+            $"Unknown sync read schema '{schemaName}' in Swagger document '{documentName}'.");
     }
 
     public IReadOnlyList<string> ValidateReferences()
@@ -98,8 +132,8 @@ public sealed class SwaggerSyncMetadataRegistry
         SwaggerSyncDocumentSource source,
         IDictionary<string, SwaggerSyncEntityMetadata> entities,
         ICollection<string> entityOrder,
-        IDictionary<string, SwaggerSyncSchemaMetadata> schemas,
-        ICollection<string> schemaOrder)
+        IDictionary<string, Dictionary<string, SwaggerSyncSchemaMetadata>> schemasByDocument,
+        ICollection<(string DocumentName, string SchemaName)> schemaOrder)
     {
         if (string.IsNullOrWhiteSpace(source.DocumentName))
         {
@@ -161,6 +195,12 @@ public sealed class SwaggerSyncMetadataRegistry
             return;
         }
 
+        if (!schemasByDocument.TryGetValue(source.DocumentName, out var documentSchemas))
+        {
+            documentSchemas = new Dictionary<string, SwaggerSyncSchemaMetadata>(StringComparer.OrdinalIgnoreCase);
+            schemasByDocument.Add(source.DocumentName, documentSchemas);
+        }
+
         foreach (var schemaProperty in schemasElement.EnumerateObject())
         {
             var schema = ReadSchema(
@@ -170,14 +210,14 @@ public sealed class SwaggerSyncMetadataRegistry
                 schemaProperty.Value,
                 operationsById);
 
-            if (schemas.TryGetValue(schema.SchemaName, out var existing))
+            if (documentSchemas.TryGetValue(schema.SchemaName, out var existing))
             {
-                schemas[schema.SchemaName] = Merge(existing, schema);
+                documentSchemas[schema.SchemaName] = Merge(existing, schema);
                 continue;
             }
 
-            schemas.Add(schema.SchemaName, schema);
-            schemaOrder.Add(schema.SchemaName);
+            documentSchemas.Add(schema.SchemaName, schema);
+            schemaOrder.Add((source.DocumentName, schema.SchemaName));
         }
     }
 

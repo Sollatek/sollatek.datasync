@@ -117,6 +117,30 @@ public sealed class SwaggerSyncMetadataRegistryTests
     }
 
     [Fact]
+    public void Load_ScopesDuplicateSchemaNamesToTheirSwaggerDocuments()
+    {
+        var registry = SwaggerSyncMetadataRegistry.Load(
+            [
+                new SwaggerSyncDocumentSource("data-v1", DataAssetSimpleSwagger),
+                new SwaggerSyncDocumentSource("portal-v1", PortalAssetSimpleSwagger)
+            ]);
+
+        var dataSchema = registry.GetSchema("data-v1", "AssetSimple");
+        var portalSchema = registry.GetSchema("portal-v1", "AssetSimple");
+
+        Assert.Equal("Platform.Models.Devices.Devices.AssetSimpleDto", dataSchema.Type);
+        Assert.Equal("Platform.Models.Assets.AssetSimpleDto", portalSchema.Type);
+        Assert.Equal(2, registry.OrderedSchemas.Count(x => x.SchemaName == "AssetSimple"));
+        Assert.True(registry.SchemasByDocument["data-v1"].ContainsKey("AssetSimple"));
+        Assert.True(registry.SchemasByDocument["portal-v1"].ContainsKey("AssetSimple"));
+
+        var exception = Assert.Throws<InvalidOperationException>(() => registry.GetSchema("AssetSimple"));
+        Assert.Contains("Ambiguous sync read schema 'AssetSimple'", exception.Message);
+        Assert.Contains("data-v1", exception.Message);
+        Assert.Contains("portal-v1", exception.Message);
+    }
+
+    [Fact]
     public void Load_ResolvesEntityOperationPathsFromSwaggerOperationIds()
     {
         var registry = SwaggerSyncMetadataRegistry.Load([new SwaggerSyncDocumentSource("data-v1", DataSwagger)]);
@@ -376,6 +400,79 @@ public sealed class SwaggerSyncMetadataRegistryTests
               "field": "created.dateTime",
               "tieBreakers": ["id"]
             },
+            "references": []
+          }
+        }
+      }
+    }
+    """;
+
+    private const string DataAssetSimpleSwagger = """
+    {
+      "openapi": "3.0.1",
+      "paths": {
+        "/api/Devices": {
+          "get": { "operationId": "Devices_GetDevices" }
+        }
+      },
+      "components": {
+        "schemas": {
+          "AssetSimple": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "format": "guid" },
+              "serial": { "type": "string" }
+            }
+          }
+        }
+      },
+      "x-sollatek-sync": {
+        "version": 1,
+        "entities": {},
+        "schemas": {
+          "AssetSimple": {
+            "schemaName": "AssetSimple",
+            "schema": "#/components/schemas/AssetSimple",
+            "type": "Platform.Models.Devices.Devices.AssetSimpleDto",
+            "operationIds": ["Devices_GetDevices"],
+            "primaryKey": ["id"],
+            "references": []
+          }
+        }
+      }
+    }
+    """;
+
+    private const string PortalAssetSimpleSwagger = """
+    {
+      "openapi": "3.0.1",
+      "paths": {
+        "/api/CoolersData/doors": {
+          "get": { "operationId": "CoolersData_GetDoorData" }
+        }
+      },
+      "components": {
+        "schemas": {
+          "AssetSimple": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "format": "guid" },
+              "serial": { "type": "string" },
+              "type": { "type": "integer", "format": "int32" }
+            }
+          }
+        }
+      },
+      "x-sollatek-sync": {
+        "version": 1,
+        "entities": {},
+        "schemas": {
+          "AssetSimple": {
+            "schemaName": "AssetSimple",
+            "schema": "#/components/schemas/AssetSimple",
+            "type": "Platform.Models.Assets.AssetSimpleDto",
+            "operationIds": ["CoolersData_GetDoorData"],
+            "primaryKey": ["id"],
             "references": []
           }
         }
