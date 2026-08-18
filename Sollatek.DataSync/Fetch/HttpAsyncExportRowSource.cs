@@ -535,6 +535,8 @@ public sealed class HttpAsyncExportRowSource : IAsyncExportRowSource
             HttpMethod.Get,
             $"api/exports/{state.ExportId.Value}/download/{pollResult.DownloadId.Value}");
         httpRequest.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue(GetAcceptHeader()));
+        httpRequest.Headers.Accept.Add(
+            new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/problem+json"));
         using var response = await _httpClient.SendAsync(
             httpRequest,
             HttpCompletionOption.ResponseHeadersRead,
