@@ -107,6 +107,90 @@ public sealed class AsyncExportRowSourceTests
             Assert.Empty(Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories));
             Assert.Equal(0, monitor.Current.AsyncExportsDownloaded);
             Assert.Equal(0, monitor.Current.AsyncExportsProcessing);
+            Assert.Equal(
+                ["application/vnd.apache.parquet", "application/problem+json"],
+                handler.Requests[3].Headers.Accept.Select(value => value.MediaType!).ToArray());
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task PrepareAsync_MissingDownloadResubmitsWhenProblemDetailsIsAccepted()
+    {
+        var directory = CreateTempDirectory();
+        try
+        {
+            var firstExportId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+            var firstDownloadId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+            var secondExportId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+            var secondDownloadId = Guid.Parse("44444444-4444-4444-4444-444444444444");
+            var parquet = await ParquetAsync();
+            var handler = new RecordingHandler(
+                _ => Json(HttpStatusCode.Accepted, $$"""
+                    { "exportId": "{{firstExportId}}", "createdAtUtc": "2026-06-22T00:00:00Z" }
+                    """),
+                _ => Json(HttpStatusCode.OK, $$"""
+                    {
+                      "exportId": "{{firstExportId}}",
+                      "status": "succeeded",
+                      "downloadId": "{{firstDownloadId}}",
+                      "expiresAtUtc": "2099-06-23T00:00:00Z"
+                    }
+                    """),
+                _ => Problem(HttpStatusCode.NotFound),
+                _ => Json(HttpStatusCode.Accepted, $$"""
+                    { "exportId": "{{secondExportId}}", "createdAtUtc": "2026-06-22T00:00:00Z" }
+                    """),
+                _ => Json(HttpStatusCode.OK, $$"""
+                    {
+                      "exportId": "{{secondExportId}}",
+                      "status": "succeeded",
+                      "downloadId": "{{secondDownloadId}}",
+                      "expiresAtUtc": "2099-06-23T00:00:00Z"
+                    }
+                    """),
+                _ => Binary(parquet, "application/vnd.apache.parquet"));
+            var source = new HttpAsyncExportRowSource(
+                new HttpClient(handler)
+                {
+                    BaseAddress = new Uri("https://api.test/")
+                },
+                new AsyncExportOptions
+                {
+                    StatePath = directory,
+                    PollInterval = TimeSpan.FromMilliseconds(1),
+                    MaxParallelRequests = 1
+                },
+                NullLogger<HttpAsyncExportRowSource>.Instance);
+            var job = new SyncJob(
+                AssetMetadata(),
+                new SyncDateRange(
+                    new DateTimeOffset(2026, 6, 1, 0, 0, 0, TimeSpan.Zero),
+                    new DateTimeOffset(2026, 6, 2, 0, 0, 0, TimeSpan.Zero)),
+                SyncTransferMode.AsyncExport);
+
+            var files = await source.PrepareAsync(
+                [new AsyncExportRequest(0, job, job.Metadata, job.Range)],
+                CancellationToken.None);
+
+            Assert.Single(files);
+            Assert.Equal(6, handler.Requests.Count);
+            Assert.Equal(
+                2,
+                handler.Requests.Count(request =>
+                    request.RequestUri!.PathAndQuery.Contains("%24exportAsync=true", StringComparison.Ordinal)));
+            foreach (var downloadRequest in handler.Requests.Where(request =>
+                         request.RequestUri!.AbsolutePath.Contains("/download/", StringComparison.Ordinal)))
+            {
+                Assert.Equal(
+                    ["application/vnd.apache.parquet", "application/problem+json"],
+                    downloadRequest.Headers.Accept.Select(value => value.MediaType!).ToArray());
+            }
+
+            await source.CompleteAsync(files.Single(), CancellationToken.None);
         }
         finally
         {
@@ -418,6 +502,17 @@ public sealed class AsyncExportRowSourceTests
         };
     }
 
+    private static HttpResponseMessage Problem(HttpStatusCode statusCode)
+    {
+        return new HttpResponseMessage(statusCode)
+        {
+            Content = new StringContent(
+                """{"status":404,"title":"Not Found"}""",
+                Encoding.UTF8,
+                "application/problem+json")
+        };
+    }
+
     private static async Task<byte[]> ParquetAsync()
     {
         var schema = new ParquetSchema(
@@ -530,7 +625,11 @@ public sealed class AsyncExportRowSourceTests
 
         private static HttpRequestMessage CloneRequest(HttpRequestMessage request)
         {
-            return new HttpRequestMessage(request.Method, request.RequestUri);
+            var clone = new HttpRequestMessage(request.Method, request.RequestUri);
+            clone.Headers.TryAddWithoutValidation(
+                "Accept",
+                request.Headers.Accept.Select(value => value.ToString()));
+            return clone;
         }
     }
 
