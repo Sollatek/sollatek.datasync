@@ -60,6 +60,7 @@ using IHost host = Host.CreateDefaultBuilder(args).ConfigureLogging((context, lo
     {
         var configuration = s.Configuration;
         var oauthUrl = GetRequiredUriSetting(configuration, "Settings:oauthUrl");
+        var oauthTokenEndpointPath = configuration.GetValue<string>("Settings:oauthTokenEndpointPath");
         var clientKey = GetRequiredSetting(configuration, "Settings:clientKey");
         var clientSecret = GetRequiredSetting(configuration, "Settings:clientSecret");
         var apiUrl = GetRequiredUriSetting(configuration, "Settings:apiUrl");
@@ -160,7 +161,7 @@ using IHost host = Host.CreateDefaultBuilder(args).ConfigureLogging((context, lo
 #endif
         });
         services.AddHttpClient();
-        services.AddApiClients(apiUrl, oauthUrl, clientKey, clientSecret);
+        services.AddApiClients(apiUrl, oauthUrl, clientKey, clientSecret, oauthTokenEndpointPath);
         services.AddHttpClient<PagedApiClient>(client =>
                 ConfigurePlatformHttpClient(client, apiUrl, syncOptions.ApiRequestTimeout))
             .AddHttpMessageHandler<ProtectedApiBearerTokenHandler>();
