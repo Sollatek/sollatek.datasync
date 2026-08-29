@@ -88,6 +88,7 @@
   "appsettings": {
     "Settings": {
       "oauthUrl": "https://id.sollatek.io/",
+      "oauthTokenEndpointPath": "/realms/platform/protocol/openid-connect/token",
       "apiUrl": "https://api.sollatek.io/"
     },
     "Sync": {

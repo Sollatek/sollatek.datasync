@@ -10,9 +10,14 @@ public static class DiHelper
         string apiUrl,
         string oauthUrl,
         string clientKey,
-        string clientSecret)
+        string clientSecret,
+        string tokenEndpointPath = ClientCredentialsSettings.StandardTokenEndpointPath)
     {
-        services.AddSingleton(new ClientCredentialsSettings(oauthUrl, clientKey, clientSecret));
+        services.AddSingleton(new ClientCredentialsSettings(
+            oauthUrl,
+            clientKey,
+            clientSecret,
+            tokenEndpointPath));
         services.AddSingleton<TokenCache>();
         services.AddTransient<ProtectedApiBearerTokenHandler>();
         services.AddSingleton<IClientSettings>(new ClientSettings(apiUrl));

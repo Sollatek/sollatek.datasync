@@ -1,5 +1,4 @@
 ﻿using System.Security.Authentication;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Platform.ApiClient.Models;
@@ -28,14 +27,11 @@ public class IdentityServerClient : IIdentityServerClient
     {
         using (var httpClient = _httpClientFactory.CreateClient())
         {
-            var urlBuilder_ = new StringBuilder();
-            urlBuilder_.Append(_settings.OauthUrl != null ? _settings.OauthUrl.TrimEnd('/') : "")
-                .Append("/connect/token");
             int statusCode = 400;
             try
             {
                 using (var request_ = new HttpRequestMessage(HttpMethod.Post,
-                           new Uri(urlBuilder_.ToString(), UriKind.RelativeOrAbsolute)))
+                           _settings.TokenEndpoint))
                 {
                   
 

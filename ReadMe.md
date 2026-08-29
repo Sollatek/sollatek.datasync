@@ -47,6 +47,11 @@ $env:SOL_Settings__clientSecret="YourClientSecret"
 ```
 
 `Settings:oauthUrl` defaults to `https://id.sollatek.io/` in `appsettings.json`.
+`Settings:oauthTokenEndpointPath` defaults to the standard Keycloak realm token
+endpoint `/realms/platform/protocol/openid-connect/token`. The compatibility
+path `/connect/token` is accepted only as an explicit rollback override; the
+client ID, secret, grant, scopes, token shape, and Platform API contract do not
+change.
 `Settings:apiUrl` defaults to `https://api.sollatek.io/`.
 
 ### 3. Configure Storage
