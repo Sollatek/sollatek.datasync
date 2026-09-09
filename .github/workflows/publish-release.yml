@@ -9,6 +9,8 @@ on:
     branches:
       - develop
       - master
+    tags:
+      - 'v*.*.*'
   workflow_dispatch:
 
 concurrency:
@@ -32,6 +34,40 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release identity
+        id: release
+        shell: pwsh
+        run: |
+          $isRelease = $env:GITHUB_REF_TYPE -eq 'tag'
+          $version = '0.0.0-dev'
+          $releaseTag = ''
+          $majorMinor = '0.0'
+          $major = '0'
+
+          if ($isRelease) {
+            if ($env:GITHUB_REF_NAME -notmatch '^v(?<major>0|[1-9][0-9]*)\.(?<minor>0|[1-9][0-9]*)\.(?<patch>0|[1-9][0-9]*)$') {
+              throw "Release tags must use the stable semantic version format vMAJOR.MINOR.PATCH."
+            }
+
+            $version = "$($Matches.major).$($Matches.minor).$($Matches.patch)"
+            $releaseTag = "v$version"
+            $majorMinor = "$($Matches.major).$($Matches.minor)"
+            $major = $Matches.major
+
+            git merge-base --is-ancestor $env:GITHUB_SHA origin/master
+            if ($LASTEXITCODE -ne 0) {
+              throw "Release tag '$releaseTag' does not point to a commit contained in master."
+            }
+          }
+
+          "publish=$($isRelease.ToString().ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "release_tag=$releaseTag" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "major_minor=$majorMinor" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "major=$major" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Install .NET SDK
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -59,12 +95,18 @@ jobs:
       - name: Publish compiled application
         shell: pwsh
         run: |
-          $publishRoot = Join-Path $PWD '.artifacts/release/datasync'
-          New-Item -ItemType Directory -Path $publishRoot -Force | Out-Null
+          $artifactRoot = Join-Path $PWD '.artifacts/release'
+          $portableRoot = Join-Path $artifactRoot 'datasync'
+          $selfContainedRoot = Join-Path $artifactRoot 'self-contained'
+          New-Item -ItemType Directory -Path $portableRoot -Force | Out-Null
+          New-Item -ItemType Directory -Path $selfContainedRoot -Force | Out-Null
+
           dotnet publish Sollatek.DataSync/Sollatek.DataSync.csproj `
             -c Release `
-            -o $publishRoot `
+            -o $portableRoot `
             --no-self-contained `
+            --disable-build-servers `
+            -m:1 `
             -p:DataSyncProvider=all `
             -p:DataSyncMonitoringProvider=none `
             -p:DebugType=None `
@@ -73,13 +115,61 @@ jobs:
             throw "DataSync publish failed with exit code $LASTEXITCODE."
           }
 
-          Remove-Item -LiteralPath (Join-Path $publishRoot 'appsettings.Development.json') -Force -ErrorAction SilentlyContinue
-          Copy-Item -LiteralPath deployment/publication/appsettings.public.json -Destination (Join-Path $publishRoot 'appsettings.json') -Force
-          Copy-Item -LiteralPath deployment/publication/Dockerfile.binary -Destination (Join-Path $PWD ".artifacts/release/$env:RELEASE_DOCKERFILE") -Force
+          Remove-Item -LiteralPath (Join-Path $portableRoot 'appsettings.Development.json') -Force -ErrorAction SilentlyContinue
+          Get-ChildItem -LiteralPath $portableRoot -Filter '*.pdb' -File -Recurse | Remove-Item -Force
+          Copy-Item -LiteralPath deployment/publication/appsettings.public.json -Destination (Join-Path $portableRoot 'appsettings.json') -Force
+          Copy-Item -LiteralPath deployment/publication/Dockerfile.binary -Destination (Join-Path $artifactRoot $env:RELEASE_DOCKERFILE) -Force
 
-          tar --create --gzip --file (Join-Path $PWD ".artifacts/release/$env:RELEASE_ARCHIVE") --directory $publishRoot .
+          tar --create --gzip --file (Join-Path $artifactRoot $env:RELEASE_ARCHIVE) --directory $portableRoot .
           if ($LASTEXITCODE -ne 0) {
-            throw "Release archive creation failed with exit code $LASTEXITCODE."
+            throw "Portable release archive creation failed with exit code $LASTEXITCODE."
+          }
+
+          $targets = @(
+            @{ Rid = 'linux-x64'; Archive = 'sollatek-datasync-linux-x64.tar.gz'; Windows = $false },
+            @{ Rid = 'linux-arm64'; Archive = 'sollatek-datasync-linux-arm64.tar.gz'; Windows = $false },
+            @{ Rid = 'win-x64'; Archive = 'sollatek-datasync-win-x64.zip'; Windows = $true },
+            @{ Rid = 'win-arm64'; Archive = 'sollatek-datasync-win-arm64.zip'; Windows = $true },
+            @{ Rid = 'osx-x64'; Archive = 'sollatek-datasync-osx-x64.tar.gz'; Windows = $false },
+            @{ Rid = 'osx-arm64'; Archive = 'sollatek-datasync-osx-arm64.tar.gz'; Windows = $false }
+          )
+
+          foreach ($target in $targets) {
+            $targetRoot = Join-Path $selfContainedRoot $target.Rid
+            New-Item -ItemType Directory -Path $targetRoot -Force | Out-Null
+            dotnet publish Sollatek.DataSync/Sollatek.DataSync.csproj `
+              -c Release `
+              -o $targetRoot `
+              --runtime $target.Rid `
+              --self-contained true `
+              --disable-build-servers `
+              -m:1 `
+              -p:UseAppHost=true `
+              -p:DataSyncProvider=all `
+              -p:DataSyncMonitoringProvider=none `
+              -p:DebugType=None `
+              -p:DebugSymbols=false
+            if ($LASTEXITCODE -ne 0) {
+              throw "DataSync self-contained publish for $($target.Rid) failed with exit code $LASTEXITCODE."
+            }
+
+            Remove-Item -LiteralPath (Join-Path $targetRoot 'appsettings.Development.json') -Force -ErrorAction SilentlyContinue
+            Get-ChildItem -LiteralPath $targetRoot -Filter '*.pdb' -File -Recurse | Remove-Item -Force
+            Copy-Item -LiteralPath deployment/publication/appsettings.public.json -Destination (Join-Path $targetRoot 'appsettings.json') -Force
+
+            $archivePath = Join-Path $artifactRoot $target.Archive
+            if ($target.Windows) {
+              Compress-Archive -Path (Join-Path $targetRoot '*') -DestinationPath $archivePath -CompressionLevel Optimal
+            } else {
+              chmod +x -- (Join-Path $targetRoot 'Sollatek.DataSync')
+              if ($LASTEXITCODE -ne 0) {
+                throw "Could not mark the $($target.Rid) entry point as executable."
+              }
+              tar --create --gzip --file $archivePath --directory $targetRoot .
+              if ($LASTEXITCODE -ne 0) {
+                throw "Release archive creation for $($target.Rid) failed with exit code $LASTEXITCODE."
+              }
+            }
           }
 
       - name: Scan public release content
@@ -89,6 +179,7 @@ jobs:
             -ForbiddenTextBase64 $env:PUBLIC_RELEASE_EXCLUDED_TERMS_B64 `
             -Path @(
               '.artifacts/release/datasync',
+              '.artifacts/release/self-contained',
               '.artifacts/release/Dockerfile.binary',
               'deployment/publication/appsettings.public.json'
             )
@@ -97,7 +188,7 @@ jobs:
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
 
       - name: Log in to GitHub Container Registry
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: steps.release.outputs.publish == 'true'
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
@@ -108,24 +199,24 @@ jobs:
         id: image
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
-          context: .
-          file: Sollatek.DataSync/Dockerfile
-          platforms: linux/amd64
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          context: .artifacts/release
+          file: .artifacts/release/Dockerfile.binary
+          platforms: linux/amd64,linux/arm64
+          push: ${{ steps.release.outputs.publish == 'true' }}
           provenance: false
-          build-args: |
-            DATASYNC_PROVIDER=azureblobstorage
-            DATASYNC_MONITORING_PROVIDER=none
-            DATASYNC_SETTINGS_PATH=deployment/publication/appsettings.public.json
           tags: |
             ${{ env.IMAGE_REPOSITORY }}:sha-${{ github.sha }}
+            ${{ env.IMAGE_REPOSITORY }}:${{ steps.release.outputs.version }}
+            ${{ env.IMAGE_REPOSITORY }}:${{ steps.release.outputs.major_minor }}
+            ${{ env.IMAGE_REPOSITORY }}:${{ steps.release.outputs.major }}
             ${{ env.IMAGE_REPOSITORY }}:latest
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.release.outputs.version }}
 
-      - name: Publish immutable GitHub release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+      - name: Publish versioned GitHub release
+        if: steps.release.outputs.publish == 'true'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
@@ -135,7 +226,8 @@ jobs:
           $dockerfilePath = Join-Path $artifactRoot $env:RELEASE_DOCKERFILE
           $manifestPath = Join-Path $artifactRoot $env:RELEASE_MANIFEST
           $checksumsPath = Join-Path $artifactRoot 'SHA256SUMS'
-          $releaseTag = "release-$env:GITHUB_SHA"
+          $releaseTag = '${{ steps.release.outputs.release_tag }}'
+          $releaseVersion = '${{ steps.release.outputs.version }}'
           $imageDigest = '${{ steps.image.outputs.digest }}'
 
           if ($imageDigest -notmatch '^sha256:[0-9a-f]{64}$') {
@@ -144,17 +236,42 @@ jobs:
 
           $archiveHash = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
           $dockerfileHash = (Get-FileHash -LiteralPath $dockerfilePath -Algorithm SHA256).Hash.ToLowerInvariant()
+          $executableDefinitions = @(
+            [ordered]@{ rid = 'linux-x64'; name = 'sollatek-datasync-linux-x64.tar.gz'; entryPoint = 'Sollatek.DataSync'; archiveFormat = 'tar.gz' },
+            [ordered]@{ rid = 'linux-arm64'; name = 'sollatek-datasync-linux-arm64.tar.gz'; entryPoint = 'Sollatek.DataSync'; archiveFormat = 'tar.gz' },
+            [ordered]@{ rid = 'win-x64'; name = 'sollatek-datasync-win-x64.zip'; entryPoint = 'Sollatek.DataSync.exe'; archiveFormat = 'zip' },
+            [ordered]@{ rid = 'win-arm64'; name = 'sollatek-datasync-win-arm64.zip'; entryPoint = 'Sollatek.DataSync.exe'; archiveFormat = 'zip' },
+            [ordered]@{ rid = 'osx-x64'; name = 'sollatek-datasync-osx-x64.tar.gz'; entryPoint = 'Sollatek.DataSync'; archiveFormat = 'tar.gz' },
+            [ordered]@{ rid = 'osx-arm64'; name = 'sollatek-datasync-osx-arm64.tar.gz'; entryPoint = 'Sollatek.DataSync'; archiveFormat = 'tar.gz' }
+          )
+          $executableArtifacts = @(
+            foreach ($definition in $executableDefinitions) {
+              $path = Join-Path $artifactRoot $definition.name
+              [ordered]@{
+                rid = $definition.rid
+                name = $definition.name
+                sha256 = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+                framework = 'net10.0'
+                deploymentMode = 'self-contained'
+                entryPoint = $definition.entryPoint
+                archiveFormat = $definition.archiveFormat
+              }
+            }
+          )
+
           $manifest = [ordered]@{
-            schemaVersion = 1
-            contract = 'datasync-public-v1'
+            schemaVersion = 2
+            contract = 'datasync-public-v2'
             repository = $env:GITHUB_REPOSITORY
             commit = $env:GITHUB_SHA
+            version = $releaseVersion
             release = $releaseTag
             image = [ordered]@{
               repository = $env:IMAGE_REPOSITORY
-              tag = "sha-$env:GITHUB_SHA"
+              tag = $releaseVersion
+              immutableTag = "sha-$env:GITHUB_SHA"
               digest = $imageDigest
-              platform = 'linux/amd64'
+              platforms = @('linux/amd64', 'linux/arm64')
             }
             artifact = [ordered]@{
               name = $env:RELEASE_ARCHIVE
@@ -163,6 +280,7 @@ jobs:
               deploymentMode = 'framework-dependent'
               entryPoint = 'Sollatek.DataSync.dll'
             }
+            executables = $executableArtifacts
             dockerfile = [ordered]@{
               name = $env:RELEASE_DOCKERFILE
               sha256 = $dockerfileHash
@@ -170,29 +288,34 @@ jobs:
           }
           $manifest | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $manifestPath -Encoding utf8NoBOM
 
-          @(
+          $checksumLines = @(
             "$archiveHash  $env:RELEASE_ARCHIVE"
             "$dockerfileHash  $env:RELEASE_DOCKERFILE"
+            foreach ($executable in $executableArtifacts) {
+              "$($executable.sha256)  $($executable.name)"
+            }
             "$((Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash.ToLowerInvariant())  $env:RELEASE_MANIFEST"
-          ) | Set-Content -LiteralPath $checksumsPath -Encoding utf8NoBOM
+          )
+          $checksumLines | Set-Content -LiteralPath $checksumsPath -Encoding utf8NoBOM
 
           ./deployment/publication/Test-PublicReleaseContent.ps1 `
             -ForbiddenTextBase64 $env:PUBLIC_RELEASE_EXCLUDED_TERMS_B64 `
             -Path @($manifestPath, $checksumsPath)
 
-          $releaseFiles = @($archivePath, $dockerfilePath, $manifestPath, $checksumsPath)
+          $releaseFiles = @($archivePath, $dockerfilePath, $manifestPath, $checksumsPath) + @(
+            $executableDefinitions | ForEach-Object { Join-Path $artifactRoot $_.name }
+          )
           gh release view $releaseTag --repo $env:GITHUB_REPOSITORY *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload $releaseTag @releaseFiles --repo $env:GITHUB_REPOSITORY --clobber
-            gh release edit $releaseTag --repo $env:GITHUB_REPOSITORY --latest --title "DataSync $($env:GITHUB_SHA.Substring(0, 12))"
-          } else {
-            gh release create $releaseTag @releaseFiles `
-              --repo $env:GITHUB_REPOSITORY `
-              --target $env:GITHUB_SHA `
-              --latest `
-              --title "DataSync $($env:GITHUB_SHA.Substring(0, 12))" `
-              --notes "Immutable DataSync release built and tested from master commit $env:GITHUB_SHA."
+            throw "Release '$releaseTag' already exists and will not be overwritten."
           }
+
+          gh release create $releaseTag @releaseFiles `
+            --repo $env:GITHUB_REPOSITORY `
+            --verify-tag `
+            --latest `
+            --title "DataSync $releaseVersion" `
+            --notes "DataSync $releaseVersion, built and tested from master commit $env:GITHUB_SHA. The container image supports Linux x64 and arm64. Self-contained downloads are provided for Linux, Windows, and macOS on x64 and arm64."
           if ($LASTEXITCODE -ne 0) {
             throw "GitHub release publication failed with exit code $LASTEXITCODE."
           }
