@@ -6,7 +6,8 @@ Validates or deploys the latest canonical DataSync master commit and can start a
 Clones the public Sollatek DataSync master branch from GitHub over HTTPS, verifies the async-export
 recovery fix and the Keycloak realm token endpoint change, tests the commit in an isolated temporary
 checkout, validates the exact Azure production target, and prepares an immutable image tag. Add
--Deploy to publish the image and update the existing Container Apps Job image.
+-Deploy to publish the image and update the existing Container Apps Job image. The script uses the
+current Azure CLI or Cloud Shell login and validates the requested subscription before proceeding.
 
 Add -FreshHistoricalRun to plan or create a new private, timestamped Blob container for both exports
 and state. Add -StartHistoricalRun with -Deploy and -FreshHistoricalRun to start the first execution.
@@ -14,22 +15,19 @@ The existing Blob container is never deleted or modified, and existing job secre
 verified before and after the configuration update without reading their values.
 
 .EXAMPLE
-.\Invoke-DataSyncProductionRelease.ps1 -TenantId <tenant-guid> -SubscriptionId <subscription-guid>
+.\Invoke-DataSyncProductionRelease.ps1 -SubscriptionId <subscription-guid>
 
 .EXAMPLE
-.\Invoke-DataSyncProductionRelease.ps1 -TenantId <tenant-guid> -SubscriptionId <subscription-guid> -Deploy
+.\Invoke-DataSyncProductionRelease.ps1 -SubscriptionId <subscription-guid> -Deploy
 
 .EXAMPLE
-.\Invoke-DataSyncProductionRelease.ps1 -TenantId <tenant-guid> -SubscriptionId <subscription-guid> -FreshHistoricalRun
+.\Invoke-DataSyncProductionRelease.ps1 -SubscriptionId <subscription-guid> -FreshHistoricalRun
 
 .EXAMPLE
-.\Invoke-DataSyncProductionRelease.ps1 -TenantId <tenant-guid> -SubscriptionId <subscription-guid> -Deploy -FreshHistoricalRun -StartHistoricalRun -HistoricalStartFrom 2025-01-01 -FreshRunLabel eccbc
+.\Invoke-DataSyncProductionRelease.ps1 -SubscriptionId <subscription-guid> -Deploy -FreshHistoricalRun -StartHistoricalRun -HistoricalStartFrom 2025-01-01 -FreshRunLabel eccbc
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)]
-    [Guid] $TenantId,
-
     [Parameter(Mandatory = $true)]
     [Guid] $SubscriptionId,
 
@@ -406,24 +404,20 @@ try {
     Assert-ExpectedValue -Name "cron expression" -Actual ([string] $config.containerApps.cronExpression) -Expected $expectedCronExpression
     Assert-ExpectedValue -Name "Keycloak token endpoint" -Actual ([string] $config.appsettings.Settings.oauthTokenEndpointPath) -Expected $requiredTokenEndpointPath
 
-    $stage = "authenticating to the production Azure target"
-    $tenantText = $TenantId.ToString()
+    $stage = "validating the current Azure login and production subscription"
     $subscriptionText = $SubscriptionId.ToString()
 
-    Invoke-CheckedCommand -Command "az" -ArgumentList @(
-        "login", "--tenant", $tenantText, "--output", "none"
-    )
     Invoke-CheckedCommand -Command "az" -ArgumentList @(
         "account", "set", "--subscription", $subscriptionText
     )
 
     $account = ConvertFrom-CommandJson -Output @(Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
         "account", "show",
-        "--query", "{tenantId:tenantId,id:id,name:name}",
+        "--subscription", $subscriptionText,
+        "--query", "{id:id,name:name}",
         "--output", "json",
         "--only-show-errors"
     ))
-    Assert-ExpectedValue -Name "Azure tenant" -Actual ([string] $account.tenantId) -Expected $tenantText
     Assert-ExpectedValue -Name "Azure subscription" -Actual ([string] $account.id) -Expected $subscriptionText
 
     Invoke-CheckedCommand -Command "az" -ArgumentList @(
