@@ -1,14 +1,14 @@
 <#
 .SYNOPSIS
-Validates or deploys the latest canonical DataSync master commit and can start an isolated historical run.
+Validates or deploys a published DataSync release and can start an isolated historical run.
 
 .DESCRIPTION
-Clones the public Sollatek DataSync master branch from GitHub over HTTPS, verifies the async-export
-recovery fix and the Keycloak realm token endpoint change, validates the exact Azure production
-target, and prepares an immutable image tag. Add -Deploy to run the full test suite in the ACR .NET 10
-build, publish the image, and update the existing Container Apps Job image. The script uses the current
-Azure CLI or Cloud Shell login and validates the requested subscription before proceeding. A local
-.NET SDK is not required.
+Resolves a tested, immutable release published from the Sollatek DataSync master branch and validates
+the exact Azure production target. The default PrebuiltImage delivery imports the published image by
+digest into the existing Azure Container Registry and updates only the Container Apps Job image.
+Binary delivery downloads and verifies the compiled .NET 10 release, then assembles it with the
+selected compatible runtime base image in ACR without compiling source code. Git, Docker, source code,
+and a local .NET SDK are not required.
 
 Add -FreshHistoricalRun to plan or create a new private, timestamped Blob container for both exports
 and state. Add -StartHistoricalRun with -Deploy and -FreshHistoricalRun to start the first execution.
@@ -22,10 +22,13 @@ verified before and after the configuration update without reading their values.
 .\Invoke-DataSyncProductionRelease.ps1 -SubscriptionId <subscription-guid> -Deploy
 
 .EXAMPLE
+.\Invoke-DataSyncProductionRelease.ps1 -SubscriptionId <subscription-guid> -DeliveryMode Binary -BaseImage mcr.microsoft.com/dotnet/runtime:10.0 -Deploy
+
+.EXAMPLE
 .\Invoke-DataSyncProductionRelease.ps1 -SubscriptionId <subscription-guid> -FreshHistoricalRun
 
 .EXAMPLE
-.\Invoke-DataSyncProductionRelease.ps1 -SubscriptionId <subscription-guid> -Deploy -FreshHistoricalRun -StartHistoricalRun -HistoricalStartFrom 2025-01-01 -FreshRunLabel eccbc
+.\Invoke-DataSyncProductionRelease.ps1 -SubscriptionId <subscription-guid> -Deploy -FreshHistoricalRun -StartHistoricalRun -HistoricalStartFrom 2025-01-01 -FreshRunLabel datasync
 #>
 [CmdletBinding()]
 param(
@@ -34,6 +37,15 @@ param(
 
     [switch] $Deploy,
 
+    [ValidateSet("PrebuiltImage", "Binary")]
+    [string] $DeliveryMode = "PrebuiltImage",
+
+    [ValidatePattern("^latest$|^release-[0-9a-f]{40}$")]
+    [string] $ReleaseVersion = "latest",
+
+    [ValidatePattern("^[A-Za-z0-9][A-Za-z0-9._/:@-]{0,255}$")]
+    [string] $BaseImage = "mcr.microsoft.com/dotnet/runtime:10.0",
+
     [switch] $FreshHistoricalRun,
 
     [switch] $StartHistoricalRun,
@@ -41,7 +53,7 @@ param(
     [DateTimeOffset] $HistoricalStartFrom = [DateTimeOffset]::Parse("2025-01-01T00:00:00Z"),
 
     [ValidatePattern("^(?!.*--)[a-z0-9](?:[a-z0-9-]{0,18}[a-z0-9])?$")]
-    [string] $FreshRunLabel = "eccbc"
+    [string] $FreshRunLabel = "datasync"
 )
 
 $ErrorActionPreference = "Stop"
@@ -54,15 +66,17 @@ $expectedJobName = "sollatek-datasync-daily"
 $expectedStorageAccountName = "stsollatekdsync001"
 $expectedStorageContainerName = "sollatek-datasync"
 $expectedCronExpression = "0 1 * * *"
-$requiredFixCommit = "25a04bc5cd886fb3465c867dba6b45538db0cb19"
-$requiredKeycloakCommit = "3d54f9c3e9f1c930df7581bb03c08e690097aae5"
 $requiredTokenEndpointPath = "/realms/platform/protocol/openid-connect/token"
-$canonicalRepositoryUrl = "https://github.com/Sollatek/sollatek.datasync.git"
-$canonicalBranch = "master"
+$releaseRepository = "Sollatek/sollatek.datasync"
+$releaseBaseUri = "https://github.com/$releaseRepository/releases"
+$requiredReleaseContract = "datasync-public-v1"
+$expectedSourceImageRepository = "ghcr.io/sollatek/sollatek.datasync"
+$expectedArtifactName = "sollatek-datasync-net10.tar.gz"
+$expectedArtifactFramework = "net10.0"
+$expectedArtifactEntryPoint = "Sollatek.DataSync.dll"
 
 $stage = "initialization"
 $exitCode = 1
-$releaseCheckout = $null
 $releaseTemp = $null
 $freshContainerName = $null
 $freshContainerCreated = $false
@@ -123,6 +137,86 @@ function Assert-ExpectedValue {
 
     if ($Actual -ne $Expected) {
         throw "Unexpected $Name. Expected '$Expected', found '$Actual'."
+    }
+}
+
+function Get-PublishedReleaseManifest {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Version
+    )
+
+    $manifestUri = if ($Version -eq "latest") {
+        "$releaseBaseUri/latest/download/sollatek-datasync-release.json"
+    } else {
+        "$releaseBaseUri/download/$Version/sollatek-datasync-release.json"
+    }
+
+    try {
+        $manifest = Invoke-RestMethod `
+            -Method Get `
+            -Uri $manifestUri `
+            -Headers @{ "User-Agent" = "Sollatek-DataSync-Release" }
+    } catch {
+        throw "Could not download the published DataSync release manifest from '$manifestUri': $($_.Exception.Message)"
+    }
+
+    Assert-ExpectedValue -Name "release manifest schema" -Actual ([string] $manifest.schemaVersion) -Expected "1"
+    Assert-ExpectedValue -Name "release contract" -Actual ([string] $manifest.contract) -Expected $requiredReleaseContract
+    Assert-ExpectedValue -Name "release repository" -Actual ([string] $manifest.repository) -Expected $releaseRepository
+
+    $commit = [string] $manifest.commit
+    if ($commit -notmatch "^[0-9a-f]{40}$") {
+        throw "The release manifest commit is missing or invalid."
+    }
+
+    $releaseTag = "release-$commit"
+    Assert-ExpectedValue -Name "release tag" -Actual ([string] $manifest.release) -Expected $releaseTag
+    if ($Version -ne "latest") {
+        Assert-ExpectedValue -Name "requested release" -Actual $releaseTag -Expected $Version
+    }
+
+    Assert-ExpectedValue `
+        -Name "published image repository" `
+        -Actual ([string] $manifest.image.repository) `
+        -Expected $expectedSourceImageRepository
+    Assert-ExpectedValue `
+        -Name "published image tag" `
+        -Actual ([string] $manifest.image.tag) `
+        -Expected "sha-$commit"
+    Assert-ExpectedValue -Name "published image platform" -Actual ([string] $manifest.image.platform) -Expected "linux/amd64"
+    if (([string] $manifest.image.digest) -notmatch "^sha256:[0-9a-f]{64}$") {
+        throw "The published image digest is missing or invalid."
+    }
+
+    Assert-ExpectedValue -Name "release artifact name" -Actual ([string] $manifest.artifact.name) -Expected $expectedArtifactName
+    Assert-ExpectedValue -Name "release artifact framework" -Actual ([string] $manifest.artifact.framework) -Expected $expectedArtifactFramework
+    Assert-ExpectedValue -Name "release artifact deployment mode" -Actual ([string] $manifest.artifact.deploymentMode) -Expected "framework-dependent"
+    Assert-ExpectedValue -Name "release artifact entry point" -Actual ([string] $manifest.artifact.entryPoint) -Expected $expectedArtifactEntryPoint
+    if (([string] $manifest.artifact.sha256) -notmatch "^[0-9a-f]{64}$") {
+        throw "The release artifact SHA-256 is missing or invalid."
+    }
+
+    $manifest
+}
+
+function Get-TextSha256Prefix {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Text,
+
+        [ValidateRange(8, 64)]
+        [int] $Length = 12
+    )
+
+    $algorithm = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($Text)
+        $hash = $algorithm.ComputeHash($bytes)
+        $hex = -join ($hash | ForEach-Object { $_.ToString("x2") })
+        $hex.Substring(0, $Length)
+    } finally {
+        $algorithm.Dispose()
     }
 }
 
@@ -266,10 +360,18 @@ function Assert-SecretReference {
 
 try {
     $stage = "preflight"
-    foreach ($commandName in @("git", "az")) {
+    foreach ($commandName in @("az")) {
         if ($null -eq (Get-Command $commandName -ErrorAction SilentlyContinue)) {
             throw "Required command is not available: $commandName"
         }
+    }
+
+    if ($DeliveryMode -eq "Binary" -and $null -eq (Get-Command "tar" -ErrorAction SilentlyContinue)) {
+        throw "Binary delivery requires the tar command available in Azure Cloud Shell."
+    }
+
+    if ($DeliveryMode -eq "PrebuiltImage" -and $PSBoundParameters.ContainsKey("BaseImage")) {
+        throw "-BaseImage applies only when -DeliveryMode Binary is selected."
     }
 
     if ($StartHistoricalRun -and -not $FreshHistoricalRun) {
@@ -303,44 +405,15 @@ try {
 
     $historicalStartText = $historicalStartUtc.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
 
-    $releaseTemp = Join-Path ([System.IO.Path]::GetTempPath()) (
-        "datasync-production-release-" + [Guid]::NewGuid().ToString("N")
-    )
-    New-Item -ItemType Directory -Path $releaseTemp | Out-Null
-    $releaseTemp = Assert-ChildPath -Path $releaseTemp -ParentPath ([System.IO.Path]::GetTempPath())
-    $releaseCheckout = Join-Path $releaseTemp "repository"
-    $releaseCheckout = Assert-ChildPath -Path $releaseCheckout -ParentPath $releaseTemp
-
-    $stage = "cloning the canonical public GitHub branch"
-    Invoke-CheckedCommand -Command "git" -ArgumentList @(
-        "clone",
-        "--branch", $canonicalBranch,
-        "--single-branch",
-        "--no-checkout",
-        $canonicalRepositoryUrl,
-        $releaseCheckout
-    )
-
-    $canonicalRemoteUrl = ((Invoke-CheckedCommand -Command "git" -CaptureOutput -ArgumentList @(
-        "-C", $releaseCheckout, "remote", "get-url", "origin"
-    )) -join "").Trim()
-    Assert-ExpectedValue -Name "canonical GitHub repository" -Actual $canonicalRemoteUrl -Expected $canonicalRepositoryUrl
-
-    $canonicalRef = "refs/remotes/origin/$canonicalBranch"
-
-    $canonicalCommit = ((Invoke-CheckedCommand -Command "git" -CaptureOutput -ArgumentList @(
-        "-C", $releaseCheckout, "rev-parse", $canonicalRef
-    )) -join "").Trim()
-
-    Invoke-CheckedCommand -Command "git" -ArgumentList @(
-        "-C", $releaseCheckout, "merge-base", "--is-ancestor", $requiredFixCommit, $canonicalCommit
-    )
-    Invoke-CheckedCommand -Command "git" -ArgumentList @(
-        "-C", $releaseCheckout, "merge-base", "--is-ancestor", $requiredKeycloakCommit, $canonicalCommit
-    )
-
+    $stage = "resolving the published DataSync release"
+    $releaseManifest = Get-PublishedReleaseManifest -Version $ReleaseVersion
+    $canonicalCommit = [string] $releaseManifest.commit
+    $releaseTag = [string] $releaseManifest.release
     $shortCommit = $canonicalCommit.Substring(0, 12)
     $releaseStamp = (Get-Date).ToUniversalTime().ToString("yyyyMMddHHmmss")
+    $publishedImage = "$([string] $releaseManifest.image.repository)@$([string] $releaseManifest.image.digest)"
+    $artifactUri = "$releaseBaseUri/download/$releaseTag/$expectedArtifactName"
+
     if ($FreshHistoricalRun) {
         $historicalStartKey = $historicalStartUtc.UtcDateTime.ToString("yyyyMMdd")
         $freshContainerName = "sollatek-datasync-$FreshRunLabel-$historicalStartKey-$releaseStamp"
@@ -364,57 +437,6 @@ try {
             "SOL_FileExport__replaceExisting" = "true"
         }
     }
-    $stage = "checking out the canonical GitHub commit"
-    Invoke-CheckedCommand -Command "git" -ArgumentList @(
-        "-C", $releaseCheckout, "checkout", "--detach", $canonicalCommit
-    )
-
-    $checkedOutCommit = ((Invoke-CheckedCommand -Command "git" -CaptureOutput -ArgumentList @(
-        "-C", $releaseCheckout, "rev-parse", "HEAD"
-    )) -join "").Trim()
-    Assert-ExpectedValue -Name "release commit" -Actual $checkedOutCommit -Expected $canonicalCommit
-
-    $worktreeStatus = ((Invoke-CheckedCommand -Command "git" -CaptureOutput -ArgumentList @(
-        "-C", $releaseCheckout, "status", "--porcelain"
-    )) -join [Environment]::NewLine).Trim()
-    if (-not [string]::IsNullOrWhiteSpace($worktreeStatus)) {
-        throw "The isolated release worktree is not clean."
-    }
-
-    $stage = "validating deployment definition"
-    $releaseSourceConfigPath = [System.IO.Path]::Combine(
-        $releaseCheckout,
-        "deployment",
-        "azure",
-        "deploy.daily.azure-containerapps-job.json"
-    )
-    $config = Get-Content -LiteralPath $releaseSourceConfigPath -Raw | ConvertFrom-Json
-
-    $releaseDockerfilePath = [System.IO.Path]::Combine(
-        $releaseCheckout,
-        "Sollatek.DataSync",
-        "Dockerfile"
-    )
-    $dockerfileText = Get-Content -LiteralPath $releaseDockerfilePath -Raw
-    foreach ($requiredDockerfileLine in @(
-        'FROM build AS test',
-        'RUN dotnet test "Sollatek.DataSync.sln" -c Release --disable-build-servers -m:1 --verbosity minimal',
-        'FROM test AS publish'
-    )) {
-        if ($dockerfileText.IndexOf($requiredDockerfileLine, [StringComparison]::Ordinal) -lt 0) {
-            throw "The canonical Dockerfile does not contain the required ACR release-test gate: $requiredDockerfileLine"
-        }
-    }
-
-    Assert-ExpectedValue -Name "resource group" -Actual ([string] $config.resourceGroup) -Expected $expectedResourceGroup
-    Assert-ExpectedValue -Name "region" -Actual ([string] $config.location) -Expected $expectedLocation
-    Assert-ExpectedValue -Name "registry" -Actual ([string] $config.containerRegistry.name) -Expected $expectedAcrName
-    Assert-ExpectedValue -Name "image name" -Actual ([string] $config.image.name) -Expected $expectedImageName
-    Assert-ExpectedValue -Name "job name" -Actual ([string] $config.containerApps.jobName) -Expected $expectedJobName
-    Assert-ExpectedValue -Name "storage account" -Actual ([string] $config.storage.accountName) -Expected $expectedStorageAccountName
-    Assert-ExpectedValue -Name "storage container" -Actual ([string] $config.storage.containerName) -Expected $expectedStorageContainerName
-    Assert-ExpectedValue -Name "cron expression" -Actual ([string] $config.containerApps.cronExpression) -Expected $expectedCronExpression
-    Assert-ExpectedValue -Name "Keycloak token endpoint" -Actual ([string] $config.appsettings.Settings.oauthTokenEndpointPath) -Expected $requiredTokenEndpointPath
 
     $stage = "validating the current Azure login and production subscription"
     $subscriptionText = $SubscriptionId.ToString()
@@ -569,7 +591,13 @@ try {
             -Name "SOL_State__rootPath").value
     }
 
-    $imageTag = "$releaseStamp-$shortCommit"
+    $imageAlreadyAvailable = $false
+    if ($DeliveryMode -eq "PrebuiltImage") {
+        $imageTag = [string] $releaseManifest.image.tag
+    } else {
+        $baseImageKey = Get-TextSha256Prefix -Text $BaseImage
+        $imageTag = "$releaseStamp-$shortCommit-b$baseImageKey"
+    }
     $expectedImage = "${expectedAcrName}.azurecr.io/${expectedImageName}:$imageTag"
 
     $existingTag = ((Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
@@ -581,29 +609,37 @@ try {
         "--only-show-errors"
     )) -join "").Trim()
     if (-not [string]::IsNullOrWhiteSpace($existingTag)) {
-        throw "The immutable image tag already exists: $imageTag"
+        if ($DeliveryMode -ne "PrebuiltImage") {
+            throw "The immutable image tag already exists: $imageTag"
+        }
+
+        $existingDigest = ((Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
+            "acr", "repository", "show",
+            "--name", $expectedAcrName,
+            "--image", "${expectedImageName}:$imageTag",
+            "--query", "digest",
+            "--output", "tsv",
+            "--only-show-errors"
+        )) -join "").Trim()
+        Assert-ExpectedValue `
+            -Name "existing immutable image digest" `
+            -Actual $existingDigest `
+            -Expected ([string] $releaseManifest.image.digest)
+        $imageAlreadyAvailable = $true
     }
-
-    $releaseConfigPath = Join-Path $releaseTemp "deploy.daily.azure-containerapps-job.json"
-
-    $config.subscription = $subscriptionText
-    $config.image.tag = $imageTag
-    $config.containerApps.updateExistingJob = $false
-    $config.containerApps.runNow = $false
-    $config | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $releaseConfigPath -Encoding utf8
-
-    $deployScript = [System.IO.Path]::Combine(
-        $releaseCheckout,
-        "deployment",
-        "azure",
-        "deploy-containerapps-job.ps1"
-    )
-    & $deployScript -ConfigPath $releaseConfigPath -ImageOnly -PlanOnly
 
     if (-not $Deploy) {
         Write-Host ""
-        Write-Host "SUCCESS: validation passed. Nothing was built or deployed."
+        Write-Host "SUCCESS: published release and Azure target validation passed. Nothing was deployed."
+        Write-Host "Release: $releaseTag"
         Write-Host "Commit: $canonicalCommit"
+        Write-Host "Delivery mode: $DeliveryMode"
+        if ($DeliveryMode -eq "PrebuiltImage") {
+            Write-Host "Published image: $publishedImage"
+        } else {
+            Write-Host "Published binary: $artifactUri"
+            Write-Host "Selected base image: $BaseImage"
+        }
         Write-Host "Planned image: $expectedImage"
         if ($FreshHistoricalRun) {
             Write-Host "Planned historical start: $historicalStartText"
@@ -612,12 +648,125 @@ try {
             Write-Host "Planned state path in new container: $freshStateRoot"
             Write-Host "Existing container '$liveStorageContainer' will not be modified or deleted."
         }
-        Write-Host "With -Deploy, the ACR .NET 10 build runs the full test suite before creating the image."
-        Write-Host "Run again with -Deploy to publish and update the production job image."
+        Write-Host "Run again with -Deploy to import or assemble the tested release and update only the production job image."
         $exitCode = 0
     } else {
-        $stage = "publishing and deploying the image"
-        & $deployScript -ConfigPath $releaseConfigPath -ImageOnly
+        if ($DeliveryMode -eq "PrebuiltImage") {
+            if ($imageAlreadyAvailable) {
+                Write-Host "The verified immutable release image is already present in ACR: $expectedImage"
+            } else {
+                $stage = "importing the published immutable image"
+                Invoke-CheckedCommand -Command "az" -ArgumentList @(
+                    "acr", "import",
+                    "--subscription", $subscriptionText,
+                    "--resource-group", $expectedResourceGroup,
+                    "--name", $expectedAcrName,
+                    "--source", $publishedImage,
+                    "--image", "${expectedImageName}:$imageTag",
+                    "--force",
+                    "--output", "none",
+                    "--only-show-errors"
+                )
+            }
+        } else {
+            $stage = "downloading the published compiled release"
+            $releaseTemp = Join-Path ([System.IO.Path]::GetTempPath()) (
+                "datasync-binary-release-" + [Guid]::NewGuid().ToString("N")
+            )
+            New-Item -ItemType Directory -Path $releaseTemp | Out-Null
+            $releaseTemp = Assert-ChildPath -Path $releaseTemp -ParentPath ([System.IO.Path]::GetTempPath())
+
+            $archivePath = Join-Path $releaseTemp $expectedArtifactName
+            Invoke-WebRequest `
+                -Uri $artifactUri `
+                -OutFile $archivePath `
+                -Headers @{ "User-Agent" = "Sollatek-DataSync-Release" } `
+                -UseBasicParsing
+
+            $archiveHash = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
+            Assert-ExpectedValue `
+                -Name "compiled release SHA-256" `
+                -Actual $archiveHash `
+                -Expected ([string] $releaseManifest.artifact.sha256)
+
+            $datasyncPath = Join-Path $releaseTemp "datasync"
+            New-Item -ItemType Directory -Path $datasyncPath | Out-Null
+            Invoke-CheckedCommand -Command "tar" -ArgumentList @(
+                "--extract",
+                "--gzip",
+                "--file", $archivePath,
+                "--directory", $datasyncPath
+            )
+
+            foreach ($requiredFile in @(
+                "Sollatek.DataSync.dll",
+                "Sollatek.DataSync.deps.json",
+                "Sollatek.DataSync.runtimeconfig.json",
+                "appsettings.json"
+            )) {
+                if (-not (Test-Path -LiteralPath (Join-Path $datasyncPath $requiredFile) -PathType Leaf)) {
+                    throw "The verified compiled release is missing required file '$requiredFile'."
+                }
+            }
+
+            $binaryDockerfilePath = Join-Path $releaseTemp "Dockerfile.binary"
+            @(
+                "ARG BASE_IMAGE",
+                'FROM ${BASE_IMAGE}',
+                "WORKDIR /app",
+                "COPY datasync/ .",
+                "ENV FileExport__rootPath=/app/volumes/webapi/exports",
+                'VOLUME ["/app/volumes/webapi/exports"]',
+                'ENTRYPOINT ["dotnet", "Sollatek.DataSync.dll"]'
+            ) | Set-Content -LiteralPath $binaryDockerfilePath -Encoding utf8
+
+            $stage = "assembling the selected runtime image in ACR"
+            Push-Location -LiteralPath $releaseTemp
+            try {
+                Invoke-CheckedCommand -Command "az" -ArgumentList @(
+                    "acr", "build",
+                    "--subscription", $subscriptionText,
+                    "--resource-group", $expectedResourceGroup,
+                    "--registry", $expectedAcrName,
+                    "--image", "${expectedImageName}:$imageTag",
+                    "--file", "Dockerfile.binary",
+                    "--build-arg", "BASE_IMAGE=$BaseImage",
+                    "."
+                )
+            } finally {
+                Pop-Location
+            }
+        }
+
+        $stage = "verifying the imported or assembled image"
+        $imageDigest = ((Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
+            "acr", "repository", "show",
+            "--name", $expectedAcrName,
+            "--image", "${expectedImageName}:$imageTag",
+            "--query", "digest",
+            "--output", "tsv",
+            "--only-show-errors"
+        )) -join "").Trim()
+        if ([string]::IsNullOrWhiteSpace($imageDigest)) {
+            throw "The release image exists, but its ACR digest could not be verified."
+        }
+        if ($DeliveryMode -eq "PrebuiltImage") {
+            Assert-ExpectedValue `
+                -Name "imported image digest" `
+                -Actual $imageDigest `
+                -Expected ([string] $releaseManifest.image.digest)
+        }
+
+        $stage = "updating only the production job image"
+        Invoke-CheckedCommand -Command "az" -ArgumentList @(
+            "containerapp", "job", "update",
+            "--subscription", $subscriptionText,
+            "--resource-group", $expectedResourceGroup,
+            "--name", $expectedJobName,
+            "--image", $expectedImage,
+            "--output", "none",
+            "--only-show-errors"
+        )
 
         $stage = "verifying the deployed image"
         $deployedState = ConvertFrom-CommandJson -Output @(Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
@@ -631,18 +780,6 @@ try {
         Assert-ExpectedValue -Name "deployed image" -Actual ([string] $deployedState.image) -Expected $expectedImage
         Assert-ExpectedValue -Name "post-deployment trigger" -Actual ([string] $deployedState.triggerType) -Expected "Schedule"
         Assert-ExpectedValue -Name "post-deployment cron expression" -Actual ([string] $deployedState.cron) -Expected $expectedCronExpression
-
-        $imageDigest = ((Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
-            "acr", "repository", "show",
-            "--name", $expectedAcrName,
-            "--image", "${expectedImageName}:$imageTag",
-            "--query", "digest",
-            "--output", "tsv",
-            "--only-show-errors"
-        )) -join "").Trim()
-        if ([string]::IsNullOrWhiteSpace($imageDigest)) {
-            throw "The deployed image exists, but its ACR digest could not be verified."
-        }
 
         $historicalExecutionStarted = $false
         if ($FreshHistoricalRun) {
@@ -738,9 +875,10 @@ try {
         }
 
         Write-Host ""
-        Write-Host "SUCCESS: production job image was published and deployed."
-        Write-Host "The ACR .NET 10 build completed the release test stage before image publication."
+        Write-Host "SUCCESS: the tested release image was deployed to the production job."
+        Write-Host "Release: $releaseTag"
         Write-Host "Commit: $canonicalCommit"
+        Write-Host "Delivery mode: $DeliveryMode"
         Write-Host "Image: $expectedImage"
         Write-Host "Digest: $imageDigest"
         Write-Host "Previous image: $previousImage"

@@ -1,0 +1,7 @@
+ARG BASE_IMAGE=mcr.microsoft.com/dotnet/runtime:10.0
+FROM ${BASE_IMAGE}
+WORKDIR /app
+COPY datasync/ .
+ENV FileExport__rootPath=/app/volumes/webapi/exports
+VOLUME ["/app/volumes/webapi/exports"]
+ENTRYPOINT ["dotnet", "Sollatek.DataSync.dll"]
