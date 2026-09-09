@@ -8,10 +8,10 @@ recovery fix and the Keycloak realm token endpoint change, tests the commit in a
 checkout, validates the exact Azure production target, and prepares an immutable image tag. Add
 -Deploy to publish the image and update the existing Container Apps Job image.
 
-Add -FreshHistoricalRun to plan or configure a new timestamped Blob export and state prefix. Add
--StartHistoricalRun with -Deploy and -FreshHistoricalRun to start the first execution. Existing
-exports and state are never deleted, and existing job secret references are verified before and after
-the configuration update without reading their values.
+Add -FreshHistoricalRun to plan or create a new private, timestamped Blob container for both exports
+and state. Add -StartHistoricalRun with -Deploy and -FreshHistoricalRun to start the first execution.
+The existing Blob container is never deleted or modified, and existing job secret references are
+verified before and after the configuration update without reading their values.
 
 .EXAMPLE
 .\Invoke-DataSyncProductionRelease.ps1 -TenantId <tenant-guid> -SubscriptionId <subscription-guid>
@@ -41,7 +41,7 @@ param(
 
     [DateTimeOffset] $HistoricalStartFrom = [DateTimeOffset]::Parse("2025-01-01T00:00:00Z"),
 
-    [ValidatePattern("^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$")]
+    [ValidatePattern("^(?!.*--)[a-z0-9](?:[a-z0-9-]{0,18}[a-z0-9])?$")]
     [string] $FreshRunLabel = "eccbc"
 )
 
@@ -65,7 +65,8 @@ $stage = "initialization"
 $exitCode = 1
 $releaseCheckout = $null
 $releaseTemp = $null
-$freshRunRoot = $null
+$freshContainerName = $null
+$freshContainerCreated = $false
 
 function Invoke-CheckedCommand {
     param(
@@ -343,9 +344,9 @@ try {
     $releaseStamp = (Get-Date).ToUniversalTime().ToString("yyyyMMddHHmmss")
     if ($FreshHistoricalRun) {
         $historicalStartKey = $historicalStartUtc.UtcDateTime.ToString("yyyyMMdd")
-        $freshRunRoot = "fresh-runs/$FreshRunLabel-$historicalStartKey-$releaseStamp"
-        $freshExportRoot = "$freshRunRoot/exports"
-        $freshStateRoot = "$freshRunRoot/state"
+        $freshContainerName = "sollatek-datasync-$FreshRunLabel-$historicalStartKey-$releaseStamp"
+        $freshExportRoot = "exports"
+        $freshStateRoot = "_state"
         $freshEnvironmentValues = [ordered] @{
             "SOL_Settings__oauthTokenEndpointPath" = $requiredTokenEndpointPath
             "SOL_Sync__runOnStartup" = "historicalOnly"
@@ -354,10 +355,14 @@ try {
             "SOL_Sync__schedule__time" = "01:00:00"
             "SOL_Sync__startFrom" = $historicalStartText
             "SOL_Sync__transferMode" = "asyncExport"
+            "SOL_Storage__containerName" = $freshContainerName
             "SOL_FileExport__rootPath" = $freshExportRoot
+            "SOL_FileExport__folderFormat" = "yyyyMM"
+            "SOL_FileExport__fileNameFormat" = "{entity}_{date:yyyyMMdd}.{format}"
+            "SOL_FileExport__format" = "parquet"
             "SOL_State__provider" = "azureBlobStorage"
             "SOL_State__rootPath" = $freshStateRoot
-            "SOL_FileExport__replaceExisting" = "false"
+            "SOL_FileExport__replaceExisting" = "true"
         }
     }
     $stage = "checking out the canonical GitHub commit"
@@ -448,7 +453,7 @@ try {
         "containerapp", "job", "show",
         "--resource-group", $expectedResourceGroup,
         "--name", $expectedJobName,
-        "--query", "{triggerType:configuration.triggerType,cron:configuration.scheduleTriggerConfig.cronExpression,image:template.containers[0].image}",
+        "--query", "{triggerType:configuration.triggerType,cron:configuration.scheduleTriggerConfig.cronExpression,image:template.containers[0].image,identityPrincipalId:identity.principalId}",
         "--output", "json",
         "--only-show-errors"
     ))
@@ -482,10 +487,73 @@ try {
             -Environment $jobEnvironmentBefore `
             -Name "SOL_Storage__accountName").value
         Assert-ExpectedValue -Name "live storage account" -Actual $liveStorageAccount -Expected $expectedStorageAccountName
+        $liveStorageProvider = [string] (Get-JobEnvironmentEntry `
+            -Environment $jobEnvironmentBefore `
+            -Name "SOL_Storage__provider").value
+        Assert-ExpectedValue -Name "live storage provider" -Actual $liveStorageProvider -Expected "azureBlobStorage"
+        $liveStorageAuthentication = [string] (Get-JobEnvironmentEntry `
+            -Environment $jobEnvironmentBefore `
+            -Name "SOL_Storage__authentication").value
+        Assert-ExpectedValue -Name "live storage authentication" -Actual $liveStorageAuthentication -Expected "defaultAzureCredential"
         $liveStorageContainer = [string] (Get-JobEnvironmentEntry `
             -Environment $jobEnvironmentBefore `
             -Name "SOL_Storage__containerName").value
-        Assert-ExpectedValue -Name "live storage container" -Actual $liveStorageContainer -Expected $expectedStorageContainerName
+        if ([string]::IsNullOrWhiteSpace($liveStorageContainer)) {
+            throw "The live Blob storage container name is missing."
+        }
+        $liveContainerUriEntry = Get-JobEnvironmentEntry `
+            -Environment $jobEnvironmentBefore `
+            -Name "SOL_Storage__containerUri"
+        if ($null -ne $liveContainerUriEntry -and
+            -not [string]::IsNullOrWhiteSpace([string] $liveContainerUriEntry.value)) {
+            throw "SOL_Storage__containerUri must be empty because it would override the fresh container name."
+        }
+
+        $identityPrincipalId = [string] $jobState.identityPrincipalId
+        if ([string]::IsNullOrWhiteSpace($identityPrincipalId)) {
+            throw "The Container Apps Job must have a system-assigned managed identity."
+        }
+
+        $storageAccountId = ((Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
+            "storage", "account", "show",
+            "--subscription", $subscriptionText,
+            "--resource-group", $expectedResourceGroup,
+            "--name", $expectedStorageAccountName,
+            "--query", "id",
+            "--output", "tsv",
+            "--only-show-errors"
+        )) -join "").Trim()
+        if ([string]::IsNullOrWhiteSpace($storageAccountId)) {
+            throw "Could not determine the production storage account resource ID."
+        }
+
+        $storageRoleCountText = ((Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
+            "role", "assignment", "list",
+            "--subscription", $subscriptionText,
+            "--assignee-object-id", $identityPrincipalId,
+            "--scope", $storageAccountId,
+            "--include-inherited",
+            "--role", "Storage Blob Data Contributor",
+            "--query", "length(@)",
+            "--output", "tsv",
+            "--only-show-errors"
+        )) -join "").Trim()
+        $storageRoleCount = 0
+        if (-not [int]::TryParse($storageRoleCountText, [ref] $storageRoleCount) -or $storageRoleCount -lt 1) {
+            throw "The Container Apps Job identity requires Storage Blob Data Contributor on the storage account or an inherited scope before a fresh container can be used."
+        }
+
+        $freshContainerExists = ((Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
+            "storage", "container-rm", "exists",
+            "--subscription", $subscriptionText,
+            "--resource-group", $expectedResourceGroup,
+            "--storage-account", $expectedStorageAccountName,
+            "--name", $freshContainerName,
+            "--query", "exists",
+            "--output", "tsv",
+            "--only-show-errors"
+        )) -join "").Trim()
+        Assert-ExpectedValue -Name "fresh Blob container existence" -Actual $freshContainerExists.ToLowerInvariant() -Expected "false"
 
         $previousExportRoot = [string] (Get-JobEnvironmentEntry `
             -Environment $jobEnvironmentBefore `
@@ -528,10 +596,10 @@ try {
         Write-Host "Planned image: $expectedImage"
         if ($FreshHistoricalRun) {
             Write-Host "Planned historical start: $historicalStartText"
-            Write-Host "Planned export prefix: $freshExportRoot"
-            Write-Host "Planned state prefix: $freshStateRoot"
-            Write-Host "Blob container: https://$expectedStorageAccountName.blob.core.windows.net/$expectedStorageContainerName"
-            Write-Host "Existing exports and state will not be deleted."
+            Write-Host "Planned new Blob container: https://$expectedStorageAccountName.blob.core.windows.net/$freshContainerName"
+            Write-Host "Planned export path in new container: $freshExportRoot"
+            Write-Host "Planned state path in new container: $freshStateRoot"
+            Write-Host "Existing container '$liveStorageContainer' will not be modified or deleted."
         }
         Write-Host "Run again with -Deploy to publish and update the production job image."
         $exitCode = 0
@@ -571,6 +639,32 @@ try {
                 -ResourceGroup $expectedResourceGroup `
                 -JobName $expectedJobName `
                 -Subscription $subscriptionText
+
+            $stage = "creating the fresh Blob container"
+            Invoke-CheckedCommand -Command "az" -ArgumentList @(
+                "storage", "container-rm", "create",
+                "--subscription", $subscriptionText,
+                "--resource-group", $expectedResourceGroup,
+                "--storage-account", $expectedStorageAccountName,
+                "--name", $freshContainerName,
+                "--public-access", "off",
+                "--fail-on-exist",
+                "--output", "none",
+                "--only-show-errors"
+            )
+            $freshContainerCreated = $true
+
+            $createdContainerExists = ((Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
+                "storage", "container-rm", "exists",
+                "--subscription", $subscriptionText,
+                "--resource-group", $expectedResourceGroup,
+                "--storage-account", $expectedStorageAccountName,
+                "--name", $freshContainerName,
+                "--query", "exists",
+                "--output", "tsv",
+                "--only-show-errors"
+            )) -join "").Trim()
+            Assert-ExpectedValue -Name "created Blob container existence" -Actual $createdContainerExists.ToLowerInvariant() -Expected "true"
 
             $stage = "configuring the fresh historical run"
             $freshEnvironmentArguments = @(
@@ -640,12 +734,13 @@ try {
         Write-Host "Schedule: $expectedCronExpression UTC"
         if ($FreshHistoricalRun) {
             Write-Host "Historical start: $historicalStartText"
-            Write-Host "Export prefix: $freshExportRoot"
-            Write-Host "State prefix: $freshStateRoot"
-            Write-Host "Blob container: https://$expectedStorageAccountName.blob.core.windows.net/$expectedStorageContainerName"
-            Write-Host "Previous export prefix: $previousExportRoot"
-            Write-Host "Previous state prefix: $previousStateRoot"
-            Write-Host "Existing exports and state were not deleted."
+            Write-Host "New Blob container: https://$expectedStorageAccountName.blob.core.windows.net/$freshContainerName"
+            Write-Host "Export path in new container: $freshExportRoot"
+            Write-Host "State path in new container: $freshStateRoot"
+            Write-Host "Previous Blob container: $liveStorageContainer"
+            Write-Host "Previous export path: $previousExportRoot"
+            Write-Host "Previous state path: $previousStateRoot"
+            Write-Host "The previous container and its data were not modified or deleted."
         }
         if ($historicalExecutionStarted) {
             Write-Host "The first fresh historical execution was started."
@@ -656,6 +751,9 @@ try {
     }
 } catch {
     Write-Error "FAILED during '$stage': $($_.Exception.Message)" -ErrorAction Continue
+    if ($freshContainerCreated) {
+        Write-Warning "The new Blob container '$freshContainerName' was created and was not deleted automatically."
+    }
     $exitCode = 1
 } finally {
     if (-not [string]::IsNullOrWhiteSpace($releaseTemp) -and (Test-Path -LiteralPath $releaseTemp)) {
