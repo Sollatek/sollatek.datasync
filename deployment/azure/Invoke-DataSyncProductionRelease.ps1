@@ -1,18 +1,29 @@
 <#
 .SYNOPSIS
-Validates or deploys the latest canonical DataSync master commit to the production daily job.
+Validates or deploys the latest canonical DataSync master commit and can start an isolated historical run.
 
 .DESCRIPTION
-Fetches github-work/master, verifies the exact Sollatek GitHub repository and the async-export
-recovery fix, tests the commit in an isolated worktree, validates the exact Azure production target,
-and prepares an immutable image tag. Add -Deploy to publish the image and update only the existing
-Container Apps Job image. The script never starts a job execution or reads or replaces job secrets.
+Clones the public Sollatek DataSync master branch from GitHub over HTTPS, verifies the async-export
+recovery fix and the Keycloak realm token endpoint change, tests the commit in an isolated temporary
+checkout, validates the exact Azure production target, and prepares an immutable image tag. Add
+-Deploy to publish the image and update the existing Container Apps Job image.
+
+Add -FreshHistoricalRun to plan or configure a new timestamped Blob export and state prefix. Add
+-StartHistoricalRun with -Deploy and -FreshHistoricalRun to start the first execution. Existing
+exports and state are never deleted, and existing job secret references are verified before and after
+the configuration update without reading their values.
 
 .EXAMPLE
 .\Invoke-DataSyncProductionRelease.ps1 -TenantId <tenant-guid> -SubscriptionId <subscription-guid>
 
 .EXAMPLE
 .\Invoke-DataSyncProductionRelease.ps1 -TenantId <tenant-guid> -SubscriptionId <subscription-guid> -Deploy
+
+.EXAMPLE
+.\Invoke-DataSyncProductionRelease.ps1 -TenantId <tenant-guid> -SubscriptionId <subscription-guid> -FreshHistoricalRun
+
+.EXAMPLE
+.\Invoke-DataSyncProductionRelease.ps1 -TenantId <tenant-guid> -SubscriptionId <subscription-guid> -Deploy -FreshHistoricalRun -StartHistoricalRun -HistoricalStartFrom 2025-01-01 -FreshRunLabel eccbc
 #>
 [CmdletBinding()]
 param(
@@ -22,7 +33,16 @@ param(
     [Parameter(Mandatory = $true)]
     [Guid] $SubscriptionId,
 
-    [switch] $Deploy
+    [switch] $Deploy,
+
+    [switch] $FreshHistoricalRun,
+
+    [switch] $StartHistoricalRun,
+
+    [DateTimeOffset] $HistoricalStartFrom = [DateTimeOffset]::Parse("2025-01-01T00:00:00Z"),
+
+    [ValidatePattern("^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$")]
+    [string] $FreshRunLabel = "eccbc"
 )
 
 $ErrorActionPreference = "Stop"
@@ -32,16 +52,20 @@ $expectedLocation = "westeurope"
 $expectedAcrName = "acrsollatekdatasync001"
 $expectedImageName = "sollatek-datasync"
 $expectedJobName = "sollatek-datasync-daily"
+$expectedStorageAccountName = "stsollatekdsync001"
+$expectedStorageContainerName = "sollatek-datasync"
 $expectedCronExpression = "0 1 * * *"
 $requiredFixCommit = "25a04bc5cd886fb3465c867dba6b45538db0cb19"
-$canonicalRemote = "github-work"
-$expectedCanonicalRemoteUrl = "git@github-work:Sollatek/sollatek.datasync.git"
+$requiredKeycloakCommit = "3d54f9c3e9f1c930df7581bb03c08e690097aae5"
+$requiredTokenEndpointPath = "/realms/platform/protocol/openid-connect/token"
+$canonicalRepositoryUrl = "https://github.com/Sollatek/sollatek.datasync.git"
 $canonicalBranch = "master"
 
 $stage = "initialization"
 $exitCode = 1
-$releaseWorktree = $null
+$releaseCheckout = $null
 $releaseTemp = $null
+$freshRunRoot = $null
 
 function Invoke-CheckedCommand {
     param(
@@ -123,6 +147,123 @@ function Assert-ChildPath {
     $fullPath
 }
 
+function Get-JobEnvironment {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $ResourceGroup,
+
+        [Parameter(Mandatory = $true)]
+        [string] $JobName,
+
+        [Parameter(Mandatory = $true)]
+        [string] $Subscription
+    )
+
+    $environment = ConvertFrom-CommandJson -Output @(Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
+        "containerapp", "job", "show",
+        "--subscription", $Subscription,
+        "--resource-group", $ResourceGroup,
+        "--name", $JobName,
+        "--query", "template.containers[0].env",
+        "--output", "json",
+        "--only-show-errors"
+    ))
+
+    @($environment)
+}
+
+function Get-JobEnvironmentEntry {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object[]] $Environment,
+
+        [Parameter(Mandatory = $true)]
+        [string] $Name
+    )
+
+    $matches = @($Environment | Where-Object { [string] $_.name -eq $Name })
+    if ($matches.Count -gt 1) {
+        throw "The Container Apps Job has duplicate environment variable '$Name' entries."
+    }
+
+    if ($matches.Count -eq 0) {
+        return $null
+    }
+
+    $matches[0]
+}
+
+function Get-RunningExecutionNames {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $ResourceGroup,
+
+        [Parameter(Mandatory = $true)]
+        [string] $JobName,
+
+        [Parameter(Mandatory = $true)]
+        [string] $Subscription
+    )
+
+    $names = @(Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
+        "containerapp", "job", "execution", "list",
+        "--subscription", $Subscription,
+        "--resource-group", $ResourceGroup,
+        "--name", $JobName,
+        "--query", "[?properties.status=='Running'].name",
+        "--output", "tsv",
+        "--only-show-errors"
+    ))
+
+    @($names | Where-Object { -not [string]::IsNullOrWhiteSpace([string] $_) })
+}
+
+function Assert-NoRunningExecution {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $ResourceGroup,
+
+        [Parameter(Mandatory = $true)]
+        [string] $JobName,
+
+        [Parameter(Mandatory = $true)]
+        [string] $Subscription
+    )
+
+    $runningExecutions = @(Get-RunningExecutionNames `
+        -ResourceGroup $ResourceGroup `
+        -JobName $JobName `
+        -Subscription $Subscription)
+
+    if ($runningExecutions.Count -gt 0) {
+        throw "The Container Apps Job already has a running execution: $($runningExecutions -join ', ')."
+    }
+}
+
+function Assert-SecretReference {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object[]] $Environment,
+
+        [Parameter(Mandatory = $true)]
+        [string] $Name,
+
+        [string] $ExpectedSecretReference
+    )
+
+    $entry = Get-JobEnvironmentEntry -Environment $Environment -Name $Name
+    if ($null -eq $entry -or [string]::IsNullOrWhiteSpace([string] $entry.secretRef)) {
+        throw "The Container Apps Job environment variable '$Name' must use an existing secret reference."
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($ExpectedSecretReference) -and
+        [string] $entry.secretRef -ne $ExpectedSecretReference) {
+        throw "The Container Apps Job secret reference for '$Name' changed unexpectedly."
+    }
+
+    [string] $entry.secretRef
+}
+
 try {
     $stage = "preflight"
     foreach ($commandName in @("git", "dotnet", "az")) {
@@ -131,62 +272,106 @@ try {
         }
     }
 
-    $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
-    $hostRoot = Split-Path -Parent $repoRoot
-    $worktreeRoot = Join-Path $hostRoot ".worktrees"
-    $sourceConfigPath = Join-Path $repoRoot "deployment\azure\deploy.daily.azure-containerapps-job.json"
-
-    if (-not (Test-Path -LiteralPath $sourceConfigPath -PathType Leaf)) {
-        throw "Deployment config was not found: $sourceConfigPath"
+    if ($StartHistoricalRun -and -not $FreshHistoricalRun) {
+        throw "-StartHistoricalRun requires -FreshHistoricalRun."
     }
 
-    $stage = "validating canonical GitHub remote"
-    $canonicalRemoteUrl = ((Invoke-CheckedCommand -Command "git" -CaptureOutput -ArgumentList @(
-        "-C", $repoRoot, "remote", "get-url", $canonicalRemote
-    )) -join "").Trim()
-    Assert-ExpectedValue -Name "canonical GitHub remote" -Actual $canonicalRemoteUrl -Expected $expectedCanonicalRemoteUrl
+    if ($StartHistoricalRun -and -not $Deploy) {
+        throw "-StartHistoricalRun requires -Deploy so the tested canonical image is deployed first."
+    }
 
-    $stage = "fetching canonical GitHub branch"
-    $canonicalRef = "refs/remotes/$canonicalRemote/$canonicalBranch"
-    $canonicalRefspec = "${canonicalBranch}:$canonicalRef"
+    $historicalStartUtc = $HistoricalStartFrom.ToUniversalTime()
+    if ($FreshHistoricalRun) {
+        if ($historicalStartUtc.UtcDateTime.TimeOfDay -ne [TimeSpan]::Zero) {
+            throw "-HistoricalStartFrom must be a UTC day boundary for a daily historical run."
+        }
 
-    Invoke-CheckedCommand -Command "git" -ArgumentList @(
-        "-C", $repoRoot, "fetch", $canonicalRemote, $canonicalRefspec
+        $nowUtc = [DateTimeOffset]::UtcNow
+        $currentUtcDayStart = [DateTimeOffset]::new(
+            $nowUtc.Year,
+            $nowUtc.Month,
+            $nowUtc.Day,
+            0,
+            0,
+            0,
+            [TimeSpan]::Zero
+        )
+        if ($historicalStartUtc -ge $currentUtcDayStart) {
+            throw "-HistoricalStartFrom must be earlier than the current UTC day."
+        }
+    }
+
+    $historicalStartText = $historicalStartUtc.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+
+    $releaseTemp = Join-Path ([System.IO.Path]::GetTempPath()) (
+        "datasync-production-release-" + [Guid]::NewGuid().ToString("N")
     )
+    New-Item -ItemType Directory -Path $releaseTemp | Out-Null
+    $releaseTemp = Assert-ChildPath -Path $releaseTemp -ParentPath ([System.IO.Path]::GetTempPath())
+    $releaseCheckout = Join-Path $releaseTemp "repository"
+    $releaseCheckout = Assert-ChildPath -Path $releaseCheckout -ParentPath $releaseTemp
+
+    $stage = "cloning the canonical public GitHub branch"
+    Invoke-CheckedCommand -Command "git" -ArgumentList @(
+        "clone",
+        "--branch", $canonicalBranch,
+        "--single-branch",
+        "--no-checkout",
+        $canonicalRepositoryUrl,
+        $releaseCheckout
+    )
+
+    $canonicalRemoteUrl = ((Invoke-CheckedCommand -Command "git" -CaptureOutput -ArgumentList @(
+        "-C", $releaseCheckout, "remote", "get-url", "origin"
+    )) -join "").Trim()
+    Assert-ExpectedValue -Name "canonical GitHub repository" -Actual $canonicalRemoteUrl -Expected $canonicalRepositoryUrl
+
+    $canonicalRef = "refs/remotes/origin/$canonicalBranch"
 
     $canonicalCommit = ((Invoke-CheckedCommand -Command "git" -CaptureOutput -ArgumentList @(
-        "-C", $repoRoot, "rev-parse", $canonicalRef
+        "-C", $releaseCheckout, "rev-parse", $canonicalRef
     )) -join "").Trim()
 
     Invoke-CheckedCommand -Command "git" -ArgumentList @(
-        "-C", $repoRoot, "merge-base", "--is-ancestor", $requiredFixCommit, $canonicalCommit
+        "-C", $releaseCheckout, "merge-base", "--is-ancestor", $requiredFixCommit, $canonicalCommit
     )
-
-    $stage = "creating isolated release worktree"
-    if (-not (Test-Path -LiteralPath $worktreeRoot -PathType Container)) {
-        New-Item -ItemType Directory -Path $worktreeRoot | Out-Null
-    }
+    Invoke-CheckedCommand -Command "git" -ArgumentList @(
+        "-C", $releaseCheckout, "merge-base", "--is-ancestor", $requiredKeycloakCommit, $canonicalCommit
+    )
 
     $shortCommit = $canonicalCommit.Substring(0, 12)
     $releaseStamp = (Get-Date).ToUniversalTime().ToString("yyyyMMddHHmmss")
-    $releaseWorktree = Join-Path $worktreeRoot "datasync-production-$shortCommit-$releaseStamp"
-    $releaseWorktree = Assert-ChildPath -Path $releaseWorktree -ParentPath $worktreeRoot
-
-    if (Test-Path -LiteralPath $releaseWorktree) {
-        throw "Release worktree already exists: $releaseWorktree"
+    if ($FreshHistoricalRun) {
+        $historicalStartKey = $historicalStartUtc.UtcDateTime.ToString("yyyyMMdd")
+        $freshRunRoot = "fresh-runs/$FreshRunLabel-$historicalStartKey-$releaseStamp"
+        $freshExportRoot = "$freshRunRoot/exports"
+        $freshStateRoot = "$freshRunRoot/state"
+        $freshEnvironmentValues = [ordered] @{
+            "SOL_Settings__oauthTokenEndpointPath" = $requiredTokenEndpointPath
+            "SOL_Sync__runOnStartup" = "historicalOnly"
+            "SOL_Sync__stopWhenFinished" = "true"
+            "SOL_Sync__schedule__mode" = "daily"
+            "SOL_Sync__schedule__time" = "01:00:00"
+            "SOL_Sync__startFrom" = $historicalStartText
+            "SOL_Sync__transferMode" = "asyncExport"
+            "SOL_FileExport__rootPath" = $freshExportRoot
+            "SOL_State__provider" = "azureBlobStorage"
+            "SOL_State__rootPath" = $freshStateRoot
+            "SOL_FileExport__replaceExisting" = "false"
+        }
     }
-
+    $stage = "checking out the canonical GitHub commit"
     Invoke-CheckedCommand -Command "git" -ArgumentList @(
-        "-C", $repoRoot, "worktree", "add", "--detach", $releaseWorktree, $canonicalCommit
+        "-C", $releaseCheckout, "checkout", "--detach", $canonicalCommit
     )
 
     $checkedOutCommit = ((Invoke-CheckedCommand -Command "git" -CaptureOutput -ArgumentList @(
-        "-C", $releaseWorktree, "rev-parse", "HEAD"
+        "-C", $releaseCheckout, "rev-parse", "HEAD"
     )) -join "").Trim()
     Assert-ExpectedValue -Name "release commit" -Actual $checkedOutCommit -Expected $canonicalCommit
 
     $worktreeStatus = ((Invoke-CheckedCommand -Command "git" -CaptureOutput -ArgumentList @(
-        "-C", $releaseWorktree, "status", "--porcelain"
+        "-C", $releaseCheckout, "status", "--porcelain"
     )) -join [Environment]::NewLine).Trim()
     if (-not [string]::IsNullOrWhiteSpace($worktreeStatus)) {
         throw "The isolated release worktree is not clean."
@@ -195,7 +380,7 @@ try {
     $stage = "running DataSync release tests"
     Invoke-CheckedCommand -Command "dotnet" -ArgumentList @(
         "test",
-        (Join-Path $releaseWorktree "Sollatek.DataSync.sln"),
+        (Join-Path $releaseCheckout "Sollatek.DataSync.sln"),
         "-c", "Release",
         "--disable-build-servers",
         "-m:1",
@@ -203,7 +388,7 @@ try {
     )
 
     $stage = "validating deployment definition"
-    $releaseSourceConfigPath = Join-Path $releaseWorktree "deployment\azure\deploy.daily.azure-containerapps-job.json"
+    $releaseSourceConfigPath = Join-Path $releaseCheckout "deployment\azure\deploy.daily.azure-containerapps-job.json"
     $config = Get-Content -LiteralPath $releaseSourceConfigPath -Raw | ConvertFrom-Json
 
     Assert-ExpectedValue -Name "resource group" -Actual ([string] $config.resourceGroup) -Expected $expectedResourceGroup
@@ -211,7 +396,10 @@ try {
     Assert-ExpectedValue -Name "registry" -Actual ([string] $config.containerRegistry.name) -Expected $expectedAcrName
     Assert-ExpectedValue -Name "image name" -Actual ([string] $config.image.name) -Expected $expectedImageName
     Assert-ExpectedValue -Name "job name" -Actual ([string] $config.containerApps.jobName) -Expected $expectedJobName
+    Assert-ExpectedValue -Name "storage account" -Actual ([string] $config.storage.accountName) -Expected $expectedStorageAccountName
+    Assert-ExpectedValue -Name "storage container" -Actual ([string] $config.storage.containerName) -Expected $expectedStorageContainerName
     Assert-ExpectedValue -Name "cron expression" -Actual ([string] $config.containerApps.cronExpression) -Expected $expectedCronExpression
+    Assert-ExpectedValue -Name "Keycloak token endpoint" -Actual ([string] $config.appsettings.Settings.oauthTokenEndpointPath) -Expected $requiredTokenEndpointPath
 
     $stage = "authenticating to the production Azure target"
     $tenantText = $TenantId.ToString()
@@ -272,6 +460,41 @@ try {
         throw "Could not determine the current production image for rollback."
     }
 
+    if ($FreshHistoricalRun) {
+        $stage = "validating fresh historical-run prerequisites"
+        Assert-NoRunningExecution `
+            -ResourceGroup $expectedResourceGroup `
+            -JobName $expectedJobName `
+            -Subscription $subscriptionText
+
+        $jobEnvironmentBefore = @(Get-JobEnvironment `
+            -ResourceGroup $expectedResourceGroup `
+            -JobName $expectedJobName `
+            -Subscription $subscriptionText)
+        $clientKeySecretReference = Assert-SecretReference `
+            -Environment $jobEnvironmentBefore `
+            -Name "SOL_Settings__clientKey"
+        $clientSecretReference = Assert-SecretReference `
+            -Environment $jobEnvironmentBefore `
+            -Name "SOL_Settings__clientSecret"
+
+        $liveStorageAccount = [string] (Get-JobEnvironmentEntry `
+            -Environment $jobEnvironmentBefore `
+            -Name "SOL_Storage__accountName").value
+        Assert-ExpectedValue -Name "live storage account" -Actual $liveStorageAccount -Expected $expectedStorageAccountName
+        $liveStorageContainer = [string] (Get-JobEnvironmentEntry `
+            -Environment $jobEnvironmentBefore `
+            -Name "SOL_Storage__containerName").value
+        Assert-ExpectedValue -Name "live storage container" -Actual $liveStorageContainer -Expected $expectedStorageContainerName
+
+        $previousExportRoot = [string] (Get-JobEnvironmentEntry `
+            -Environment $jobEnvironmentBefore `
+            -Name "SOL_FileExport__rootPath").value
+        $previousStateRoot = [string] (Get-JobEnvironmentEntry `
+            -Environment $jobEnvironmentBefore `
+            -Name "SOL_State__rootPath").value
+    }
+
     $imageTag = "$releaseStamp-$shortCommit"
     $expectedImage = "${expectedAcrName}.azurecr.io/${expectedImageName}:$imageTag"
 
@@ -287,11 +510,6 @@ try {
         throw "The immutable image tag already exists: $imageTag"
     }
 
-    $releaseTemp = Join-Path ([System.IO.Path]::GetTempPath()) (
-        "datasync-production-release-" + [Guid]::NewGuid().ToString("N")
-    )
-    New-Item -ItemType Directory -Path $releaseTemp | Out-Null
-    $releaseTemp = Assert-ChildPath -Path $releaseTemp -ParentPath ([System.IO.Path]::GetTempPath())
     $releaseConfigPath = Join-Path $releaseTemp "deploy.daily.azure-containerapps-job.json"
 
     $config.subscription = $subscriptionText
@@ -300,7 +518,7 @@ try {
     $config.containerApps.runNow = $false
     $config | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $releaseConfigPath -Encoding utf8
 
-    $deployScript = Join-Path $releaseWorktree "deployment\azure\deploy-containerapps-job.ps1"
+    $deployScript = Join-Path $releaseCheckout "deployment\azure\deploy-containerapps-job.ps1"
     & $deployScript -ConfigPath $releaseConfigPath -ImageOnly -PlanOnly
 
     if (-not $Deploy) {
@@ -308,6 +526,13 @@ try {
         Write-Host "SUCCESS: validation and release tests passed. Nothing was deployed."
         Write-Host "Commit: $canonicalCommit"
         Write-Host "Planned image: $expectedImage"
+        if ($FreshHistoricalRun) {
+            Write-Host "Planned historical start: $historicalStartText"
+            Write-Host "Planned export prefix: $freshExportRoot"
+            Write-Host "Planned state prefix: $freshStateRoot"
+            Write-Host "Blob container: https://$expectedStorageAccountName.blob.core.windows.net/$expectedStorageContainerName"
+            Write-Host "Existing exports and state will not be deleted."
+        }
         Write-Host "Run again with -Deploy to publish and update the production job image."
         $exitCode = 0
     } else {
@@ -339,6 +564,73 @@ try {
             throw "The deployed image exists, but its ACR digest could not be verified."
         }
 
+        $historicalExecutionStarted = $false
+        if ($FreshHistoricalRun) {
+            $stage = "checking for active executions before the fresh historical update"
+            Assert-NoRunningExecution `
+                -ResourceGroup $expectedResourceGroup `
+                -JobName $expectedJobName `
+                -Subscription $subscriptionText
+
+            $stage = "configuring the fresh historical run"
+            $freshEnvironmentArguments = @(
+                "containerapp", "job", "update",
+                "--subscription", $subscriptionText,
+                "--resource-group", $expectedResourceGroup,
+                "--name", $expectedJobName,
+                "--set-env-vars"
+            )
+            foreach ($entry in $freshEnvironmentValues.GetEnumerator()) {
+                $freshEnvironmentArguments += "$($entry.Key)=$($entry.Value)"
+            }
+            $freshEnvironmentArguments += @("--output", "none", "--only-show-errors")
+            Invoke-CheckedCommand -Command "az" -ArgumentList $freshEnvironmentArguments
+
+            $stage = "verifying the fresh historical configuration"
+            $jobEnvironmentAfter = @(Get-JobEnvironment `
+                -ResourceGroup $expectedResourceGroup `
+                -JobName $expectedJobName `
+                -Subscription $subscriptionText)
+            Assert-SecretReference `
+                -Environment $jobEnvironmentAfter `
+                -Name "SOL_Settings__clientKey" `
+                -ExpectedSecretReference $clientKeySecretReference | Out-Null
+            Assert-SecretReference `
+                -Environment $jobEnvironmentAfter `
+                -Name "SOL_Settings__clientSecret" `
+                -ExpectedSecretReference $clientSecretReference | Out-Null
+
+            foreach ($entry in $freshEnvironmentValues.GetEnumerator()) {
+                $actualEntry = Get-JobEnvironmentEntry `
+                    -Environment $jobEnvironmentAfter `
+                    -Name $entry.Key
+                $actualValue = if ($null -eq $actualEntry) { "" } else { [string] $actualEntry.value }
+                Assert-ExpectedValue `
+                    -Name "job environment variable $($entry.Key)" `
+                    -Actual $actualValue `
+                    -Expected ([string] $entry.Value)
+            }
+
+            if ($StartHistoricalRun) {
+                $stage = "checking for active executions before starting the historical run"
+                Assert-NoRunningExecution `
+                    -ResourceGroup $expectedResourceGroup `
+                    -JobName $expectedJobName `
+                    -Subscription $subscriptionText
+
+                $stage = "starting the fresh historical run"
+                Invoke-CheckedCommand -Command "az" -ArgumentList @(
+                    "containerapp", "job", "start",
+                    "--subscription", $subscriptionText,
+                    "--resource-group", $expectedResourceGroup,
+                    "--name", $expectedJobName,
+                    "--output", "none",
+                    "--only-show-errors"
+                )
+                $historicalExecutionStarted = $true
+            }
+        }
+
         Write-Host ""
         Write-Host "SUCCESS: production job image was published and deployed."
         Write-Host "Commit: $canonicalCommit"
@@ -346,25 +638,26 @@ try {
         Write-Host "Digest: $imageDigest"
         Write-Host "Previous image: $previousImage"
         Write-Host "Schedule: $expectedCronExpression UTC"
-        Write-Host "The job was not started manually; the next scheduled execution will use the new image."
+        if ($FreshHistoricalRun) {
+            Write-Host "Historical start: $historicalStartText"
+            Write-Host "Export prefix: $freshExportRoot"
+            Write-Host "State prefix: $freshStateRoot"
+            Write-Host "Blob container: https://$expectedStorageAccountName.blob.core.windows.net/$expectedStorageContainerName"
+            Write-Host "Previous export prefix: $previousExportRoot"
+            Write-Host "Previous state prefix: $previousStateRoot"
+            Write-Host "Existing exports and state were not deleted."
+        }
+        if ($historicalExecutionStarted) {
+            Write-Host "The first fresh historical execution was started."
+        } else {
+            Write-Host "The job was not started manually; the next scheduled execution will use the deployed configuration."
+        }
         $exitCode = 0
     }
 } catch {
     Write-Error "FAILED during '$stage': $($_.Exception.Message)" -ErrorAction Continue
     $exitCode = 1
 } finally {
-    if (-not [string]::IsNullOrWhiteSpace($releaseWorktree) -and (Test-Path -LiteralPath $releaseWorktree)) {
-        try {
-            $releaseWorktree = Assert-ChildPath -Path $releaseWorktree -ParentPath $worktreeRoot
-            Invoke-CheckedCommand -Command "git" -ArgumentList @(
-                "-C", $repoRoot, "worktree", "remove", $releaseWorktree
-            )
-        } catch {
-            Write-Error "Cleanup failed for release worktree '$releaseWorktree': $($_.Exception.Message)" -ErrorAction Continue
-            $exitCode = 1
-        }
-    }
-
     if (-not [string]::IsNullOrWhiteSpace($releaseTemp) -and (Test-Path -LiteralPath $releaseTemp)) {
         try {
             $releaseTemp = Assert-ChildPath -Path $releaseTemp -ParentPath ([System.IO.Path]::GetTempPath())
