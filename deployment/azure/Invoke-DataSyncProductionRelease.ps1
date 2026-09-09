@@ -22,6 +22,9 @@ verified before and after the configuration update without reading their values.
 .\Invoke-DataSyncProductionRelease.ps1 -SubscriptionId <subscription-guid> -Deploy
 
 .EXAMPLE
+.\Invoke-DataSyncProductionRelease.ps1 -SubscriptionId <subscription-guid> -ReleaseVersion 1.0.0 -Deploy
+
+.EXAMPLE
 .\Invoke-DataSyncProductionRelease.ps1 -SubscriptionId <subscription-guid> -DeliveryMode Binary -BaseImage mcr.microsoft.com/dotnet/runtime:10.0 -Deploy
 
 .EXAMPLE
@@ -40,7 +43,7 @@ param(
     [ValidateSet("PrebuiltImage", "Binary")]
     [string] $DeliveryMode = "PrebuiltImage",
 
-    [ValidatePattern("^latest$|^release-[0-9a-f]{40}$")]
+    [ValidatePattern("^latest$|^release-[0-9a-f]{40}$|^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")]
     [string] $ReleaseVersion = "latest",
 
     [ValidatePattern("^[A-Za-z0-9][A-Za-z0-9._/:@-]{0,255}$")]
@@ -69,7 +72,7 @@ $expectedCronExpression = "0 1 * * *"
 $requiredTokenEndpointPath = "/realms/platform/protocol/openid-connect/token"
 $releaseRepository = "Sollatek/sollatek.datasync"
 $releaseBaseUri = "https://github.com/$releaseRepository/releases"
-$requiredReleaseContract = "datasync-public-v1"
+$supportedReleaseContracts = @("datasync-public-v1", "datasync-public-v2")
 $expectedSourceImageRepository = "ghcr.io/sollatek/sollatek.datasync"
 $expectedArtifactName = "sollatek-datasync-net10.tar.gz"
 $expectedArtifactFramework = "net10.0"
@@ -146,10 +149,18 @@ function Get-PublishedReleaseManifest {
         [string] $Version
     )
 
-    $manifestUri = if ($Version -eq "latest") {
+    $requestedRelease = if ($Version -eq "latest" -or $Version -like "release-*") {
+        $Version
+    } elseif ($Version.StartsWith("v", [StringComparison]::OrdinalIgnoreCase)) {
+        "v$($Version.Substring(1))"
+    } else {
+        "v$Version"
+    }
+
+    $manifestUri = if ($requestedRelease -eq "latest") {
         "$releaseBaseUri/latest/download/sollatek-datasync-release.json"
     } else {
-        "$releaseBaseUri/download/$Version/sollatek-datasync-release.json"
+        "$releaseBaseUri/download/$requestedRelease/sollatek-datasync-release.json"
     }
 
     try {
@@ -161,8 +172,13 @@ function Get-PublishedReleaseManifest {
         throw "Could not download the published DataSync release manifest from '$manifestUri': $($_.Exception.Message)"
     }
 
-    Assert-ExpectedValue -Name "release manifest schema" -Actual ([string] $manifest.schemaVersion) -Expected "1"
-    Assert-ExpectedValue -Name "release contract" -Actual ([string] $manifest.contract) -Expected $requiredReleaseContract
+    $contract = [string] $manifest.contract
+    if ($contract -notin $supportedReleaseContracts) {
+        throw "Unsupported release contract '$contract'."
+    }
+
+    $expectedSchemaVersion = if ($contract -eq "datasync-public-v2") { "2" } else { "1" }
+    Assert-ExpectedValue -Name "release manifest schema" -Actual ([string] $manifest.schemaVersion) -Expected $expectedSchemaVersion
     Assert-ExpectedValue -Name "release repository" -Actual ([string] $manifest.repository) -Expected $releaseRepository
 
     $commit = [string] $manifest.commit
@@ -170,21 +186,49 @@ function Get-PublishedReleaseManifest {
         throw "The release manifest commit is missing or invalid."
     }
 
-    $releaseTag = "release-$commit"
+    if ($contract -eq "datasync-public-v2") {
+        $semanticVersion = [string] $manifest.version
+        if ($semanticVersion -notmatch "^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$") {
+            throw "The release manifest semantic version is missing or invalid."
+        }
+        $releaseTag = "v$semanticVersion"
+    } else {
+        $releaseTag = "release-$commit"
+    }
+
     Assert-ExpectedValue -Name "release tag" -Actual ([string] $manifest.release) -Expected $releaseTag
-    if ($Version -ne "latest") {
-        Assert-ExpectedValue -Name "requested release" -Actual $releaseTag -Expected $Version
+    if ($requestedRelease -ne "latest") {
+        Assert-ExpectedValue -Name "requested release" -Actual $releaseTag -Expected $requestedRelease
     }
 
     Assert-ExpectedValue `
         -Name "published image repository" `
         -Actual ([string] $manifest.image.repository) `
         -Expected $expectedSourceImageRepository
-    Assert-ExpectedValue `
-        -Name "published image tag" `
-        -Actual ([string] $manifest.image.tag) `
-        -Expected "sha-$commit"
-    Assert-ExpectedValue -Name "published image platform" -Actual ([string] $manifest.image.platform) -Expected "linux/amd64"
+    if ($contract -eq "datasync-public-v2") {
+        Assert-ExpectedValue `
+            -Name "published image version tag" `
+            -Actual ([string] $manifest.image.tag) `
+            -Expected $semanticVersion
+        Assert-ExpectedValue `
+            -Name "published image immutable tag" `
+            -Actual ([string] $manifest.image.immutableTag) `
+            -Expected "sha-$commit"
+
+        $imagePlatforms = @($manifest.image.platforms)
+        if ($imagePlatforms.Count -ne 2 -or
+            "linux/amd64" -notin $imagePlatforms -or
+            "linux/arm64" -notin $imagePlatforms) {
+            throw "The published image platforms must be exactly linux/amd64 and linux/arm64."
+        }
+    } else {
+        Assert-ExpectedValue `
+            -Name "published image tag" `
+            -Actual ([string] $manifest.image.tag) `
+            -Expected "sha-$commit"
+        Assert-ExpectedValue -Name "published image platform" -Actual ([string] $manifest.image.platform) -Expected "linux/amd64"
+    }
+
     if (([string] $manifest.image.digest) -notmatch "^sha256:[0-9a-f]{64}$") {
         throw "The published image digest is missing or invalid."
     }
@@ -195,6 +239,38 @@ function Get-PublishedReleaseManifest {
     Assert-ExpectedValue -Name "release artifact entry point" -Actual ([string] $manifest.artifact.entryPoint) -Expected $expectedArtifactEntryPoint
     if (([string] $manifest.artifact.sha256) -notmatch "^[0-9a-f]{64}$") {
         throw "The release artifact SHA-256 is missing or invalid."
+    }
+
+    if ($contract -eq "datasync-public-v2") {
+        $expectedExecutables = [ordered] @{
+            "linux-x64" = @{ Name = "sollatek-datasync-linux-x64.tar.gz"; EntryPoint = "Sollatek.DataSync"; ArchiveFormat = "tar.gz" }
+            "linux-arm64" = @{ Name = "sollatek-datasync-linux-arm64.tar.gz"; EntryPoint = "Sollatek.DataSync"; ArchiveFormat = "tar.gz" }
+            "win-x64" = @{ Name = "sollatek-datasync-win-x64.zip"; EntryPoint = "Sollatek.DataSync.exe"; ArchiveFormat = "zip" }
+            "win-arm64" = @{ Name = "sollatek-datasync-win-arm64.zip"; EntryPoint = "Sollatek.DataSync.exe"; ArchiveFormat = "zip" }
+            "osx-x64" = @{ Name = "sollatek-datasync-osx-x64.tar.gz"; EntryPoint = "Sollatek.DataSync"; ArchiveFormat = "tar.gz" }
+            "osx-arm64" = @{ Name = "sollatek-datasync-osx-arm64.tar.gz"; EntryPoint = "Sollatek.DataSync"; ArchiveFormat = "tar.gz" }
+        }
+        $executables = @($manifest.executables)
+        if ($executables.Count -ne $expectedExecutables.Count) {
+            throw "The release manifest must contain exactly $($expectedExecutables.Count) self-contained executables."
+        }
+
+        foreach ($expectedExecutable in $expectedExecutables.GetEnumerator()) {
+            $matches = @($executables | Where-Object { [string] $_.rid -eq $expectedExecutable.Key })
+            if ($matches.Count -ne 1) {
+                throw "The release manifest must contain exactly one '$($expectedExecutable.Key)' executable."
+            }
+
+            $executable = $matches[0]
+            Assert-ExpectedValue -Name "$($expectedExecutable.Key) executable name" -Actual ([string] $executable.name) -Expected $expectedExecutable.Value.Name
+            Assert-ExpectedValue -Name "$($expectedExecutable.Key) executable framework" -Actual ([string] $executable.framework) -Expected $expectedArtifactFramework
+            Assert-ExpectedValue -Name "$($expectedExecutable.Key) executable deployment mode" -Actual ([string] $executable.deploymentMode) -Expected "self-contained"
+            Assert-ExpectedValue -Name "$($expectedExecutable.Key) executable entry point" -Actual ([string] $executable.entryPoint) -Expected $expectedExecutable.Value.EntryPoint
+            Assert-ExpectedValue -Name "$($expectedExecutable.Key) executable archive format" -Actual ([string] $executable.archiveFormat) -Expected $expectedExecutable.Value.ArchiveFormat
+            if (([string] $executable.sha256) -notmatch "^[0-9a-f]{64}$") {
+                throw "The $($expectedExecutable.Key) executable SHA-256 is missing or invalid."
+            }
+        }
     }
 
     $manifest
