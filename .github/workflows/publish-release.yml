@@ -1,0 +1,198 @@
+name: Validate and publish DataSync release
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - master
+  push:
+    branches:
+      - develop
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: datasync-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE_REPOSITORY: ghcr.io/sollatek/sollatek.datasync
+  RELEASE_ARCHIVE: sollatek-datasync-net10.tar.gz
+  RELEASE_DOCKERFILE: Dockerfile.binary
+  RELEASE_MANIFEST: sollatek-datasync-release.json
+  PUBLIC_RELEASE_EXCLUDED_TERMS_B64: ${{ secrets.PUBLIC_RELEASE_EXCLUDED_TERMS_B64 }}
+
+jobs:
+  validate-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install .NET SDK
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.301
+
+      - name: Verify public release exclusion gate
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:PUBLIC_RELEASE_EXCLUDED_TERMS_B64)) {
+            throw "The public release exclusion list is not configured."
+          }
+          $trackedFiles = @(git ls-files)
+          if ($LASTEXITCODE -ne 0 -or $trackedFiles.Count -eq 0) {
+            throw "Could not enumerate the tracked source files."
+          }
+          ./deployment/publication/Test-PublicReleaseContent.ps1 `
+            -ExcludedTextOnly `
+            -ForbiddenTextBase64 $env:PUBLIC_RELEASE_EXCLUDED_TERMS_B64 `
+            -Path $trackedFiles
+
+      - name: Test solution
+        run: dotnet test Sollatek.DataSync.sln -c Release --disable-build-servers -m:1 --verbosity minimal
+
+      - name: Publish compiled application
+        shell: pwsh
+        run: |
+          $publishRoot = Join-Path $PWD '.artifacts/release/datasync'
+          New-Item -ItemType Directory -Path $publishRoot -Force | Out-Null
+          dotnet publish Sollatek.DataSync/Sollatek.DataSync.csproj `
+            -c Release `
+            -o $publishRoot `
+            --no-self-contained `
+            -p:DataSyncProvider=all `
+            -p:DataSyncMonitoringProvider=none `
+            -p:DebugType=None `
+            -p:DebugSymbols=false
+          if ($LASTEXITCODE -ne 0) {
+            throw "DataSync publish failed with exit code $LASTEXITCODE."
+          }
+
+          Remove-Item -LiteralPath (Join-Path $publishRoot 'appsettings.Development.json') -Force -ErrorAction SilentlyContinue
+          Copy-Item -LiteralPath deployment/publication/appsettings.public.json -Destination (Join-Path $publishRoot 'appsettings.json') -Force
+          Copy-Item -LiteralPath deployment/publication/Dockerfile.binary -Destination (Join-Path $PWD ".artifacts/release/$env:RELEASE_DOCKERFILE") -Force
+
+          tar --create --gzip --file (Join-Path $PWD ".artifacts/release/$env:RELEASE_ARCHIVE") --directory $publishRoot .
+          if ($LASTEXITCODE -ne 0) {
+            throw "Release archive creation failed with exit code $LASTEXITCODE."
+          }
+
+      - name: Scan public release content
+        shell: pwsh
+        run: |
+          ./deployment/publication/Test-PublicReleaseContent.ps1 `
+            -ForbiddenTextBase64 $env:PUBLIC_RELEASE_EXCLUDED_TERMS_B64 `
+            -Path @(
+              '.artifacts/release/datasync',
+              '.artifacts/release/Dockerfile.binary',
+              'deployment/publication/appsettings.public.json'
+            )
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build release image
+        id: image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: Sollatek.DataSync/Dockerfile
+          platforms: linux/amd64
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          provenance: false
+          build-args: |
+            DATASYNC_PROVIDER=azureblobstorage
+            DATASYNC_MONITORING_PROVIDER=none
+            DATASYNC_SETTINGS_PATH=deployment/publication/appsettings.public.json
+          tags: |
+            ${{ env.IMAGE_REPOSITORY }}:sha-${{ github.sha }}
+            ${{ env.IMAGE_REPOSITORY }}:latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Publish immutable GitHub release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $artifactRoot = Join-Path $PWD '.artifacts/release'
+          $archivePath = Join-Path $artifactRoot $env:RELEASE_ARCHIVE
+          $dockerfilePath = Join-Path $artifactRoot $env:RELEASE_DOCKERFILE
+          $manifestPath = Join-Path $artifactRoot $env:RELEASE_MANIFEST
+          $checksumsPath = Join-Path $artifactRoot 'SHA256SUMS'
+          $releaseTag = "release-$env:GITHUB_SHA"
+          $imageDigest = '${{ steps.image.outputs.digest }}'
+
+          if ($imageDigest -notmatch '^sha256:[0-9a-f]{64}$') {
+            throw "The published image digest is missing or invalid."
+          }
+
+          $archiveHash = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
+          $dockerfileHash = (Get-FileHash -LiteralPath $dockerfilePath -Algorithm SHA256).Hash.ToLowerInvariant()
+          $manifest = [ordered]@{
+            schemaVersion = 1
+            contract = 'datasync-public-v1'
+            repository = $env:GITHUB_REPOSITORY
+            commit = $env:GITHUB_SHA
+            release = $releaseTag
+            image = [ordered]@{
+              repository = $env:IMAGE_REPOSITORY
+              tag = "sha-$env:GITHUB_SHA"
+              digest = $imageDigest
+              platform = 'linux/amd64'
+            }
+            artifact = [ordered]@{
+              name = $env:RELEASE_ARCHIVE
+              sha256 = $archiveHash
+              framework = 'net10.0'
+              deploymentMode = 'framework-dependent'
+              entryPoint = 'Sollatek.DataSync.dll'
+            }
+            dockerfile = [ordered]@{
+              name = $env:RELEASE_DOCKERFILE
+              sha256 = $dockerfileHash
+            }
+          }
+          $manifest | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $manifestPath -Encoding utf8NoBOM
+
+          @(
+            "$archiveHash  $env:RELEASE_ARCHIVE"
+            "$dockerfileHash  $env:RELEASE_DOCKERFILE"
+            "$((Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash.ToLowerInvariant())  $env:RELEASE_MANIFEST"
+          ) | Set-Content -LiteralPath $checksumsPath -Encoding utf8NoBOM
+
+          ./deployment/publication/Test-PublicReleaseContent.ps1 `
+            -ForbiddenTextBase64 $env:PUBLIC_RELEASE_EXCLUDED_TERMS_B64 `
+            -Path @($manifestPath, $checksumsPath)
+
+          $releaseFiles = @($archivePath, $dockerfilePath, $manifestPath, $checksumsPath)
+          gh release view $releaseTag --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $releaseTag @releaseFiles --repo $env:GITHUB_REPOSITORY --clobber
+            gh release edit $releaseTag --repo $env:GITHUB_REPOSITORY --latest --title "DataSync $($env:GITHUB_SHA.Substring(0, 12))"
+          } else {
+            gh release create $releaseTag @releaseFiles `
+              --repo $env:GITHUB_REPOSITORY `
+              --target $env:GITHUB_SHA `
+              --latest `
+              --title "DataSync $($env:GITHUB_SHA.Substring(0, 12))" `
+              --notes "Immutable DataSync release built and tested from master commit $env:GITHUB_SHA."
+          }
+          if ($LASTEXITCODE -ne 0) {
+            throw "GitHub release publication failed with exit code $LASTEXITCODE."
+          }

@@ -360,31 +360,63 @@ public sealed class AsyncExportRowSourceTests
             var firstDownloadId = Guid.Parse("33333333-3333-3333-3333-333333333333");
             var secondDownloadId = Guid.Parse("44444444-4444-4444-4444-444444444444");
             var parquet = await ParquetAsync();
+            HttpResponseMessage RouteResponse(HttpRequestMessage request)
+            {
+                var pathAndQuery = request.RequestUri!.PathAndQuery;
+                if (pathAndQuery.Contains("%24exportAsync=true", StringComparison.Ordinal))
+                {
+                    if (pathAndQuery.Contains("2026-06-01", StringComparison.Ordinal))
+                    {
+                        return Json(HttpStatusCode.Accepted, $$"""
+                            { "exportId": "{{firstExportId}}", "createdAtUtc": "2026-06-22T00:00:00Z" }
+                            """);
+                    }
+
+                    if (pathAndQuery.Contains("2026-06-02", StringComparison.Ordinal))
+                    {
+                        return Json(HttpStatusCode.Accepted, $$"""
+                            { "exportId": "{{secondExportId}}", "createdAtUtc": "2026-06-22T00:00:00Z" }
+                            """);
+                    }
+                }
+
+                if (request.RequestUri.AbsolutePath == $"/api/exports/{firstExportId}")
+                {
+                    return Json(HttpStatusCode.OK, $$"""
+                        {
+                          "exportId": "{{firstExportId}}",
+                          "status": "succeeded",
+                          "downloadId": "{{firstDownloadId}}",
+                          "expiresAtUtc": "2099-06-23T00:00:00Z"
+                        }
+                        """);
+                }
+
+                if (request.RequestUri.AbsolutePath == $"/api/exports/{secondExportId}")
+                {
+                    return Json(HttpStatusCode.OK, $$"""
+                        {
+                          "exportId": "{{secondExportId}}",
+                          "status": "succeeded",
+                          "downloadId": "{{secondDownloadId}}",
+                          "expiresAtUtc": "2099-06-23T00:00:00Z"
+                        }
+                        """);
+                }
+
+                if (request.RequestUri.AbsolutePath ==
+                        $"/api/exports/{firstExportId}/download/{firstDownloadId}" ||
+                    request.RequestUri.AbsolutePath ==
+                        $"/api/exports/{secondExportId}/download/{secondDownloadId}")
+                {
+                    return Binary(parquet, "application/vnd.apache.parquet");
+                }
+
+                throw new InvalidOperationException($"Unexpected async export request: {pathAndQuery}");
+            }
+
             var handler = new RecordingHandler(
-                _ => Json(HttpStatusCode.Accepted, $$"""
-                    { "exportId": "{{firstExportId}}", "createdAtUtc": "2026-06-22T00:00:00Z" }
-                    """),
-                _ => Json(HttpStatusCode.OK, $$"""
-                    {
-                      "exportId": "{{firstExportId}}",
-                      "status": "succeeded",
-                      "downloadId": "{{firstDownloadId}}",
-                      "expiresAtUtc": "2099-06-23T00:00:00Z"
-                    }
-                    """),
-                _ => Binary(parquet, "application/vnd.apache.parquet"),
-                _ => Json(HttpStatusCode.Accepted, $$"""
-                    { "exportId": "{{secondExportId}}", "createdAtUtc": "2026-06-22T00:00:00Z" }
-                    """),
-                _ => Json(HttpStatusCode.OK, $$"""
-                    {
-                      "exportId": "{{secondExportId}}",
-                      "status": "succeeded",
-                      "downloadId": "{{secondDownloadId}}",
-                      "expiresAtUtc": "2099-06-23T00:00:00Z"
-                    }
-                    """),
-                _ => Binary(parquet, "application/vnd.apache.parquet"));
+                Enumerable.Repeat<Func<HttpRequestMessage, HttpResponseMessage>>(RouteResponse, 6).ToArray());
             var source = new HttpAsyncExportRowSource(
                 new HttpClient(handler)
                 {
