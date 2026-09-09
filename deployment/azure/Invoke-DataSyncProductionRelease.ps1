@@ -4,10 +4,11 @@ Validates or deploys the latest canonical DataSync master commit and can start a
 
 .DESCRIPTION
 Clones the public Sollatek DataSync master branch from GitHub over HTTPS, verifies the async-export
-recovery fix and the Keycloak realm token endpoint change, tests the commit in an isolated temporary
-checkout, validates the exact Azure production target, and prepares an immutable image tag. Add
--Deploy to publish the image and update the existing Container Apps Job image. The script uses the
-current Azure CLI or Cloud Shell login and validates the requested subscription before proceeding.
+recovery fix and the Keycloak realm token endpoint change, validates the exact Azure production
+target, and prepares an immutable image tag. Add -Deploy to run the full test suite in the ACR .NET 10
+build, publish the image, and update the existing Container Apps Job image. The script uses the current
+Azure CLI or Cloud Shell login and validates the requested subscription before proceeding. A local
+.NET SDK is not required.
 
 Add -FreshHistoricalRun to plan or create a new private, timestamped Blob container for both exports
 and state. Add -StartHistoricalRun with -Deploy and -FreshHistoricalRun to start the first execution.
@@ -265,7 +266,7 @@ function Assert-SecretReference {
 
 try {
     $stage = "preflight"
-    foreach ($commandName in @("git", "dotnet", "az")) {
+    foreach ($commandName in @("git", "az")) {
         if ($null -eq (Get-Command $commandName -ErrorAction SilentlyContinue)) {
             throw "Required command is not available: $commandName"
         }
@@ -380,19 +381,30 @@ try {
         throw "The isolated release worktree is not clean."
     }
 
-    $stage = "running DataSync release tests"
-    Invoke-CheckedCommand -Command "dotnet" -ArgumentList @(
-        "test",
-        (Join-Path $releaseCheckout "Sollatek.DataSync.sln"),
-        "-c", "Release",
-        "--disable-build-servers",
-        "-m:1",
-        "--verbosity", "minimal"
-    )
-
     $stage = "validating deployment definition"
-    $releaseSourceConfigPath = Join-Path $releaseCheckout "deployment\azure\deploy.daily.azure-containerapps-job.json"
+    $releaseSourceConfigPath = [System.IO.Path]::Combine(
+        $releaseCheckout,
+        "deployment",
+        "azure",
+        "deploy.daily.azure-containerapps-job.json"
+    )
     $config = Get-Content -LiteralPath $releaseSourceConfigPath -Raw | ConvertFrom-Json
+
+    $releaseDockerfilePath = [System.IO.Path]::Combine(
+        $releaseCheckout,
+        "Sollatek.DataSync",
+        "Dockerfile"
+    )
+    $dockerfileText = Get-Content -LiteralPath $releaseDockerfilePath -Raw
+    foreach ($requiredDockerfileLine in @(
+        'FROM build AS test',
+        'RUN dotnet test "Sollatek.DataSync.sln" -c Release --disable-build-servers -m:1 --verbosity minimal',
+        'FROM test AS publish'
+    )) {
+        if ($dockerfileText.IndexOf($requiredDockerfileLine, [StringComparison]::Ordinal) -lt 0) {
+            throw "The canonical Dockerfile does not contain the required ACR release-test gate: $requiredDockerfileLine"
+        }
+    }
 
     Assert-ExpectedValue -Name "resource group" -Actual ([string] $config.resourceGroup) -Expected $expectedResourceGroup
     Assert-ExpectedValue -Name "region" -Actual ([string] $config.location) -Expected $expectedLocation
@@ -580,12 +592,17 @@ try {
     $config.containerApps.runNow = $false
     $config | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $releaseConfigPath -Encoding utf8
 
-    $deployScript = Join-Path $releaseCheckout "deployment\azure\deploy-containerapps-job.ps1"
+    $deployScript = [System.IO.Path]::Combine(
+        $releaseCheckout,
+        "deployment",
+        "azure",
+        "deploy-containerapps-job.ps1"
+    )
     & $deployScript -ConfigPath $releaseConfigPath -ImageOnly -PlanOnly
 
     if (-not $Deploy) {
         Write-Host ""
-        Write-Host "SUCCESS: validation and release tests passed. Nothing was deployed."
+        Write-Host "SUCCESS: validation passed. Nothing was built or deployed."
         Write-Host "Commit: $canonicalCommit"
         Write-Host "Planned image: $expectedImage"
         if ($FreshHistoricalRun) {
@@ -595,6 +612,7 @@ try {
             Write-Host "Planned state path in new container: $freshStateRoot"
             Write-Host "Existing container '$liveStorageContainer' will not be modified or deleted."
         }
+        Write-Host "With -Deploy, the ACR .NET 10 build runs the full test suite before creating the image."
         Write-Host "Run again with -Deploy to publish and update the production job image."
         $exitCode = 0
     } else {
@@ -721,6 +739,7 @@ try {
 
         Write-Host ""
         Write-Host "SUCCESS: production job image was published and deployed."
+        Write-Host "The ACR .NET 10 build completed the release test stage before image publication."
         Write-Host "Commit: $canonicalCommit"
         Write-Host "Image: $expectedImage"
         Write-Host "Digest: $imageDigest"
