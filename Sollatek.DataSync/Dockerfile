@@ -32,7 +32,12 @@ COPY . .
 WORKDIR "/src/Sollatek.DataSync"
 RUN dotnet build "Sollatek.DataSync.csproj" -c Release -o /app/build -p:DataSyncProvider="${DATASYNC_PROVIDER}" -p:DataSyncMonitoringProvider="${DATASYNC_MONITORING_PROVIDER}"
 
-FROM build AS publish
+FROM build AS test
+WORKDIR /src
+RUN dotnet test "Sollatek.DataSync.sln" -c Release --disable-build-servers -m:1 --verbosity minimal
+
+FROM test AS publish
+WORKDIR "/src/Sollatek.DataSync"
 ARG DATASYNC_PROVIDER=all
 ARG DATASYNC_MONITORING_PROVIDER=none
 RUN dotnet publish "Sollatek.DataSync.csproj" -c Release -o /app/publish -p:DataSyncProvider="${DATASYNC_PROVIDER}" -p:DataSyncMonitoringProvider="${DATASYNC_MONITORING_PROVIDER}"
