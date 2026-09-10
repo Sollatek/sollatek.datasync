@@ -21,6 +21,7 @@ env:
   IMAGE_REPOSITORY: ghcr.io/sollatek/sollatek.datasync
   RELEASE_ARCHIVE: sollatek-datasync-net10.tar.gz
   RELEASE_DOCKERFILE: Dockerfile.binary
+  RELEASE_LICENSE: LICENCE.md
   RELEASE_MANIFEST: sollatek-datasync-release.json
   PUBLIC_RELEASE_EXCLUDED_TERMS_B64: ${{ secrets.PUBLIC_RELEASE_EXCLUDED_TERMS_B64 }}
 
@@ -98,8 +99,10 @@ jobs:
           $artifactRoot = Join-Path $PWD '.artifacts/release'
           $portableRoot = Join-Path $artifactRoot 'datasync'
           $selfContainedRoot = Join-Path $artifactRoot 'self-contained'
+          $licensePath = Join-Path $artifactRoot $env:RELEASE_LICENSE
           New-Item -ItemType Directory -Path $portableRoot -Force | Out-Null
           New-Item -ItemType Directory -Path $selfContainedRoot -Force | Out-Null
+          Copy-Item -LiteralPath LICENCE.md -Destination $licensePath -Force
 
           dotnet publish Sollatek.DataSync/Sollatek.DataSync.csproj `
             -c Release `
@@ -118,6 +121,7 @@ jobs:
           Remove-Item -LiteralPath (Join-Path $portableRoot 'appsettings.Development.json') -Force -ErrorAction SilentlyContinue
           Get-ChildItem -LiteralPath $portableRoot -Filter '*.pdb' -File -Recurse | Remove-Item -Force
           Copy-Item -LiteralPath deployment/publication/appsettings.public.json -Destination (Join-Path $portableRoot 'appsettings.json') -Force
+          Copy-Item -LiteralPath $licensePath -Destination (Join-Path $portableRoot $env:RELEASE_LICENSE) -Force
           Copy-Item -LiteralPath deployment/publication/Dockerfile.binary -Destination (Join-Path $artifactRoot $env:RELEASE_DOCKERFILE) -Force
 
           tar --create --gzip --file (Join-Path $artifactRoot $env:RELEASE_ARCHIVE) --directory $portableRoot .
@@ -156,6 +160,7 @@ jobs:
             Remove-Item -LiteralPath (Join-Path $targetRoot 'appsettings.Development.json') -Force -ErrorAction SilentlyContinue
             Get-ChildItem -LiteralPath $targetRoot -Filter '*.pdb' -File -Recurse | Remove-Item -Force
             Copy-Item -LiteralPath deployment/publication/appsettings.public.json -Destination (Join-Path $targetRoot 'appsettings.json') -Force
+            Copy-Item -LiteralPath $licensePath -Destination (Join-Path $targetRoot $env:RELEASE_LICENSE) -Force
 
             $archivePath = Join-Path $artifactRoot $target.Archive
             if ($target.Windows) {
@@ -181,6 +186,7 @@ jobs:
               '.artifacts/release/datasync',
               '.artifacts/release/self-contained',
               '.artifacts/release/Dockerfile.binary',
+              '.artifacts/release/LICENCE.md',
               'deployment/publication/appsettings.public.json'
             )
 
@@ -224,6 +230,7 @@ jobs:
           $artifactRoot = Join-Path $PWD '.artifacts/release'
           $archivePath = Join-Path $artifactRoot $env:RELEASE_ARCHIVE
           $dockerfilePath = Join-Path $artifactRoot $env:RELEASE_DOCKERFILE
+          $licensePath = Join-Path $artifactRoot $env:RELEASE_LICENSE
           $manifestPath = Join-Path $artifactRoot $env:RELEASE_MANIFEST
           $checksumsPath = Join-Path $artifactRoot 'SHA256SUMS'
           $releaseTag = '${{ steps.release.outputs.release_tag }}'
@@ -236,6 +243,7 @@ jobs:
 
           $archiveHash = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
           $dockerfileHash = (Get-FileHash -LiteralPath $dockerfilePath -Algorithm SHA256).Hash.ToLowerInvariant()
+          $licenseHash = (Get-FileHash -LiteralPath $licensePath -Algorithm SHA256).Hash.ToLowerInvariant()
           $executableDefinitions = @(
             [ordered]@{ rid = 'linux-x64'; name = 'sollatek-datasync-linux-x64.tar.gz'; entryPoint = 'Sollatek.DataSync'; archiveFormat = 'tar.gz' },
             [ordered]@{ rid = 'linux-arm64'; name = 'sollatek-datasync-linux-arm64.tar.gz'; entryPoint = 'Sollatek.DataSync'; archiveFormat = 'tar.gz' },
@@ -285,12 +293,17 @@ jobs:
               name = $env:RELEASE_DOCKERFILE
               sha256 = $dockerfileHash
             }
+            license = [ordered]@{
+              name = $env:RELEASE_LICENSE
+              sha256 = $licenseHash
+            }
           }
           $manifest | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $manifestPath -Encoding utf8NoBOM
 
           $checksumLines = @(
             "$archiveHash  $env:RELEASE_ARCHIVE"
             "$dockerfileHash  $env:RELEASE_DOCKERFILE"
+            "$licenseHash  $env:RELEASE_LICENSE"
             foreach ($executable in $executableArtifacts) {
               "$($executable.sha256)  $($executable.name)"
             }
@@ -302,7 +315,7 @@ jobs:
             -ForbiddenTextBase64 $env:PUBLIC_RELEASE_EXCLUDED_TERMS_B64 `
             -Path @($manifestPath, $checksumsPath)
 
-          $releaseFiles = @($archivePath, $dockerfilePath, $manifestPath, $checksumsPath) + @(
+          $releaseFiles = @($archivePath, $dockerfilePath, $licensePath, $manifestPath, $checksumsPath) + @(
             $executableDefinitions | ForEach-Object { Join-Path $artifactRoot $_.name }
           )
           gh release view $releaseTag --repo $env:GITHUB_REPOSITORY *> $null

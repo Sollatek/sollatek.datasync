@@ -10,10 +10,48 @@ Binary delivery downloads and verifies the compiled .NET 10 release, then assemb
 selected compatible runtime base image in ACR without compiling source code. Git, Docker, source code,
 and a local .NET SDK are not required.
 
+The OS-specific self-contained executable archives published with each release are intended for
+direct Linux, Windows, or macOS hosting. This Azure Container Apps Job script deliberately uses the
+portable compiled archive for Binary delivery so the selected base image supplies a known-compatible
+.NET runtime and native operating-system dependencies.
+
 Add -FreshHistoricalRun to plan or create a new private, timestamped Blob container for both exports
 and state. Add -StartHistoricalRun with -Deploy and -FreshHistoricalRun to start the first execution.
 The existing Blob container is never deleted or modified, and existing job secret references are
 verified before and after the configuration update without reading their values.
+
+.PARAMETER SubscriptionId
+Azure subscription containing the existing production DataSync resources. The script uses the current
+Azure CLI login and does not require a tenant parameter.
+
+.PARAMETER Deploy
+Applies the planned image update. Without this switch, the script validates the release and exact Azure
+target and reports the plan without changing the job.
+
+.PARAMETER DeliveryMode
+PrebuiltImage imports the Sollatek-published multi-platform image by immutable digest and is recommended.
+Binary downloads the checksum-verified portable compiled release and assembles it in ACR with BaseImage.
+Neither mode clones the repository or compiles DataSync source code in the customer environment.
+
+.PARAMETER ReleaseVersion
+Published semantic version such as 1.0.0 or v1.0.0. latest resolves the newest published release when
+the command runs; it does not update an existing Azure job until this script is run again with Deploy.
+
+.PARAMETER BaseImage
+Runtime base image used only with DeliveryMode Binary. It must provide a compatible .NET 10 runtime and
+the native libraries required by DataSync. The default is mcr.microsoft.com/dotnet/runtime:10.0.
+
+.PARAMETER FreshHistoricalRun
+Plans or creates a new private Blob container and isolated export/state roots for a historical run.
+
+.PARAMETER StartHistoricalRun
+Starts the first execution after deployment. Requires both Deploy and FreshHistoricalRun.
+
+.PARAMETER HistoricalStartFrom
+UTC day boundary used as the beginning of a fresh historical run.
+
+.PARAMETER FreshRunLabel
+Short lowercase label included in the generated Blob container name.
 
 .EXAMPLE
 .\Invoke-DataSyncProductionRelease.ps1 -SubscriptionId <subscription-guid>

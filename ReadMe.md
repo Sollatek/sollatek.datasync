@@ -919,6 +919,47 @@ Logs are disabled by default to avoid surprise ingestion volume. Set `Monitoring
 
 For an Azure portal walkthrough that deploys DataSync as a 01:00 UTC daily Container Apps Job writing to Azure Blob Storage through selected-network storage firewall rules, see [Deploy DataSync As An Azure Container Apps Daily Blob Job](deployment/azure/AZURE_CONTAINER_APPS_DAILY_BLOB_JOB.md). The deployment script also supports `-ImageOnly` to rebuild the configured ACR image and update only the existing Container Apps Job image. The Azure guide includes optional Databricks scripts for storage network/RBAC access and Unity Catalog source registration. For the cloud-team low-level design, including Azure resources, VNet integration, storage service endpoints, RBAC, and validation steps from scratch, see [Azure Deployment Low-Level Design](deployment/azure/AZURE_DEPLOYMENT_LLD.md). The guide also covers storage accounts where the deployment script must skip blob container data-plane setup.
 
+### Published Releases
+
+Customers updating an existing Sollatek DataSync Azure deployment do not need to clone this repository or install Git, Docker, or the .NET SDK. Use [Update An Existing Azure Job From A Published Release](deployment/azure/UPDATE_FROM_PUBLIC_RELEASE.md) with `deployment/azure/Invoke-DataSyncProductionRelease.ps1`.
+
+| Option | Published input | Customer-selected base image | Recommended use |
+| --- | --- | --- | --- |
+| `PrebuiltImage` | Sollatek GHCR image resolved and imported by immutable digest | No | Default and recommended Azure update path |
+| `Binary` | Checksum-verified portable compiled .NET 10 archive | Yes, compatible .NET 10 runtime image | Customer policy requires assembling the final image in its own ACR |
+| Self-contained downloads | Linux, Windows, or macOS archive for x64 or arm64 | Not used by the Azure script | Direct host, VM, service, or customer-authored container deployment |
+
+Run without `-Deploy` first to validate the published release and exact Azure target without changing it:
+
+```powershell
+.\Invoke-DataSyncProductionRelease.ps1 `
+  -SubscriptionId '<customer-subscription-guid>' `
+  -ReleaseVersion 1.0.0
+```
+
+Deploy the prebuilt Sollatek image:
+
+```powershell
+.\Invoke-DataSyncProductionRelease.ps1 `
+  -SubscriptionId '<customer-subscription-guid>' `
+  -ReleaseVersion 1.0.0 `
+  -DeliveryMode PrebuiltImage `
+  -Deploy
+```
+
+Alternatively, assemble the published compiled application with a selected compatible runtime image in the customer's ACR:
+
+```powershell
+.\Invoke-DataSyncProductionRelease.ps1 `
+  -SubscriptionId '<customer-subscription-guid>' `
+  -ReleaseVersion 1.0.0 `
+  -DeliveryMode Binary `
+  -BaseImage mcr.microsoft.com/dotnet/runtime:10.0 `
+  -Deploy
+```
+
+Pin a semantic version for repeatable deployment. `-ReleaseVersion latest` selects the newest published release only when the script runs; a `latest` tag does not force Azure to pull or deploy anything automatically.
+
 ### Docker Runtime
 
 Build the default container image from the repository root. It includes all storage providers and no optional monitoring providers:
@@ -1140,6 +1181,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\generate-platf
 The process-scoped execution-policy override does not change the machine or user policy. The script defaults to `http://127.0.0.1:15700/swagger/data-v1/swagger.json`, stages both generated files under the ignored `.tmp` directory, and replaces the tracked client only after NSwag succeeds. A remote Swagger URL requires the explicit `-AllowRemoteSwagger` switch.
 
 ![Swagger Editor Languages](Images/swagger_editor_languages.png)
+
+## Dependencies And Notices
+
+The normal build uses .NET 10 and the NuGet dependencies declared in the project files. The published container and portable archive include the selected DataSync provider packages. Self-contained downloads also include the applicable .NET runtime components for their target OS and CPU architecture. Each downloadable archive contains `LICENCE.md` and `Sollatek.DataSync.deps.json`; the latter is the machine-readable runtime dependency inventory for that build.
+
+Third-party components remain governed by their own licenses. [LICENCE.md](LICENCE.md) covers Sollatek.DataSync itself and does not replace third-party notices or license obligations. Before redistributing a release outside the intended customer deployment, review the direct and transitive dependency licenses and publish any required notices or software bill of materials with the release.
 
 ## License
 
