@@ -921,6 +921,8 @@ For an Azure portal walkthrough that deploys DataSync as a 01:00 UTC daily Conta
 
 ### Published Releases
 
+Sollatek releases follow the protected `develop -> candidate/vX.Y.Z -> QA approval -> release/vX.Y.Z -> publication -> master` promotion path documented in [DataSync Release Process](deployment/publication/RELEASE_PROCESS.md). Creating the release branch from the exact approved candidate commit is the only publication trigger. The protected `public-release` job builds and publishes the versioned GitHub Release assets and GHCR image, creates `vX.Y.Z` on that exact commit, and the unchanged release branch is then merged to `master`. Changes to `develop` or `master`, including documentation and deployment-script changes, never create release assets or images.
+
 Customers updating an existing Sollatek DataSync Azure deployment do not need to clone this repository or install Git, Docker, or the .NET SDK. Use [Update An Existing Azure Job From A Published Release](deployment/azure/UPDATE_FROM_PUBLIC_RELEASE.md) with `deployment/azure/Invoke-DataSyncProductionRelease.ps1`. The helper discovers the existing DataSync job from the selected subscription or accepts explicit `ResourceGroup`, `JobName`, `RegistryName`, and `ImageRepository` values. It reads the deployed job's location and schedule from Azure; neither is hard-coded.
 
 | Option | Published input | Customer-selected base image | Recommended use |

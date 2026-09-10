@@ -3,7 +3,7 @@
 Validates or deploys a published DataSync release and can start an isolated historical run.
 
 .DESCRIPTION
-Resolves a tested, immutable release published from the Sollatek DataSync master branch and validates
+Resolves a tested, immutable release published from an approved Sollatek DataSync release branch and validates
 an existing Azure DataSync target. The target is discovered from the selected subscription, with
 explicit resource-group, job, registry, and image-repository parameters available when discovery is
 ambiguous. The default PrebuiltImage delivery imports the published image by digest into the existing

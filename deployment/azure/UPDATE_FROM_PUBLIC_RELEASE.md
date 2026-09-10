@@ -2,6 +2,8 @@
 
 Use this procedure to update an existing Sollatek DataSync Container Apps Job from a tested public release. The customer does not need to clone the repository or install Git, Docker, or the .NET SDK.
 
+Sollatek publishes these files and images only when `release/vMAJOR.MINOR.PATCH` is created from the exact QA-approved candidate commit and passes the protected release environment described in [DataSync Release Process](../publication/RELEASE_PROCESS.md). That job creates the matching stable tag and public GitHub Release, after which the unchanged release branch is merged to `master`. Changes to `develop` or `master` do not create release assets or images.
+
 This is an update procedure, not a first-time Azure landing-zone deployment. It discovers or directly selects the customer's existing resources, reads the job's actual Azure location and schedule, and validates the rollback image before it changes the job.
 
 ## File To Provide To The Customer
