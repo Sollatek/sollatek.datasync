@@ -29,6 +29,8 @@ Use this pattern when the host should be offline between runs. Use a normal Cont
 ## Included Files
 
 - Deployment script: `deploy-containerapps-job.ps1`
+- Existing-job release update script: `Invoke-DataSyncProductionRelease.ps1`
+- Published-release update guide: `UPDATE_FROM_PUBLIC_RELEASE.md`
 - Daily deployment config: `deploy.daily.azure-containerapps-job.json`
 - Optional Databricks storage connector script: `connect-databricks-storage.ps1`
 - Optional Databricks storage connector config: `connect.databricks-storage.json`
@@ -259,9 +261,15 @@ The script does the following:
 
 Existing jobs are not changed unless `containerApps.updateExistingJob=true`.
 
-## Update Only The Job Image
+## Update From A Published Release
 
-Use image-only mode when the Azure resources and Container Apps Job already exist and you only need the job to use a rebuilt DataSync app image:
+For an existing production job that matches the guarded Sollatek resource contract, prefer the published-release updater instead of cloning the repository and rebuilding DataSync source in the customer environment. It supports importing the Sollatek-published image by immutable digest or assembling the checksum-verified portable compiled release with a selected compatible .NET 10 runtime image in the customer's ACR.
+
+See [Update An Existing Azure Job From A Published Release](UPDATE_FROM_PUBLIC_RELEASE.md). Run the command without `-Deploy` first; add `-Deploy` only after the validation-only result identifies the expected subscription, resources, release, and planned image.
+
+## Update Only The Job Image From Source
+
+Use image-only mode when the Azure resources and Container Apps Job already exist and you intentionally want to rebuild DataSync from a local source checkout:
 
 ```powershell
 .\deploy-containerapps-job.ps1 `
