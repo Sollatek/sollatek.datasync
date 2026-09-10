@@ -1,4 +1,4 @@
-name: Validate and publish DataSync release
+name: Validate or publish DataSync release
 
 on:
   pull_request:
@@ -9,7 +9,6 @@ on:
     branches:
       - develop
       - master
-      - 'candidate/v*.*.*'
       - 'release/v*.*.*'
   workflow_dispatch:
 
@@ -50,8 +49,40 @@ jobs:
             -RefType $env:GITHUB_REF_TYPE `
             -RefName $env:GITHUB_REF_NAME `
             -BaseRef $env:GITHUB_BASE_REF `
-            -HeadRef $env:GITHUB_HEAD_REF `
-            -CommitSha $env:GITHUB_SHA
+            -HeadRef $env:GITHUB_HEAD_REF
+
+      - name: Validate publication authorization configuration
+        if: >-
+          github.event_name == 'workflow_dispatch' &&
+          github.ref_type == 'branch' &&
+          startsWith(github.ref, 'refs/heads/release/')
+        shell: pwsh
+        env:
+          PUBLIC_RELEASE_OWNER: ${{ vars.PUBLIC_RELEASE_OWNER }}
+          PUBLIC_RELEASE_REVIEW_GATE_ENABLED: ${{ vars.PUBLIC_RELEASE_REVIEW_GATE_ENABLED }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:PUBLIC_RELEASE_OWNER)) {
+            throw "Repository variable PUBLIC_RELEASE_OWNER must be configured before publication."
+          }
+
+          $originalActorIsOwner = [string]::Equals(
+            $env:GITHUB_ACTOR,
+            $env:PUBLIC_RELEASE_OWNER,
+            [StringComparison]::OrdinalIgnoreCase
+          )
+          $triggeringActorIsOwner = [string]::Equals(
+            $env:GITHUB_TRIGGERING_ACTOR,
+            $env:PUBLIC_RELEASE_OWNER,
+            [StringComparison]::OrdinalIgnoreCase
+          )
+          if ($originalActorIsOwner -and $triggeringActorIsOwner) {
+            Write-Host "Direct release-owner publication path selected."
+          } else {
+            if ($env:PUBLIC_RELEASE_REVIEW_GATE_ENABLED -ne 'true') {
+              throw "Non-owner publication is disabled until PUBLIC_RELEASE_REVIEW_GATE_ENABLED is true."
+            }
+            Write-Host "Reviewed publication path selected."
+          }
 
       - name: Install .NET SDK
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -79,13 +110,13 @@ jobs:
   publish-release:
     name: Publish approved public release
     if: >-
-      github.event_name == 'push' &&
+      github.event_name == 'workflow_dispatch' &&
       github.ref_type == 'branch' &&
       startsWith(github.ref, 'refs/heads/release/')
     needs: validate
     runs-on: ubuntu-latest
     environment:
-      name: public-release
+      name: ${{ github.actor == vars.PUBLIC_RELEASE_OWNER && github.triggering_actor == vars.PUBLIC_RELEASE_OWNER && 'public-release-owner' || 'public-release' }}
       url: https://github.com/${{ github.repository }}/releases
     permissions:
       contents: write
@@ -104,7 +135,7 @@ jobs:
         run: |
           if ($env:GITHUB_REF_TYPE -ne 'branch' -or
               $env:GITHUB_REF_NAME -notmatch '^release/v(?<major>0|[1-9][0-9]*)\.(?<minor>0|[1-9][0-9]*)\.(?<patch>0|[1-9][0-9]*)$') {
-            throw "Publication requires a release/vMAJOR.MINOR.PATCH branch push."
+            throw "Publication requires a manual workflow run from release/vMAJOR.MINOR.PATCH."
           }
 
           $version = "$($Matches.major).$($Matches.minor).$($Matches.patch)"
