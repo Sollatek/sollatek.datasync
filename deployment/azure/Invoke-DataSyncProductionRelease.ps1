@@ -4,8 +4,10 @@ Validates or deploys a published DataSync release and can start an isolated hist
 
 .DESCRIPTION
 Resolves a tested, immutable release published from the Sollatek DataSync master branch and validates
-the exact Azure production target. The default PrebuiltImage delivery imports the published image by
-digest into the existing Azure Container Registry and updates only the Container Apps Job image.
+an existing Azure DataSync target. The target is discovered from the selected subscription, with
+explicit resource-group, job, registry, and image-repository parameters available when discovery is
+ambiguous. The default PrebuiltImage delivery imports the published image by digest into the existing
+Azure Container Registry and updates only the Container Apps Job image.
 Binary delivery downloads and verifies the compiled .NET 10 release, then assembles it with the
 selected compatible runtime base image in ACR without compiling source code. Git, Docker, source code,
 and a local .NET SDK are not required.
@@ -20,9 +22,25 @@ and state. Add -StartHistoricalRun with -Deploy and -FreshHistoricalRun to start
 The existing Blob container is never deleted or modified, and existing job secret references are
 verified before and after the configuration update without reading their values.
 
-.PARAMETER SubscriptionId
-Azure subscription containing the existing production DataSync resources. The script uses the current
-Azure CLI login and does not require a tenant parameter.
+.PARAMETER Subscription
+Azure subscription name or ID containing the existing DataSync resources. The script uses the current
+Azure CLI login and does not require a tenant parameter. SubscriptionId remains an alias for backward
+compatibility.
+
+.PARAMETER ResourceGroup
+Optional existing Container Apps Job resource group. Supply it with JobName to select the target
+directly, or supply it alone to limit automatic discovery to that resource group.
+
+.PARAMETER JobName
+Optional existing Container Apps Job name. Supply it with ResourceGroup to select the target directly.
+
+.PARAMETER RegistryName
+Optional existing Azure Container Registry name. By default, the script derives the registry from the
+current job image and verifies it in the selected subscription.
+
+.PARAMETER ImageRepository
+Optional repository path inside the Azure Container Registry. By default, the script preserves the
+repository path used by the current job image.
 
 .PARAMETER Deploy
 Applies the planned image update. Without this switch, the script validates the release and exact Azure
@@ -54,27 +72,44 @@ UTC day boundary used as the beginning of a fresh historical run.
 Short lowercase label included in the generated Blob container name.
 
 .EXAMPLE
-.\Invoke-DataSyncProductionRelease.ps1 -SubscriptionId <subscription-guid>
+.\Invoke-DataSyncProductionRelease.ps1 -Subscription '<subscription-name-or-guid>'
 
 .EXAMPLE
-.\Invoke-DataSyncProductionRelease.ps1 -SubscriptionId <subscription-guid> -Deploy
+.\Invoke-DataSyncProductionRelease.ps1 -Subscription '<subscription-name-or-guid>' -Deploy
 
 .EXAMPLE
-.\Invoke-DataSyncProductionRelease.ps1 -SubscriptionId <subscription-guid> -ReleaseVersion 1.0.0 -Deploy
+.\Invoke-DataSyncProductionRelease.ps1 -Subscription '<subscription-name-or-guid>' -ResourceGroup '<resource-group>' -JobName '<job-name>' -RegistryName '<registry-name>' -Deploy
 
 .EXAMPLE
-.\Invoke-DataSyncProductionRelease.ps1 -SubscriptionId <subscription-guid> -DeliveryMode Binary -BaseImage mcr.microsoft.com/dotnet/runtime:10.0 -Deploy
+.\Invoke-DataSyncProductionRelease.ps1 -Subscription '<subscription-name-or-guid>' -ReleaseVersion 1.0.0 -Deploy
 
 .EXAMPLE
-.\Invoke-DataSyncProductionRelease.ps1 -SubscriptionId <subscription-guid> -FreshHistoricalRun
+.\Invoke-DataSyncProductionRelease.ps1 -Subscription '<subscription-name-or-guid>' -DeliveryMode Binary -BaseImage mcr.microsoft.com/dotnet/runtime:10.0 -Deploy
 
 .EXAMPLE
-.\Invoke-DataSyncProductionRelease.ps1 -SubscriptionId <subscription-guid> -Deploy -FreshHistoricalRun -StartHistoricalRun -HistoricalStartFrom 2025-01-01 -FreshRunLabel datasync
+.\Invoke-DataSyncProductionRelease.ps1 -Subscription '<subscription-name-or-guid>' -FreshHistoricalRun
+
+.EXAMPLE
+.\Invoke-DataSyncProductionRelease.ps1 -Subscription '<subscription-name-or-guid>' -Deploy -FreshHistoricalRun -StartHistoricalRun -HistoricalStartFrom 2025-01-01 -FreshRunLabel datasync
 #>
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [Guid] $SubscriptionId,
+    [Alias("SubscriptionId")]
+    [ValidateNotNullOrEmpty()]
+    [string] $Subscription,
+
+    [ValidateNotNullOrEmpty()]
+    [string] $ResourceGroup,
+
+    [ValidateNotNullOrEmpty()]
+    [string] $JobName,
+
+    [ValidateNotNullOrEmpty()]
+    [string] $RegistryName,
+
+    [ValidatePattern("^[a-z0-9]+(?:[._/-][a-z0-9]+)*$")]
+    [string] $ImageRepository,
 
     [switch] $Deploy,
 
@@ -99,14 +134,6 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$expectedResourceGroup = "rg-sollatek-datasync-prod"
-$expectedLocation = "westeurope"
-$expectedAcrName = "acrsollatekdatasync001"
-$expectedImageName = "sollatek-datasync"
-$expectedJobName = "sollatek-datasync-daily"
-$expectedStorageAccountName = "stsollatekdsync001"
-$expectedStorageContainerName = "sollatek-datasync"
-$expectedCronExpression = "0 1 * * *"
 $requiredTokenEndpointPath = "/realms/platform/protocol/openid-connect/token"
 $releaseRepository = "Sollatek/sollatek.datasync"
 $releaseBaseUri = "https://github.com/$releaseRepository/releases"
@@ -355,6 +382,221 @@ function Assert-ChildPath {
     $fullPath
 }
 
+function Get-ContainerAppsJobState {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Subscription,
+
+        [Parameter(Mandatory = $true)]
+        [string] $ResourceGroup,
+
+        [Parameter(Mandatory = $true)]
+        [string] $JobName
+    )
+
+    ConvertFrom-CommandJson -Output @(Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
+        "containerapp", "job", "show",
+        "--subscription", $Subscription,
+        "--resource-group", $ResourceGroup,
+        "--name", $JobName,
+        "--query", "{id:id,name:name,resourceGroup:resourceGroup,location:location,triggerType:configuration.triggerType,cron:configuration.scheduleTriggerConfig.cronExpression,image:template.containers[0].image,identityPrincipalId:identity.principalId}",
+        "--output", "json",
+        "--only-show-errors"
+    ))
+}
+
+function Test-DataSyncJobCandidate {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object] $Candidate
+    )
+
+    $candidateName = [string] $Candidate.name
+    $candidateImage = [string] $Candidate.image
+    $environmentNames = @($Candidate.environment | ForEach-Object { [string] $_.name })
+
+    $candidateName -match "(?i)data[-.]?sync" -or
+        $candidateImage -match "(?i)(^|/)(sollatek[.-]?datasync)(?=[:@/]|$)" -or
+        (
+            "SOL_Settings__oauthUrl" -in $environmentNames -and
+            "SOL_Sync__transferMode" -in $environmentNames
+        )
+}
+
+function Resolve-ContainerAppsJobTarget {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Subscription,
+
+        [string] $ResourceGroup,
+
+        [string] $JobName
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($ResourceGroup) -and
+        -not [string]::IsNullOrWhiteSpace($JobName)) {
+        return Get-ContainerAppsJobState `
+            -Subscription $Subscription `
+            -ResourceGroup $ResourceGroup `
+            -JobName $JobName
+    }
+
+    $listArguments = @(
+        "containerapp", "job", "list",
+        "--subscription", $Subscription
+    )
+    if (-not [string]::IsNullOrWhiteSpace($ResourceGroup)) {
+        $listArguments += @("--resource-group", $ResourceGroup)
+    }
+    $listArguments += @(
+        "--query", "[].{name:name,resourceGroup:resourceGroup,location:location,image:template.containers[0].image,environment:template.containers[0].env}",
+        "--output", "json",
+        "--only-show-errors"
+    )
+
+    try {
+        $jobs = @(ConvertFrom-CommandJson -Output @(
+            Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList $listArguments
+        ))
+    } catch {
+        throw "Automatic Container Apps Job discovery failed. Supply both -ResourceGroup and -JobName to use a direct lookup. $($_.Exception.Message)"
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($JobName)) {
+        $matches = @($jobs | Where-Object { [string] $_.name -eq $JobName })
+    } else {
+        $matches = @($jobs | Where-Object { Test-DataSyncJobCandidate -Candidate $_ })
+    }
+
+    if ($matches.Count -ne 1) {
+        if ($matches.Count -gt 0) {
+            Write-Host "Matching Container Apps Jobs:"
+            foreach ($candidate in $matches) {
+                Write-Host "  $([string] $candidate.resourceGroup)/$([string] $candidate.name) [$([string] $candidate.location)] image=$([string] $candidate.image)"
+            }
+        }
+
+        if ($matches.Count -eq 0) {
+            throw "No existing DataSync Container Apps Job could be identified in the selected scope. Supply -ResourceGroup and -JobName."
+        }
+
+        throw "More than one DataSync Container Apps Job matched. Supply -ResourceGroup and -JobName to select exactly one."
+    }
+
+    Get-ContainerAppsJobState `
+        -Subscription $Subscription `
+        -ResourceGroup ([string] $matches[0].resourceGroup) `
+        -JobName ([string] $matches[0].name)
+}
+
+function Resolve-ContainerRegistryTarget {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Subscription,
+
+        [Parameter(Mandatory = $true)]
+        [string] $CurrentImage,
+
+        [string] $RegistryName
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($RegistryName)) {
+        return ConvertFrom-CommandJson -Output @(Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
+            "acr", "show",
+            "--subscription", $Subscription,
+            "--name", $RegistryName,
+            "--query", "{id:id,name:name,resourceGroup:resourceGroup,loginServer:loginServer}",
+            "--output", "json",
+            "--only-show-errors"
+        ))
+    }
+
+    $currentRegistryHost = ($CurrentImage -split "/", 2)[0]
+    if ($currentRegistryHost -notmatch "(?i)\.azurecr\.io$") {
+        throw "The current job image does not identify an Azure Container Registry. Supply -RegistryName explicitly."
+    }
+
+    try {
+        $registries = @(ConvertFrom-CommandJson -Output @(Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
+            "acr", "list",
+            "--subscription", $Subscription,
+            "--query", "[].{id:id,name:name,resourceGroup:resourceGroup,loginServer:loginServer}",
+            "--output", "json",
+            "--only-show-errors"
+        )))
+    } catch {
+        throw "Automatic Azure Container Registry discovery failed. Supply -RegistryName to use a direct lookup. $($_.Exception.Message)"
+    }
+
+    $matches = @($registries | Where-Object {
+        [string] $_.loginServer -eq $currentRegistryHost
+    })
+    if ($matches.Count -ne 1) {
+        throw "Could not map current image registry '$currentRegistryHost' to exactly one registry in the selected subscription. Supply -RegistryName."
+    }
+
+    $matches[0]
+}
+
+function Resolve-ImageRepository {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $CurrentImage,
+
+        [Parameter(Mandatory = $true)]
+        [string] $RegistryLoginServer,
+
+        [string] $ImageRepository
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($ImageRepository)) {
+        return $ImageRepository
+    }
+
+    $prefix = "$RegistryLoginServer/"
+    if (-not $CurrentImage.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "The current job image is not hosted in '$RegistryLoginServer'. Supply -ImageRepository explicitly."
+    }
+
+    $repositoryWithReference = $CurrentImage.Substring($prefix.Length)
+    $repository = ($repositoryWithReference -split "@", 2)[0]
+    $lastSlash = $repository.LastIndexOf("/")
+    $lastColon = $repository.LastIndexOf(":")
+    if ($lastColon -gt $lastSlash) {
+        $repository = $repository.Substring(0, $lastColon)
+    }
+
+    if ([string]::IsNullOrWhiteSpace($repository)) {
+        throw "Could not derive the image repository from the current job image. Supply -ImageRepository explicitly."
+    }
+
+    $repository
+}
+
+function Resolve-StorageAccountTarget {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Subscription,
+
+        [Parameter(Mandatory = $true)]
+        [string] $AccountName
+    )
+
+    $accounts = @(ConvertFrom-CommandJson -Output @(Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
+        "storage", "account", "list",
+        "--subscription", $Subscription,
+        "--query", "[].{id:id,name:name,resourceGroup:resourceGroup}",
+        "--output", "json",
+        "--only-show-errors"
+    )))
+    $matches = @($accounts | Where-Object { [string] $_.name -eq $AccountName })
+    if ($matches.Count -ne 1) {
+        throw "Could not map storage account '$AccountName' to exactly one account in the selected subscription."
+    }
+
+    $matches[0]
+}
+
 function Get-JobEnvironment {
     param(
         [Parameter(Mandatory = $true)]
@@ -552,71 +794,77 @@ try {
         }
     }
 
-    $stage = "validating the current Azure login and production subscription"
-    $subscriptionText = $SubscriptionId.ToString()
-
-    Invoke-CheckedCommand -Command "az" -ArgumentList @(
-        "account", "set", "--subscription", $subscriptionText
-    )
-
+    $stage = "validating the current Azure login and subscription"
     $account = ConvertFrom-CommandJson -Output @(Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
         "account", "show",
-        "--subscription", $subscriptionText,
+        "--subscription", $Subscription,
         "--query", "{id:id,name:name}",
         "--output", "json",
         "--only-show-errors"
     ))
-    Assert-ExpectedValue -Name "Azure subscription" -Actual ([string] $account.id) -Expected $subscriptionText
+    $subscriptionText = [string] $account.id
+    if ([string]::IsNullOrWhiteSpace($subscriptionText)) {
+        throw "Could not resolve Azure subscription '$Subscription'."
+    }
 
     Invoke-CheckedCommand -Command "az" -ArgumentList @(
         "extension", "add", "--name", "containerapp", "--upgrade", "--only-show-errors"
     )
 
-    $actualLocation = ((Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
-        "group", "show",
-        "--name", $expectedResourceGroup,
-        "--query", "location",
-        "--output", "tsv",
-        "--only-show-errors"
-    )) -join "").Trim()
-    Assert-ExpectedValue -Name "production resource-group region" -Actual $actualLocation -Expected $expectedLocation
+    $stage = "discovering the existing DataSync Container Apps Job"
+    $jobState = Resolve-ContainerAppsJobTarget `
+        -Subscription $subscriptionText `
+        -ResourceGroup $ResourceGroup `
+        -JobName $JobName
+    $targetResourceGroup = [string] $jobState.resourceGroup
+    $targetJobName = [string] $jobState.name
+    $targetLocation = [string] $jobState.location
+    if ([string]::IsNullOrWhiteSpace($targetResourceGroup) -or
+        [string]::IsNullOrWhiteSpace($targetJobName) -or
+        [string]::IsNullOrWhiteSpace($targetLocation)) {
+        throw "The selected Container Apps Job did not return a complete resource group, name, and location."
+    }
 
-    $acrName = ((Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
-        "acr", "show",
-        "--resource-group", $expectedResourceGroup,
-        "--name", $expectedAcrName,
-        "--query", "name",
-        "--output", "tsv",
-        "--only-show-errors"
-    )) -join "").Trim()
-    Assert-ExpectedValue -Name "production registry" -Actual $acrName -Expected $expectedAcrName
-
-    $jobState = ConvertFrom-CommandJson -Output @(Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
-        "containerapp", "job", "show",
-        "--resource-group", $expectedResourceGroup,
-        "--name", $expectedJobName,
-        "--query", "{triggerType:configuration.triggerType,cron:configuration.scheduleTriggerConfig.cronExpression,image:template.containers[0].image,identityPrincipalId:identity.principalId}",
-        "--output", "json",
-        "--only-show-errors"
-    ))
     Assert-ExpectedValue -Name "job trigger" -Actual ([string] $jobState.triggerType) -Expected "Schedule"
-    Assert-ExpectedValue -Name "live cron expression" -Actual ([string] $jobState.cron) -Expected $expectedCronExpression
+    $existingCronExpression = [string] $jobState.cron
+    if ([string]::IsNullOrWhiteSpace($existingCronExpression)) {
+        throw "The selected scheduled Container Apps Job has no cron expression."
+    }
 
     $previousImage = [string] $jobState.image
     if ([string]::IsNullOrWhiteSpace($previousImage)) {
-        throw "Could not determine the current production image for rollback."
+        throw "Could not determine the current image for the selected Container Apps Job."
     }
+
+    $stage = "discovering the existing Azure Container Registry"
+    $registry = Resolve-ContainerRegistryTarget `
+        -Subscription $subscriptionText `
+        -CurrentImage $previousImage `
+        -RegistryName $RegistryName
+    $targetRegistryName = [string] $registry.name
+    $targetRegistryResourceGroup = [string] $registry.resourceGroup
+    $targetRegistryLoginServer = [string] $registry.loginServer
+    if ([string]::IsNullOrWhiteSpace($targetRegistryName) -or
+        [string]::IsNullOrWhiteSpace($targetRegistryResourceGroup) -or
+        [string]::IsNullOrWhiteSpace($targetRegistryLoginServer)) {
+        throw "The selected Azure Container Registry did not return a complete name, resource group, and login server."
+    }
+
+    $targetImageRepository = Resolve-ImageRepository `
+        -CurrentImage $previousImage `
+        -RegistryLoginServer $targetRegistryLoginServer `
+        -ImageRepository $ImageRepository
 
     if ($FreshHistoricalRun) {
         $stage = "validating fresh historical-run prerequisites"
         Assert-NoRunningExecution `
-            -ResourceGroup $expectedResourceGroup `
-            -JobName $expectedJobName `
+            -ResourceGroup $targetResourceGroup `
+            -JobName $targetJobName `
             -Subscription $subscriptionText
 
         $jobEnvironmentBefore = @(Get-JobEnvironment `
-            -ResourceGroup $expectedResourceGroup `
-            -JobName $expectedJobName `
+            -ResourceGroup $targetResourceGroup `
+            -JobName $targetJobName `
             -Subscription $subscriptionText)
         $clientKeySecretReference = Assert-SecretReference `
             -Environment $jobEnvironmentBefore `
@@ -628,7 +876,9 @@ try {
         $liveStorageAccount = [string] (Get-JobEnvironmentEntry `
             -Environment $jobEnvironmentBefore `
             -Name "SOL_Storage__accountName").value
-        Assert-ExpectedValue -Name "live storage account" -Actual $liveStorageAccount -Expected $expectedStorageAccountName
+        if ([string]::IsNullOrWhiteSpace($liveStorageAccount)) {
+            throw "The live Azure Blob storage account name is missing."
+        }
         $liveStorageProvider = [string] (Get-JobEnvironmentEntry `
             -Environment $jobEnvironmentBefore `
             -Name "SOL_Storage__provider").value
@@ -656,17 +906,14 @@ try {
             throw "The Container Apps Job must have a system-assigned managed identity."
         }
 
-        $storageAccountId = ((Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
-            "storage", "account", "show",
-            "--subscription", $subscriptionText,
-            "--resource-group", $expectedResourceGroup,
-            "--name", $expectedStorageAccountName,
-            "--query", "id",
-            "--output", "tsv",
-            "--only-show-errors"
-        )) -join "").Trim()
-        if ([string]::IsNullOrWhiteSpace($storageAccountId)) {
-            throw "Could not determine the production storage account resource ID."
+        $storageAccount = Resolve-StorageAccountTarget `
+            -Subscription $subscriptionText `
+            -AccountName $liveStorageAccount
+        $storageAccountId = [string] $storageAccount.id
+        $targetStorageResourceGroup = [string] $storageAccount.resourceGroup
+        if ([string]::IsNullOrWhiteSpace($storageAccountId) -or
+            [string]::IsNullOrWhiteSpace($targetStorageResourceGroup)) {
+            throw "The live Azure Blob storage account did not return a complete resource ID and resource group."
         }
 
         $storageRoleCountText = ((Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
@@ -688,8 +935,8 @@ try {
         $freshContainerExists = ((Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
             "storage", "container-rm", "exists",
             "--subscription", $subscriptionText,
-            "--resource-group", $expectedResourceGroup,
-            "--storage-account", $expectedStorageAccountName,
+            "--resource-group", $targetStorageResourceGroup,
+            "--storage-account", $liveStorageAccount,
             "--name", $freshContainerName,
             "--query", "exists",
             "--output", "tsv",
@@ -712,12 +959,13 @@ try {
         $baseImageKey = Get-TextSha256Prefix -Text $BaseImage
         $imageTag = "$releaseStamp-$shortCommit-b$baseImageKey"
     }
-    $expectedImage = "${expectedAcrName}.azurecr.io/${expectedImageName}:$imageTag"
+    $expectedImage = "${targetRegistryLoginServer}/${targetImageRepository}:$imageTag"
 
     $existingTag = ((Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
         "acr", "repository", "show-tags",
-        "--name", $expectedAcrName,
-        "--repository", $expectedImageName,
+        "--subscription", $subscriptionText,
+        "--name", $targetRegistryName,
+        "--repository", $targetImageRepository,
         "--query", "[?@=='$imageTag'] | [0]",
         "--output", "tsv",
         "--only-show-errors"
@@ -729,8 +977,9 @@ try {
 
         $existingDigest = ((Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
             "acr", "repository", "show",
-            "--name", $expectedAcrName,
-            "--image", "${expectedImageName}:$imageTag",
+            "--subscription", $subscriptionText,
+            "--name", $targetRegistryName,
+            "--image", "${targetImageRepository}:$imageTag",
             "--query", "digest",
             "--output", "tsv",
             "--only-show-errors"
@@ -748,6 +997,10 @@ try {
         Write-Host "Release: $releaseTag"
         Write-Host "Commit: $canonicalCommit"
         Write-Host "Delivery mode: $DeliveryMode"
+        Write-Host "Subscription: $([string] $account.name) ($subscriptionText)"
+        Write-Host "Target job: $targetResourceGroup/$targetJobName"
+        Write-Host "Target location: $targetLocation"
+        Write-Host "Target registry: $targetRegistryResourceGroup/$targetRegistryName"
         if ($DeliveryMode -eq "PrebuiltImage") {
             Write-Host "Published image: $publishedImage"
         } else {
@@ -757,12 +1010,12 @@ try {
         Write-Host "Planned image: $expectedImage"
         if ($FreshHistoricalRun) {
             Write-Host "Planned historical start: $historicalStartText"
-            Write-Host "Planned new Blob container: https://$expectedStorageAccountName.blob.core.windows.net/$freshContainerName"
+            Write-Host "Planned new Blob container: https://$liveStorageAccount.blob.core.windows.net/$freshContainerName"
             Write-Host "Planned export path in new container: $freshExportRoot"
             Write-Host "Planned state path in new container: $freshStateRoot"
             Write-Host "Existing container '$liveStorageContainer' will not be modified or deleted."
         }
-        Write-Host "Run again with -Deploy to import or assemble the tested release and update only the production job image."
+        Write-Host "Run again with -Deploy to import or assemble the tested release and update only the selected job image."
         $exitCode = 0
     } else {
         if ($DeliveryMode -eq "PrebuiltImage") {
@@ -773,10 +1026,10 @@ try {
                 Invoke-CheckedCommand -Command "az" -ArgumentList @(
                     "acr", "import",
                     "--subscription", $subscriptionText,
-                    "--resource-group", $expectedResourceGroup,
-                    "--name", $expectedAcrName,
+                    "--resource-group", $targetRegistryResourceGroup,
+                    "--name", $targetRegistryName,
                     "--source", $publishedImage,
-                    "--image", "${expectedImageName}:$imageTag",
+                    "--image", "${targetImageRepository}:$imageTag",
                     "--force",
                     "--output", "none",
                     "--only-show-errors"
@@ -840,9 +1093,9 @@ try {
                 Invoke-CheckedCommand -Command "az" -ArgumentList @(
                     "acr", "build",
                     "--subscription", $subscriptionText,
-                    "--resource-group", $expectedResourceGroup,
-                    "--registry", $expectedAcrName,
-                    "--image", "${expectedImageName}:$imageTag",
+                    "--resource-group", $targetRegistryResourceGroup,
+                    "--registry", $targetRegistryName,
+                    "--image", "${targetImageRepository}:$imageTag",
                     "--file", "Dockerfile.binary",
                     "--build-arg", "BASE_IMAGE=$BaseImage",
                     "."
@@ -855,8 +1108,9 @@ try {
         $stage = "verifying the imported or assembled image"
         $imageDigest = ((Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
             "acr", "repository", "show",
-            "--name", $expectedAcrName,
-            "--image", "${expectedImageName}:$imageTag",
+            "--subscription", $subscriptionText,
+            "--name", $targetRegistryName,
+            "--image", "${targetImageRepository}:$imageTag",
             "--query", "digest",
             "--output", "tsv",
             "--only-show-errors"
@@ -871,44 +1125,41 @@ try {
                 -Expected ([string] $releaseManifest.image.digest)
         }
 
-        $stage = "updating only the production job image"
+        $stage = "updating only the selected job image"
         Invoke-CheckedCommand -Command "az" -ArgumentList @(
             "containerapp", "job", "update",
             "--subscription", $subscriptionText,
-            "--resource-group", $expectedResourceGroup,
-            "--name", $expectedJobName,
+            "--resource-group", $targetResourceGroup,
+            "--name", $targetJobName,
             "--image", $expectedImage,
             "--output", "none",
             "--only-show-errors"
         )
 
         $stage = "verifying the deployed image"
-        $deployedState = ConvertFrom-CommandJson -Output @(Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
-            "containerapp", "job", "show",
-            "--resource-group", $expectedResourceGroup,
-            "--name", $expectedJobName,
-            "--query", "{triggerType:configuration.triggerType,cron:configuration.scheduleTriggerConfig.cronExpression,image:template.containers[0].image}",
-            "--output", "json",
-            "--only-show-errors"
-        ))
+        $deployedState = Get-ContainerAppsJobState `
+            -Subscription $subscriptionText `
+            -ResourceGroup $targetResourceGroup `
+            -JobName $targetJobName
         Assert-ExpectedValue -Name "deployed image" -Actual ([string] $deployedState.image) -Expected $expectedImage
         Assert-ExpectedValue -Name "post-deployment trigger" -Actual ([string] $deployedState.triggerType) -Expected "Schedule"
-        Assert-ExpectedValue -Name "post-deployment cron expression" -Actual ([string] $deployedState.cron) -Expected $expectedCronExpression
+        Assert-ExpectedValue -Name "post-deployment cron expression" -Actual ([string] $deployedState.cron) -Expected $existingCronExpression
+        Assert-ExpectedValue -Name "post-deployment location" -Actual ([string] $deployedState.location) -Expected $targetLocation
 
         $historicalExecutionStarted = $false
         if ($FreshHistoricalRun) {
             $stage = "checking for active executions before the fresh historical update"
             Assert-NoRunningExecution `
-                -ResourceGroup $expectedResourceGroup `
-                -JobName $expectedJobName `
+                -ResourceGroup $targetResourceGroup `
+                -JobName $targetJobName `
                 -Subscription $subscriptionText
 
             $stage = "creating the fresh Blob container"
             Invoke-CheckedCommand -Command "az" -ArgumentList @(
                 "storage", "container-rm", "create",
                 "--subscription", $subscriptionText,
-                "--resource-group", $expectedResourceGroup,
-                "--storage-account", $expectedStorageAccountName,
+                "--resource-group", $targetStorageResourceGroup,
+                "--storage-account", $liveStorageAccount,
                 "--name", $freshContainerName,
                 "--public-access", "off",
                 "--fail-on-exist",
@@ -920,8 +1171,8 @@ try {
             $createdContainerExists = ((Invoke-CheckedCommand -Command "az" -CaptureOutput -ArgumentList @(
                 "storage", "container-rm", "exists",
                 "--subscription", $subscriptionText,
-                "--resource-group", $expectedResourceGroup,
-                "--storage-account", $expectedStorageAccountName,
+                "--resource-group", $targetStorageResourceGroup,
+                "--storage-account", $liveStorageAccount,
                 "--name", $freshContainerName,
                 "--query", "exists",
                 "--output", "tsv",
@@ -933,8 +1184,8 @@ try {
             $freshEnvironmentArguments = @(
                 "containerapp", "job", "update",
                 "--subscription", $subscriptionText,
-                "--resource-group", $expectedResourceGroup,
-                "--name", $expectedJobName,
+                "--resource-group", $targetResourceGroup,
+                "--name", $targetJobName,
                 "--set-env-vars"
             )
             foreach ($entry in $freshEnvironmentValues.GetEnumerator()) {
@@ -945,8 +1196,8 @@ try {
 
             $stage = "verifying the fresh historical configuration"
             $jobEnvironmentAfter = @(Get-JobEnvironment `
-                -ResourceGroup $expectedResourceGroup `
-                -JobName $expectedJobName `
+                -ResourceGroup $targetResourceGroup `
+                -JobName $targetJobName `
                 -Subscription $subscriptionText)
             Assert-SecretReference `
                 -Environment $jobEnvironmentAfter `
@@ -971,16 +1222,16 @@ try {
             if ($StartHistoricalRun) {
                 $stage = "checking for active executions before starting the historical run"
                 Assert-NoRunningExecution `
-                    -ResourceGroup $expectedResourceGroup `
-                    -JobName $expectedJobName `
+                    -ResourceGroup $targetResourceGroup `
+                    -JobName $targetJobName `
                     -Subscription $subscriptionText
 
                 $stage = "starting the fresh historical run"
                 Invoke-CheckedCommand -Command "az" -ArgumentList @(
                     "containerapp", "job", "start",
                     "--subscription", $subscriptionText,
-                    "--resource-group", $expectedResourceGroup,
-                    "--name", $expectedJobName,
+                    "--resource-group", $targetResourceGroup,
+                    "--name", $targetJobName,
                     "--output", "none",
                     "--only-show-errors"
                 )
@@ -989,17 +1240,21 @@ try {
         }
 
         Write-Host ""
-        Write-Host "SUCCESS: the tested release image was deployed to the production job."
+        Write-Host "SUCCESS: the tested release image was deployed to the selected job."
         Write-Host "Release: $releaseTag"
         Write-Host "Commit: $canonicalCommit"
         Write-Host "Delivery mode: $DeliveryMode"
+        Write-Host "Subscription: $([string] $account.name) ($subscriptionText)"
+        Write-Host "Target job: $targetResourceGroup/$targetJobName"
+        Write-Host "Target location: $targetLocation"
+        Write-Host "Target registry: $targetRegistryResourceGroup/$targetRegistryName"
         Write-Host "Image: $expectedImage"
         Write-Host "Digest: $imageDigest"
         Write-Host "Previous image: $previousImage"
-        Write-Host "Schedule: $expectedCronExpression UTC"
+        Write-Host "Schedule: $existingCronExpression UTC"
         if ($FreshHistoricalRun) {
             Write-Host "Historical start: $historicalStartText"
-            Write-Host "New Blob container: https://$expectedStorageAccountName.blob.core.windows.net/$freshContainerName"
+            Write-Host "New Blob container: https://$liveStorageAccount.blob.core.windows.net/$freshContainerName"
             Write-Host "Export path in new container: $freshExportRoot"
             Write-Host "State path in new container: $freshStateRoot"
             Write-Host "Previous Blob container: $liveStorageContainer"

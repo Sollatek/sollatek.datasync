@@ -921,7 +921,7 @@ For an Azure portal walkthrough that deploys DataSync as a 01:00 UTC daily Conta
 
 ### Published Releases
 
-Customers updating an existing Sollatek DataSync Azure deployment do not need to clone this repository or install Git, Docker, or the .NET SDK. Use [Update An Existing Azure Job From A Published Release](deployment/azure/UPDATE_FROM_PUBLIC_RELEASE.md) with `deployment/azure/Invoke-DataSyncProductionRelease.ps1`.
+Customers updating an existing Sollatek DataSync Azure deployment do not need to clone this repository or install Git, Docker, or the .NET SDK. Use [Update An Existing Azure Job From A Published Release](deployment/azure/UPDATE_FROM_PUBLIC_RELEASE.md) with `deployment/azure/Invoke-DataSyncProductionRelease.ps1`. The helper discovers the existing DataSync job from the selected subscription or accepts explicit `ResourceGroup`, `JobName`, `RegistryName`, and `ImageRepository` values. It reads the deployed job's location and schedule from Azure; neither is hard-coded.
 
 | Option | Published input | Customer-selected base image | Recommended use |
 | --- | --- | --- | --- |
@@ -933,7 +933,7 @@ Run without `-Deploy` first to validate the published release and exact Azure ta
 
 ```powershell
 .\Invoke-DataSyncProductionRelease.ps1 `
-  -SubscriptionId '<customer-subscription-guid>' `
+  -Subscription '<customer-subscription-name-or-guid>' `
   -ReleaseVersion 1.0.0
 ```
 
@@ -941,7 +941,7 @@ Deploy the prebuilt Sollatek image:
 
 ```powershell
 .\Invoke-DataSyncProductionRelease.ps1 `
-  -SubscriptionId '<customer-subscription-guid>' `
+  -Subscription '<customer-subscription-name-or-guid>' `
   -ReleaseVersion 1.0.0 `
   -DeliveryMode PrebuiltImage `
   -Deploy
@@ -951,7 +951,7 @@ Alternatively, assemble the published compiled application with a selected compa
 
 ```powershell
 .\Invoke-DataSyncProductionRelease.ps1 `
-  -SubscriptionId '<customer-subscription-guid>' `
+  -Subscription '<customer-subscription-name-or-guid>' `
   -ReleaseVersion 1.0.0 `
   -DeliveryMode Binary `
   -BaseImage mcr.microsoft.com/dotnet/runtime:10.0 `

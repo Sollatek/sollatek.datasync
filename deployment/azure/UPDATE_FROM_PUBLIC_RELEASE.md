@@ -1,8 +1,8 @@
 # Update An Existing Azure Job From A Published Release
 
-Use this procedure to update the existing guarded Sollatek DataSync Container Apps Job from a tested public release. The customer does not need to clone the repository or install Git, Docker, or the .NET SDK.
+Use this procedure to update an existing Sollatek DataSync Container Apps Job from a tested public release. The customer does not need to clone the repository or install Git, Docker, or the .NET SDK.
 
-This is an update procedure, not a first-time Azure landing-zone deployment. It validates the existing subscription, resource names, region, schedule, storage contract, and rollback image before it changes the job.
+This is an update procedure, not a first-time Azure landing-zone deployment. It discovers or directly selects the customer's existing resources, reads the job's actual Azure location and schedule, and validates the rollback image before it changes the job.
 
 ## File To Provide To The Customer
 
@@ -16,13 +16,23 @@ It can be uploaded to Azure Cloud Shell or copied to another PowerShell environm
 
 ## Requirements
 
-- An existing DataSync production deployment matching the resource contract embedded in the script.
+- An existing DataSync Container Apps Job and an Azure Container Registry containing its current image.
 - A current Azure CLI login with access to the target subscription, ACR, Container Apps Job, and related validation resources.
 - PowerShell and Azure CLI. Binary delivery also requires `tar`, which is available in Azure Cloud Shell.
 - A public Sollatek DataSync GitHub release.
 - Public anonymous access to the Sollatek GHCR package when using `PrebuiltImage`.
 
-The script uses the current Azure CLI login. It requires `SubscriptionId` so the operator explicitly selects the target subscription; it does not require `TenantId`.
+The script uses the current Azure CLI login. `-Subscription` accepts either the subscription name or ID; `-SubscriptionId` remains an alias for existing commands. It does not require `TenantId`.
+
+## Target Discovery And Explicit Selection
+
+The script contains no fixed resource group, Azure region, registry, storage-account, job, or schedule values.
+
+- With only `-Subscription`, it lists accessible Container Apps Jobs and selects the single job whose name, current image, or DataSync environment-variable signature identifies it as DataSync.
+- It reads the selected job's resource group, location, image, and schedule from Azure.
+- It derives the destination ACR and image repository from the current job image.
+- If subscription-level listing is not permitted, no job matches, or more than one job matches, provide `-ResourceGroup`, `-JobName`, and `-RegistryName` explicitly. `-ImageRepository` is also available if the repository path cannot be derived from the current image.
+- Explicit values select existing resources only. The release script does not create a resource group, registry, or job.
 
 ## Choose A Delivery Mode
 
@@ -41,17 +51,28 @@ Use a fixed semantic version for a repeatable deployment:
 
 ```powershell
 .\Invoke-DataSyncProductionRelease.ps1 `
-  -SubscriptionId '<customer-subscription-guid>' `
+  -Subscription '<customer-subscription-name-or-guid>' `
   -ReleaseVersion 1.0.0
 ```
 
-This validates the release, current Azure login, subscription, production resource contract, existing job image, schedule, and planned target image. It does not deploy because `-Deploy` is absent.
+If automatic discovery is unavailable or ambiguous, select the existing resources explicitly:
+
+```powershell
+.\Invoke-DataSyncProductionRelease.ps1 `
+  -Subscription '<customer-subscription-name-or-guid>' `
+  -ResourceGroup '<existing-job-resource-group>' `
+  -JobName '<existing-datasync-job-name>' `
+  -RegistryName '<existing-acr-name>' `
+  -ReleaseVersion 1.0.0
+```
+
+This validates the release, current Azure login, selected existing job image, actual location, unchanged schedule, and planned target image. It does not deploy because `-Deploy` is absent.
 
 ## Deploy The Published Image
 
 ```powershell
 .\Invoke-DataSyncProductionRelease.ps1 `
-  -SubscriptionId '<customer-subscription-guid>' `
+  -Subscription '<customer-subscription-name-or-guid>' `
   -ReleaseVersion 1.0.0 `
   -DeliveryMode PrebuiltImage `
   -Deploy
@@ -63,7 +84,7 @@ The script imports the published image by immutable digest into the existing ACR
 
 ```powershell
 .\Invoke-DataSyncProductionRelease.ps1 `
-  -SubscriptionId '<customer-subscription-guid>' `
+  -Subscription '<customer-subscription-name-or-guid>' `
   -ReleaseVersion 1.0.0 `
   -DeliveryMode Binary `
   -BaseImage mcr.microsoft.com/dotnet/runtime:10.0 `
