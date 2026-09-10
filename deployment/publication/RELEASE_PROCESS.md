@@ -21,6 +21,13 @@ unchanged release branch is merged to `master`. Ordinary changes to `develop` or
 `master`, including documentation and deployment-script changes, can run validation
 but never build or publish release assets.
 
+The configured release owner may promote a pull request containing only repository
+workflow files, deployment tooling, README files, or license files to `master`
+without creating a semantic release. The validation job determines the complete
+changed-path set and rejects this exception if any application or test source is
+present. This maintenance path never runs the publication job; runtime changes
+continue to require the versioned release flow below.
+
 GitHub Releases remain tag-based: the release branch authorizes publication, while
 the immutable `vMAJOR.MINOR.PATCH` tag and image digest identify what customers use.
 
@@ -56,7 +63,8 @@ the immutable `vMAJOR.MINOR.PATCH` tag and image digest identify what customers 
 The workflow fails closed when:
 
 - a pull request to `master` does not come from
-  `release/vMAJOR.MINOR.PATCH`;
+  `release/vMAJOR.MINOR.PATCH`, unless it is the configured release owner's
+  non-runtime-only maintenance pull request;
 - a publication dispatch does not use a valid `release/vMAJOR.MINOR.PATCH` branch;
 - the source or packaged-content exclusion scan fails;
 - tests, cross-platform publishing, or the multi-platform image build fails; or

@@ -43,13 +43,30 @@ jobs:
 
       - name: Validate promotion path
         shell: pwsh
+        env:
+          PUBLIC_RELEASE_OWNER: ${{ vars.PUBLIC_RELEASE_OWNER }}
+          PULL_REQUEST_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
+          $changedPaths = @()
+          if ($env:GITHUB_EVENT_NAME -eq 'pull_request' -and $env:GITHUB_BASE_REF -eq 'master') {
+            if ([string]::IsNullOrWhiteSpace($env:PULL_REQUEST_BASE_SHA)) {
+              throw 'The pull request base commit is unavailable.'
+            }
+            $changedPaths = @(git diff --name-only --diff-filter=ACMRTUXB "$env:PULL_REQUEST_BASE_SHA...HEAD" --)
+            if ($LASTEXITCODE -ne 0 -or $changedPaths.Count -eq 0) {
+              throw 'Could not determine the files changed by the pull request.'
+            }
+          }
+
           ./deployment/publication/Test-DataSyncReleasePromotion.ps1 `
             -EventName $env:GITHUB_EVENT_NAME `
             -RefType $env:GITHUB_REF_TYPE `
             -RefName $env:GITHUB_REF_NAME `
             -BaseRef $env:GITHUB_BASE_REF `
-            -HeadRef $env:GITHUB_HEAD_REF
+            -HeadRef $env:GITHUB_HEAD_REF `
+            -Actor $env:GITHUB_ACTOR `
+            -ReleaseOwner $env:PUBLIC_RELEASE_OWNER `
+            -ChangedPath $changedPaths
 
       - name: Validate publication authorization configuration
         if: >-
