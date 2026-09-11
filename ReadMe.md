@@ -36,22 +36,20 @@ For local development, use .NET user secrets. The project already has `UserSecre
 
 ```powershell
 dotnet user-secrets set "Settings:clientKey" "YourClientKey" --project .\Sollatek.DataSync\Sollatek.DataSync.csproj
-dotnet user-secrets set "Settings:clientSecret" "YourClientSecret" --project .\Sollatek.DataSync\Sollatek.DataSync.csproj
+dotnet user-secrets set "Settings:clientSecret" "{client-secret}" --project .\Sollatek.DataSync\Sollatek.DataSync.csproj
 ```
 
 For deployment, use `appsettings.json`, command-line arguments, or environment variables:
 
 ```powershell
 $env:SOL_Settings__clientKey="YourClientKey"
-$env:SOL_Settings__clientSecret="YourClientSecret"
+$env:SOL_Settings__clientSecret="{client-secret}"
 ```
 
 `Settings:oauthUrl` defaults to `https://id.sollatek.io/` in `appsettings.json`.
-`Settings:oauthTokenEndpointPath` defaults to the standard Keycloak realm token
-endpoint `/realms/platform/protocol/openid-connect/token`. The compatibility
-path `/connect/token` is accepted only as an explicit rollback override; the
-client ID, secret, grant, scopes, token shape, and Platform API contract do not
-change.
+DataSync requests tokens from the Keycloak realm endpoint
+`/realms/platform/protocol/openid-connect/token`; the endpoint path is not
+configurable.
 `Settings:apiUrl` defaults to `https://api.sollatek.io/`.
 
 ### 3. Configure Storage
@@ -169,7 +167,7 @@ For a deployed executable:
 $env:SOL_Storage__provider="sqlserver"
 $env:SOL_Storage__connectionString="Server=localhost;Database=sollatek_datasync;User Id=sa;Password=YourStrongPassword;Encrypt=False;TrustServerCertificate=True;"
 $env:SOL_Settings__clientKey="YourClientKey"
-$env:SOL_Settings__clientSecret="YourClientSecret"
+$env:SOL_Settings__clientSecret="{client-secret}"
 .\Sollatek.DataSync
 ```
 
@@ -646,7 +644,7 @@ Failure email is optional. If `Notifications:failureEmail` is absent or disabled
       "smtpPort": 587,
       "enableSsl": true,
       "username": "datasync-smtp-user",
-      "password": "set-with-user-secrets-or-environment",
+      "password": "{set-at-runtime}",
       "from": "datasync@example.com",
       "to": "ops@example.com;dev@example.com",
       "subjectPrefix": "[DataSync]"

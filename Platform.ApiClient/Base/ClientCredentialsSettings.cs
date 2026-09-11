@@ -4,7 +4,6 @@ public class ClientCredentialsSettings
 {
     public const string StandardTokenEndpointPath =
         "/realms/platform/protocol/openid-connect/token";
-    public const string LegacyTokenEndpointPath = "/connect/token";
 
     public string OauthUrl { get; set; }
     public string ClientKey { get; set; }
@@ -14,34 +13,33 @@ public class ClientCredentialsSettings
     public ClientCredentialsSettings(
         string oauthUrl,
         string clientKey,
-        string clientSecret,
-        string tokenEndpointPath = StandardTokenEndpointPath)
+        string clientSecret)
     {
-        var effectivePath = string.IsNullOrWhiteSpace(tokenEndpointPath)
-            ? StandardTokenEndpointPath
-            : tokenEndpointPath.Trim();
-        if (effectivePath != StandardTokenEndpointPath &&
-            effectivePath != LegacyTokenEndpointPath)
+        if (!Uri.TryCreate(oauthUrl, UriKind.Absolute, out var oauthBaseUri) ||
+            (oauthBaseUri.Scheme != Uri.UriSchemeHttps &&
+             !(oauthBaseUri.Scheme == Uri.UriSchemeHttp && oauthBaseUri.IsLoopback)) ||
+            !string.IsNullOrEmpty(oauthBaseUri.UserInfo) ||
+            !string.IsNullOrEmpty(oauthBaseUri.Query) ||
+            !string.IsNullOrEmpty(oauthBaseUri.Fragment))
         {
             throw new ArgumentException(
-                $"The token endpoint path must be '{StandardTokenEndpointPath}' or the explicit rollback path '{LegacyTokenEndpointPath}'.",
-                nameof(tokenEndpointPath));
+                "The OAuth URL must be an HTTPS absolute URI without user info, a query, or a fragment. Loopback HTTP is allowed for local tests.",
+                nameof(oauthUrl));
         }
 
-        if (!Uri.TryCreate(oauthUrl?.TrimEnd('/') + effectivePath, UriKind.Absolute, out var tokenEndpoint) ||
-            (!string.Equals(tokenEndpoint.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) &&
-             !string.Equals(tokenEndpoint.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)) ||
-            !string.IsNullOrEmpty(tokenEndpoint.UserInfo) ||
-            !string.IsNullOrEmpty(tokenEndpoint.Query) ||
-            !string.IsNullOrEmpty(tokenEndpoint.Fragment))
+        if (string.IsNullOrWhiteSpace(clientKey))
         {
-            throw new ArgumentException("The OAuth base URL must produce an absolute HTTP(S) token endpoint.",
-                nameof(oauthUrl));
+            throw new ArgumentException("The OAuth client identifier is required.", nameof(clientKey));
+        }
+
+        if (string.IsNullOrWhiteSpace(clientSecret))
+        {
+            throw new ArgumentException("The OAuth client secret is required.", nameof(clientSecret));
         }
 
         OauthUrl = oauthUrl;
         ClientKey = clientKey;
         ClientSecret = clientSecret;
-        TokenEndpoint = tokenEndpoint;
+        TokenEndpoint = new Uri(oauthBaseUri, StandardTokenEndpointPath);
     }
 }
