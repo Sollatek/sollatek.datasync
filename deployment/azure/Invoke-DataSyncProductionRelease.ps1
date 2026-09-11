@@ -399,7 +399,7 @@ function Get-ContainerAppsJobState {
         "--subscription", $Subscription,
         "--resource-group", $ResourceGroup,
         "--name", $JobName,
-        "--query", "{id:id,name:name,resourceGroup:resourceGroup,location:location,triggerType:configuration.triggerType,cron:configuration.scheduleTriggerConfig.cronExpression,image:template.containers[0].image,identityPrincipalId:identity.principalId}",
+        "--query", "{id:id,name:name,resourceGroup:resourceGroup,location:location,triggerType:properties.configuration.triggerType,cron:properties.configuration.scheduleTriggerConfig.cronExpression,image:properties.template.containers[0].image,identityPrincipalId:identity.principalId}",
         "--output", "json",
         "--only-show-errors"
     ))
@@ -449,7 +449,7 @@ function Resolve-ContainerAppsJobTarget {
         $listArguments += @("--resource-group", $ResourceGroup)
     }
     $listArguments += @(
-        "--query", "[].{name:name,resourceGroup:resourceGroup,location:location,image:template.containers[0].image,environment:template.containers[0].env}",
+        "--query", "[].{name:name,resourceGroup:resourceGroup,location:location,image:properties.template.containers[0].image,environment:properties.template.containers[0].env}",
         "--output", "json",
         "--only-show-errors"
     )
@@ -614,7 +614,7 @@ function Get-JobEnvironment {
         "--subscription", $Subscription,
         "--resource-group", $ResourceGroup,
         "--name", $JobName,
-        "--query", "template.containers[0].env",
+        "--query", "properties.template.containers[0].env",
         "--output", "json",
         "--only-show-errors"
     ))
