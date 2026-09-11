@@ -24,21 +24,41 @@ public sealed class IdentityServerClientTests
             StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void Settings_AcceptOnlyTheExplicitLegacyRollbackPath()
+    [Theory]
+    [InlineData("http://id.sollatek.io/")]
+    [InlineData("https://user@id.sollatek.io/")]
+    [InlineData("https://id.sollatek.io/?debug=true")]
+    [InlineData("https://id.sollatek.io/#fragment")]
+    public void Settings_RejectUnsafeOauthBaseUri(string oauthUrl)
     {
-        var rollback = new ClientCredentialsSettings(
-            "https://id.sollatek.io/",
+        Assert.Throws<ArgumentException>(() => new ClientCredentialsSettings(
+            oauthUrl,
             "client-id",
-            "client-secret",
-            ClientCredentialsSettings.LegacyTokenEndpointPath);
+            "client-secret"));
+    }
 
-        Assert.Equal("https://id.sollatek.io/connect/token", rollback.TokenEndpoint.AbsoluteUri);
+    [Fact]
+    public void Settings_AllowLoopbackHttpForLocalValidation()
+    {
+        var settings = new ClientCredentialsSettings(
+            "http://127.0.0.1:18081/",
+            "client-id",
+            "client-secret");
+
+        Assert.Equal(
+            "http://127.0.0.1:18081/realms/platform/protocol/openid-connect/token",
+            settings.TokenEndpoint.AbsoluteUri);
+    }
+
+    [Theory]
+    [InlineData("", "client-secret")]
+    [InlineData("client-id", "")]
+    public void Settings_RejectMissingClientCredentials(string clientId, string clientSecret)
+    {
         Assert.Throws<ArgumentException>(() => new ClientCredentialsSettings(
             "https://id.sollatek.io/",
-            "client-id",
-            "client-secret",
-            "/untrusted/token"));
+            clientId,
+            clientSecret));
     }
 
     [Fact]
@@ -47,7 +67,7 @@ public sealed class IdentityServerClientTests
         var handler = new RecordingHandler(new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(
-                """{"access_token":"access-token","expires_in":300,"token_type":"Bearer"}""",
+                """{"access_token":"mock-token","expires_in":300,"token_type":"Bearer"}""",
                 Encoding.UTF8,
                 "application/json")
         });
@@ -62,7 +82,7 @@ public sealed class IdentityServerClientTests
 
         var token = await client.RequestClientCredentialsTokenAsync(CancellationToken.None);
 
-        Assert.Equal("access-token", token);
+        Assert.Equal("mock-token", token);
         Assert.NotNull(handler.RequestUri);
         Assert.Equal(
             "/realms/platform/protocol/openid-connect/token",
@@ -75,7 +95,7 @@ public sealed class IdentityServerClientTests
     }
 
     [Fact]
-    public async Task LocalKeycloak_StandardAndLegacyEndpointsIssueBearerTokens()
+    public async Task LocalKeycloak_StandardEndpointIssuesBearerToken()
     {
         if (!string.Equals(
                 Environment.GetEnvironmentVariable(RunLocalKeycloakFlag),
@@ -86,32 +106,21 @@ public sealed class IdentityServerClientTests
         }
 
         var standardBaseUrl = RequiredEnvironmentVariable("DATASYNC_KEYCLOAK_STANDARD_BASE_URL");
-        var legacyBaseUrl = RequiredEnvironmentVariable("DATASYNC_KEYCLOAK_LEGACY_BASE_URL");
         var clientId = RequiredEnvironmentVariable("DATASYNC_KEYCLOAK_CLIENT_ID");
         var clientSecret = RequiredEnvironmentVariable("DATASYNC_KEYCLOAK_CLIENT_SECRET");
 
-        await AssertCanAcquireTokenAsync(
-            standardBaseUrl,
-            clientId,
-            clientSecret,
-            ClientCredentialsSettings.StandardTokenEndpointPath);
-        await AssertCanAcquireTokenAsync(
-            legacyBaseUrl,
-            clientId,
-            clientSecret,
-            ClientCredentialsSettings.LegacyTokenEndpointPath);
+        await AssertCanAcquireTokenAsync(standardBaseUrl, clientId, clientSecret);
     }
 
     private static async Task AssertCanAcquireTokenAsync(
         string baseUrl,
         string clientId,
-        string clientSecret,
-        string tokenEndpointPath)
+        string clientSecret)
     {
         var client = new IdentityServerClient(
             new TokenCache(),
             new TransientHttpClientFactory(),
-            new ClientCredentialsSettings(baseUrl, clientId, clientSecret, tokenEndpointPath),
+            new ClientCredentialsSettings(baseUrl, clientId, clientSecret),
             NullLogger<IdentityServerClient>.Instance);
 
         var token = await client.RequestClientCredentialsTokenAsync(CancellationToken.None);
