@@ -36,22 +36,20 @@ For local development, use .NET user secrets. The project already has `UserSecre
 
 ```powershell
 dotnet user-secrets set "Settings:clientKey" "YourClientKey" --project .\Sollatek.DataSync\Sollatek.DataSync.csproj
-dotnet user-secrets set "Settings:clientSecret" "YourClientSecret" --project .\Sollatek.DataSync\Sollatek.DataSync.csproj
+dotnet user-secrets set "Settings:clientSecret" "{client-secret}" --project .\Sollatek.DataSync\Sollatek.DataSync.csproj
 ```
 
 For deployment, use `appsettings.json`, command-line arguments, or environment variables:
 
 ```powershell
 $env:SOL_Settings__clientKey="YourClientKey"
-$env:SOL_Settings__clientSecret="YourClientSecret"
+$env:SOL_Settings__clientSecret="{client-secret}"
 ```
 
 `Settings:oauthUrl` defaults to `https://id.sollatek.io/` in `appsettings.json`.
-`Settings:oauthTokenEndpointPath` defaults to the standard Keycloak realm token
-endpoint `/realms/platform/protocol/openid-connect/token`. The compatibility
-path `/connect/token` is accepted only as an explicit rollback override; the
-client ID, secret, grant, scopes, token shape, and Platform API contract do not
-change.
+DataSync requests tokens from the Keycloak realm endpoint
+`/realms/platform/protocol/openid-connect/token`; the endpoint path is not
+configurable.
 `Settings:apiUrl` defaults to `https://api.sollatek.io/`.
 
 ### 3. Configure Storage
@@ -62,7 +60,7 @@ SQL Server example:
 
 ```powershell
 dotnet user-secrets set "Storage:provider" "sqlserver" --project .\Sollatek.DataSync\Sollatek.DataSync.csproj
-dotnet user-secrets set "Storage:connectionString" "Server=localhost;Database=sollatek_datasync;User Id=REQUIRED_EXTERNAL_VALUE;Password=YourStrongPassword;Encrypt=False;TrustServerCertificate=True;" --project .\Sollatek.DataSync\Sollatek.DataSync.csproj
+dotnet user-secrets set "Storage:connectionString" "Server=localhost;Database=sollatek_datasync;User Id=sa;Password=YourStrongPassword;Encrypt=False;TrustServerCertificate=True;" --project .\Sollatek.DataSync\Sollatek.DataSync.csproj
 dotnet user-secrets set "Storage:schemaMode" "applySafeChanges" --project .\Sollatek.DataSync\Sollatek.DataSync.csproj
 ```
 
@@ -167,9 +165,9 @@ For a deployed executable:
 
 ```powershell
 $env:SOL_Storage__provider="sqlserver"
-$env:SOL_Storage__connectionString="Server=localhost;Database=sollatek_datasync;User Id=REQUIRED_EXTERNAL_VALUE;Password=YourStrongPassword;Encrypt=False;TrustServerCertificate=True;"
+$env:SOL_Storage__connectionString="Server=localhost;Database=sollatek_datasync;User Id=sa;Password=YourStrongPassword;Encrypt=False;TrustServerCertificate=True;"
 $env:SOL_Settings__clientKey="YourClientKey"
-$env:SOL_Settings__clientSecret="YourClientSecret"
+$env:SOL_Settings__clientSecret="{client-secret}"
 .\Sollatek.DataSync
 ```
 
@@ -204,7 +202,7 @@ Connection string examples:
 {
   "Storage": {
     "provider": "sqlserver",
-    "connectionString": "Server=localhost;Database=sollatek_datasync;User Id=REQUIRED_EXTERNAL_VALUE;Password=YourStrongPassword;Encrypt=False;TrustServerCertificate=True;",
+    "connectionString": "Server=localhost;Database=sollatek_datasync;User Id=sa;Password=YourStrongPassword;Encrypt=False;TrustServerCertificate=True;",
     "schemaMode": "validate"
   }
 }
@@ -214,7 +212,7 @@ Connection string examples:
 {
   "Storage": {
     "provider": "postgres",
-    "connectionString": "Host=localhost;Port=5432;Database=sollatek_datasync;Username=REQUIRED_EXTERNAL_VALUE;Password=YourPassword;SSL Mode=Prefer;Trust Server Certificate=true;",
+    "connectionString": "Host=localhost;Port=5432;Database=sollatek_datasync;Username=postgres;Password=YourPassword;SSL Mode=Prefer;Trust Server Certificate=true;",
     "schemaMode": "validate"
   }
 }
@@ -224,7 +222,7 @@ Connection string examples:
 {
   "Storage": {
     "provider": "mysql",
-    "connectionString": "Server=localhost;Port=3306;Database=sollatek_datasync;User Id=REQUIRED_EXTERNAL_VALUE;Password=YourPassword;SslMode=Preferred;",
+    "connectionString": "Server=localhost;Port=3306;Database=sollatek_datasync;User Id=root;Password=YourPassword;SslMode=Preferred;",
     "schemaMode": "validate"
   }
 }
@@ -646,7 +644,7 @@ Failure email is optional. If `Notifications:failureEmail` is absent or disabled
       "smtpPort": 587,
       "enableSsl": true,
       "username": "datasync-smtp-user",
-      "password": "REQUIRED_EXTERNAL_VALUE",
+      "password": "{set-at-runtime}",
       "from": "datasync@example.com",
       "to": "ops@example.com;dev@example.com",
       "subjectPrefix": "[DataSync]"

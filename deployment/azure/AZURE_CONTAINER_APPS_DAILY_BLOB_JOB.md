@@ -215,7 +215,7 @@ The sample config reads API credentials from environment variables:
 
 ```powershell
 $env:DATASYNC_PLATFORM_CLIENT_KEY = "<client-key>"
-$env:DATASYNC_PLATFORM_CLIENT_SECRET = "<client-secret>"
+$env:DATASYNC_PLATFORM_CLIENT_SECRET = "{client-secret}"
 ```
 
 Do not put client secrets in source-controlled JSON files.
