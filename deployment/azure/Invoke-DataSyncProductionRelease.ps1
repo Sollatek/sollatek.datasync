@@ -134,7 +134,6 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$requiredTokenEndpointPath = "/realms/platform/protocol/openid-connect/token"
 $releaseRepository = "Sollatek/sollatek.datasync"
 $releaseBaseUri = "https://github.com/$releaseRepository/releases"
 $supportedReleaseContracts = @("datasync-public-v1", "datasync-public-v2")
@@ -776,7 +775,6 @@ try {
         $freshExportRoot = "exports"
         $freshStateRoot = "_state"
         $freshEnvironmentValues = [ordered] @{
-            "SOL_Settings__oauthTokenEndpointPath" = $requiredTokenEndpointPath
             "SOL_Sync__runOnStartup" = "historicalOnly"
             "SOL_Sync__stopWhenFinished" = "true"
             "SOL_Sync__schedule__mode" = "daily"
