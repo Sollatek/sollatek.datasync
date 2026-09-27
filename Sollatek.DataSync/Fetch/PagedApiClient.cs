@@ -1,5 +1,6 @@
 #nullable enable
 
+using System.Text;
 using System.Text.Json;
 using Sollatek.DataSync.Execution;
 using Sollatek.DataSync.Sync.Metadata;
@@ -30,17 +31,18 @@ public sealed class PagedApiClient : IPagedApiClient
             httpRequest,
             HttpCompletionOption.ResponseHeadersRead,
             cancellationToken);
-        var responseBody = response.Content == null
-            ? string.Empty
-            : await ReadAsStringWithTimeoutAsync(response.Content, cancellationToken);
-
         if (!response.IsSuccessStatusCode)
         {
+            var responseBody = response.Content == null
+                ? string.Empty
+                : await ReadAsStringWithTimeoutAsync(response.Content, cancellationToken);
             throw new InvalidOperationException(
                 $"Fetching page for sync entity '{metadata.Key}' returned HTTP {(int)response.StatusCode}: {responseBody}");
         }
 
-        using var document = JsonDocument.Parse(responseBody);
+        using var document = response.Content == null
+            ? JsonDocument.Parse(string.Empty)
+            : await ReadJsonDocumentWithTimeoutAsync(response.Content, cancellationToken);
         if (document.RootElement.ValueKind != JsonValueKind.Array)
         {
             throw new InvalidOperationException(
@@ -85,6 +87,50 @@ public sealed class PagedApiClient : IPagedApiClient
         }
 
         return await content.ReadAsStringAsync(timeout.Token);
+    }
+
+    private async Task<JsonDocument> ReadJsonDocumentWithTimeoutAsync(
+        HttpContent content,
+        CancellationToken cancellationToken)
+    {
+        if (RequiresTextTranscoding(content))
+        {
+            var responseBody = await ReadAsStringWithTimeoutAsync(content, cancellationToken);
+            return JsonDocument.Parse(responseBody);
+        }
+
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        if (_httpClient.Timeout != Timeout.InfiniteTimeSpan)
+        {
+            timeout.CancelAfter(_httpClient.Timeout);
+        }
+
+        await using var stream = await content.ReadAsStreamAsync(timeout.Token);
+        // Preserve the previous decoder's BOM and malformed-byte replacement behavior without a full UTF-16 string.
+        await using var normalizedUtf8 = Encoding.CreateTranscodingStream(
+            stream,
+            Encoding.UTF8,
+            Encoding.UTF8,
+            leaveOpen: true);
+        return await JsonDocument.ParseAsync(normalizedUtf8, cancellationToken: timeout.Token);
+    }
+
+    private static bool RequiresTextTranscoding(HttpContent content)
+    {
+        var charset = content.Headers.ContentType?.CharSet?.Trim('"');
+        if (string.IsNullOrWhiteSpace(charset))
+        {
+            return false;
+        }
+
+        try
+        {
+            return Encoding.GetEncoding(charset).CodePage != Encoding.UTF8.CodePage;
+        }
+        catch (ArgumentException)
+        {
+            return true;
+        }
     }
 
     private sealed record Pagination(
