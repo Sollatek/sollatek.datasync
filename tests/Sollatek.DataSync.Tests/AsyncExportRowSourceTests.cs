@@ -129,11 +129,13 @@ public sealed class AsyncExportRowSourceTests
         var path = Path.Combine(directory, "rows.csv");
         try
         {
+            var longNote = $"line 1\n{new string('x', 5_000)}\nline 2";
             await File.WriteAllTextAsync(
                 path,
-                """"
+                $$""""
                 id,name,enabled,temperature,missing,ownerCustomer_id,modification_dateTime,dynamic_note
                 42,"Ψυγείο 東京, ""A""",true,4.125,,customer-1,2026-09-28T12:34:56Z,"line 1
+                {{new string('x', 5_000)}}
                 line 2"
                 """",
                 new UTF8Encoding(false));
@@ -172,7 +174,7 @@ public sealed class AsyncExportRowSourceTests
             Assert.Equal(
                 "2026-09-28T12:34:56Z",
                 actual.GetProperty("modification").GetProperty("dateTime").GetString());
-            Assert.Equal("line 1\nline 2", actual.GetProperty("dynamic").GetProperty("note").GetString());
+            Assert.Equal(longNote, actual.GetProperty("dynamic").GetProperty("note").GetString());
 
             await source.CompleteAsync(file, CancellationToken.None);
         }

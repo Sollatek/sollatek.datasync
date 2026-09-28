@@ -1197,15 +1197,16 @@ internal static class AsyncExportCsvRowReader
     {
         await using var stream = File.OpenRead(path);
         using var reader = new StreamReader(stream, new UTF8Encoding(false), detectEncodingFromByteOrderMarks: true);
+        var recordReader = new CsvRecordReader(reader);
 
-        var headers = await ReadRecordAsync(reader, cancellationToken);
+        var headers = await recordReader.ReadRecordAsync(cancellationToken);
         if (headers == null || headers.Count == 0)
         {
             yield break;
         }
 
         var pathMap = BuildPathMap(metadata);
-        while (await ReadRecordAsync(reader, cancellationToken) is { } row)
+        while (await recordReader.ReadRecordAsync(cancellationToken) is { } row)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var root = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
@@ -1315,97 +1316,126 @@ internal static class AsyncExportCsvRowReader
         return value;
     }
 
-    private static async Task<IReadOnlyList<string>?> ReadRecordAsync(
-        TextReader reader,
-        CancellationToken cancellationToken)
+    private sealed class CsvRecordReader(TextReader reader)
     {
-        var fields = new List<string>();
-        var field = new StringBuilder();
-        var buffer = new char[1];
-        var inQuotes = false;
-        var sawAny = false;
+        private const int BufferSize = 4096;
+        private readonly char[] _buffer = new char[BufferSize];
+        private int _bufferOffset;
+        private int _bufferLength;
 
-        while (true)
+        public async Task<IReadOnlyList<string>?> ReadRecordAsync(
+            CancellationToken cancellationToken)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            var count = await reader.ReadAsync(buffer.AsMemory(0, 1), cancellationToken);
-            if (count == 0)
+            var fields = new List<string>();
+            var field = new StringBuilder();
+            var inQuotes = false;
+            var sawAny = false;
+
+            while (true)
             {
-                if (inQuotes)
+                cancellationToken.ThrowIfCancellationRequested();
+                var current = await ReadCharacterAsync(cancellationToken);
+                if (current < 0)
                 {
-                    throw new InvalidOperationException("CSV export ended inside a quoted field.");
-                }
-
-                if (!sawAny)
-                {
-                    return null;
-                }
-
-                fields.Add(field.ToString());
-                return fields;
-            }
-
-            sawAny = true;
-            var ch = buffer[0];
-            if (inQuotes)
-            {
-                if (ch == '"')
-                {
-                    var next = await reader.ReadAsync(buffer.AsMemory(0, 1), cancellationToken);
-                    if (next == 0)
+                    if (inQuotes)
                     {
-                        fields.Add(field.ToString());
-                        return fields;
+                        throw new InvalidOperationException("CSV export ended inside a quoted field.");
                     }
 
-                    if (buffer[0] == '"')
+                    if (!sawAny)
                     {
-                        field.Append('"');
+                        return null;
+                    }
+
+                    fields.Add(field.ToString());
+                    return fields;
+                }
+
+                sawAny = true;
+                var ch = (char)current;
+                if (inQuotes)
+                {
+                    if (ch == '"')
+                    {
+                        var next = await ReadCharacterAsync(cancellationToken);
+                        if (next < 0)
+                        {
+                            fields.Add(field.ToString());
+                            return fields;
+                        }
+
+                        if ((char)next == '"')
+                        {
+                            field.Append('"');
+                            continue;
+                        }
+
+                        inQuotes = false;
+                        ch = (char)next;
+                    }
+                    else
+                    {
+                        field.Append(ch);
+                        continue;
+                    }
+                }
+                else if (ch == '"')
+                {
+                    inQuotes = true;
+                    continue;
+                }
+
+                if (ch == ',')
+                {
+                    fields.Add(field.ToString());
+                    field.Clear();
+                    continue;
+                }
+
+                if (ch == '\r')
+                {
+                    var next = await ReadCharacterAsync(cancellationToken);
+                    if (next >= 0 && (char)next != '\n')
+                    {
+                        field.Append((char)next);
                         continue;
                     }
 
-                    inQuotes = false;
-                    ch = buffer[0];
+                    fields.Add(field.ToString());
+                    return fields;
                 }
-                else
+
+                if (ch == '\n')
                 {
-                    field.Append(ch);
-                    continue;
-                }
-            }
-            else if (ch == '"')
-            {
-                inQuotes = true;
-                continue;
-            }
-
-            if (ch == ',')
-            {
-                fields.Add(field.ToString());
-                field.Clear();
-                continue;
-            }
-
-            if (ch == '\r')
-            {
-                var next = await reader.ReadAsync(buffer.AsMemory(0, 1), cancellationToken);
-                if (next != 0 && buffer[0] != '\n')
-                {
-                    field.Append(buffer[0]);
-                    continue;
+                    fields.Add(field.ToString());
+                    return fields;
                 }
 
-                fields.Add(field.ToString());
-                return fields;
+                field.Append(ch);
             }
+        }
 
-            if (ch == '\n')
+        private ValueTask<int> ReadCharacterAsync(CancellationToken cancellationToken)
+        {
+            if (_bufferOffset < _bufferLength)
             {
-                fields.Add(field.ToString());
-                return fields;
+                return ValueTask.FromResult((int)_buffer[_bufferOffset++]);
             }
 
-            field.Append(ch);
+            return RefillAndReadCharacterAsync(cancellationToken);
+        }
+
+        private async ValueTask<int> RefillAndReadCharacterAsync(
+            CancellationToken cancellationToken)
+        {
+            _bufferLength = await reader.ReadAsync(_buffer.AsMemory(), cancellationToken);
+            _bufferOffset = 0;
+            if (_bufferLength == 0)
+            {
+                return -1;
+            }
+
+            return _buffer[_bufferOffset++];
         }
     }
 }
