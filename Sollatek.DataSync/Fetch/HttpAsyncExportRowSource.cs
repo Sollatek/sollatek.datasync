@@ -1028,7 +1028,7 @@ internal static class AsyncExportParquetRowReader
             foreach (var field in fields)
             {
                 columns.Add(new ParquetColumnValues(
-                    field.Name,
+                    ResolvePath(field.Name, pathMap),
                     await ReadColumnAsync(rowGroup, field, rowCount, cancellationToken)));
             }
 
@@ -1039,8 +1039,7 @@ internal static class AsyncExportParquetRowReader
                 foreach (var column in columns)
                 {
                     var value = column.Values[rowIndex];
-                    var pathSegments = ResolvePath(column.Name, pathMap);
-                    SetValue(root, pathSegments, NormalizeValue(value));
+                    SetValue(root, column.Path, NormalizeValue(value));
                 }
 
                 yield return JsonSerializer.SerializeToElement(root, JsonOptions);
@@ -1183,7 +1182,7 @@ internal static class AsyncExportParquetRowReader
         };
     }
 
-    private sealed record ParquetColumnValues(string Name, object?[] Values);
+    private sealed record ParquetColumnValues(string[] Path, object?[] Values);
 }
 
 internal static class AsyncExportCsvRowReader
@@ -1206,20 +1205,22 @@ internal static class AsyncExportCsvRowReader
         }
 
         var pathMap = BuildPathMap(metadata);
+        var columnPaths = headers
+            .Select(header => string.IsNullOrWhiteSpace(header) ? null : ResolvePath(header, pathMap))
+            .ToArray();
         while (await recordReader.ReadRecordAsync(cancellationToken) is { } row)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var root = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
             for (var index = 0; index < headers.Count && index < row.Count; index++)
             {
-                var header = headers[index];
-                if (string.IsNullOrWhiteSpace(header))
+                var pathSegments = columnPaths[index];
+                if (pathSegments == null)
                 {
                     continue;
                 }
 
                 var value = ConvertValue(row[index]);
-                var pathSegments = ResolvePath(header, pathMap);
                 SetValue(root, pathSegments, value);
             }
 

@@ -107,6 +107,9 @@ public sealed class AsyncExportRowSourceTests
             Assert.Equal(
                 "2026-06-22T12:00:00Z",
                 actualRow.GetProperty("modification").GetProperty("dateTime").GetString());
+            Assert.Equal(
+                "legacy-dynamic",
+                actualRow.GetProperty("dynamic").GetProperty("note").GetString());
             Assert.EndsWith(".parquet", files.Single().Path);
             Assert.False(File.Exists(files.Single().Path));
             Assert.Empty(Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories));
@@ -617,7 +620,8 @@ public sealed class AsyncExportRowSourceTests
         var schema = new ParquetSchema(
             new DataField("id", typeof(int), isNullable: true, isArray: false, propertyName: null),
             new DataField("ownerCustomer_id", typeof(string), isNullable: true, isArray: false, propertyName: null),
-            new DataField("modification_dateTime", typeof(DateTime), isNullable: true, isArray: false, propertyName: null));
+            new DataField("modification_dateTime", typeof(DateTime), isNullable: true, isArray: false, propertyName: null),
+            new DataField("dynamic_note", typeof(string), isNullable: true, isArray: false, propertyName: null));
         await using var stream = new MemoryStream();
         await using (var writer = await ParquetWriter.CreateAsync(schema, stream))
         {
@@ -631,6 +635,7 @@ public sealed class AsyncExportRowSourceTests
                 {
                     new(2026, 6, 22, 12, 0, 0, DateTimeKind.Utc)
                 }.AsMemory());
+            await rowGroup.WriteAsync(fields[3], new[] { "legacy-dynamic" });
         }
 
         return stream.ToArray();
