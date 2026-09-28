@@ -101,7 +101,12 @@ public sealed class AsyncExportRowSourceTests
             Assert.Contains("%24exportAsync=true", createRequest.RequestUri.PathAndQuery);
             Assert.Contains("%24filter=", createRequest.RequestUri.PathAndQuery);
             Assert.Contains("%24top=-1", createRequest.RequestUri.PathAndQuery);
-            Assert.Equal("customer-1", rows.Single().GetProperty("ownerCustomer").GetProperty("id").GetString());
+            var actualRow = rows.Single();
+            Assert.Equal(1, actualRow.GetProperty("id").GetInt32());
+            Assert.Equal("customer-1", actualRow.GetProperty("ownerCustomer").GetProperty("id").GetString());
+            Assert.Equal(
+                "2026-06-22T12:00:00Z",
+                actualRow.GetProperty("modification").GetProperty("dateTime").GetString());
             Assert.EndsWith(".parquet", files.Single().Path);
             Assert.False(File.Exists(files.Single().Path));
             Assert.Empty(Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories));
@@ -110,6 +115,66 @@ public sealed class AsyncExportRowSourceTests
             Assert.Equal(
                 ["application/vnd.apache.parquet", "application/problem+json"],
                 handler.Requests[3].Headers.Accept.Select(value => value.MediaType!).ToArray());
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task ReadRowsAsync_CsvPreservesScalarNestedUnicodeAndQuotedValues()
+    {
+        var directory = CreateTempDirectory();
+        var path = Path.Combine(directory, "rows.csv");
+        try
+        {
+            await File.WriteAllTextAsync(
+                path,
+                """"
+                id,name,enabled,temperature,missing,ownerCustomer_id,modification_dateTime,dynamic_note
+                42,"Ψυγείο 東京, ""A""",true,4.125,,customer-1,2026-09-28T12:34:56Z,"line 1
+                line 2"
+                """",
+                new UTF8Encoding(false));
+            var source = new HttpAsyncExportRowSource(
+                new HttpClient(new RecordingHandler())
+                {
+                    BaseAddress = new Uri("https://api.test/")
+                },
+                new AsyncExportOptions
+                {
+                    StatePath = directory
+                },
+                NullLogger<HttpAsyncExportRowSource>.Instance);
+            var job = new SyncJob(
+                AssetMetadata(),
+                new SyncDateRange(
+                    new DateTimeOffset(2026, 9, 28, 0, 0, 0, TimeSpan.Zero),
+                    new DateTimeOffset(2026, 9, 29, 0, 0, 0, TimeSpan.Zero)),
+                SyncTransferMode.AsyncExport);
+            var request = new AsyncExportRequest(0, job, job.Metadata, job.Range);
+            var file = new AsyncExportDownloadedFile(request, path, "csv-contract");
+
+            var rows = new List<System.Text.Json.JsonElement>();
+            await foreach (var row in source.ReadRowsAsync(file, CancellationToken.None))
+            {
+                rows.Add(row);
+            }
+
+            var actual = rows.Single();
+            Assert.Equal(42, actual.GetProperty("id").GetInt64());
+            Assert.Equal("Ψυγείο 東京, \"A\"", actual.GetProperty("name").GetString());
+            Assert.True(actual.GetProperty("enabled").GetBoolean());
+            Assert.Equal(4.125m, actual.GetProperty("temperature").GetDecimal());
+            Assert.Equal(System.Text.Json.JsonValueKind.Null, actual.GetProperty("missing").ValueKind);
+            Assert.Equal("customer-1", actual.GetProperty("ownerCustomer").GetProperty("id").GetString());
+            Assert.Equal(
+                "2026-09-28T12:34:56Z",
+                actual.GetProperty("modification").GetProperty("dateTime").GetString());
+            Assert.Equal("line 1\nline 2", actual.GetProperty("dynamic").GetProperty("note").GetString());
+
+            await source.CompleteAsync(file, CancellationToken.None);
         }
         finally
         {
