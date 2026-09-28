@@ -1043,8 +1043,7 @@ internal static class AsyncExportParquetRowReader
                     SetValue(root, pathSegments, NormalizeValue(value));
                 }
 
-                using var document = JsonDocument.Parse(JsonSerializer.Serialize(root, JsonOptions));
-                yield return document.RootElement.Clone();
+                yield return JsonSerializer.SerializeToElement(root, JsonOptions);
             }
         }
     }
@@ -1223,8 +1222,7 @@ internal static class AsyncExportCsvRowReader
                 SetValue(root, pathSegments, value);
             }
 
-            using var document = JsonDocument.Parse(JsonSerializer.Serialize(root, JsonOptions));
-            yield return document.RootElement.Clone();
+            yield return JsonSerializer.SerializeToElement(root, JsonOptions);
         }
     }
 
