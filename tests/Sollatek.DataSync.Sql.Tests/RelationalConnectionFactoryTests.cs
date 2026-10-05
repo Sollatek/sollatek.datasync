@@ -13,7 +13,7 @@ public sealed class RelationalConnectionFactoryTests
     {
         using var connection = RelationalConnectionFactory.Create(
             StorageProvider.SqlServer,
-            "Server=tcp:example.database.windows.net,1433;Initial Catalog=datasync;User ID=user;Password=pass;Encrypt=True;Trust Server Certificate=False;Connection Timeout=30");
+            RelationalFixtureConnectionSettings.Create(StorageProvider.SqlServer));
 
         Assert.IsType<SqlConnection>(connection);
     }
@@ -23,7 +23,7 @@ public sealed class RelationalConnectionFactoryTests
     {
         using var connection = RelationalConnectionFactory.Create(
             StorageProvider.Postgres,
-            "Host=localhost;Port=5432;Database=datasync;Username=postgres;Password=pass;Ssl Mode=Require;Timeout=30");
+            RelationalFixtureConnectionSettings.Create(StorageProvider.Postgres));
 
         Assert.IsType<NpgsqlConnection>(connection);
     }
@@ -33,7 +33,7 @@ public sealed class RelationalConnectionFactoryTests
     {
         using var connection = RelationalConnectionFactory.Create(
             StorageProvider.MySql,
-            "Server=localhost;Port=3306;Database=datasync;User ID=mysql;Password=pass;SslMode=Required;Connection Timeout=30");
+            RelationalFixtureConnectionSettings.Create(StorageProvider.MySql));
 
         Assert.IsType<MySqlConnection>(connection);
     }
