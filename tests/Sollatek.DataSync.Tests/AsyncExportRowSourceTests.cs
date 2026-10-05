@@ -125,14 +125,16 @@ public sealed class AsyncExportRowSourceTests
         }
     }
 
-    [Fact]
-    public async Task ReadRowsAsync_CsvPreservesScalarNestedUnicodeAndQuotedValues()
+    [Theory]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    public async Task ReadRowsAsync_CsvPreservesScalarNestedUnicodeAndQuotedValues(string newLine)
     {
         var directory = CreateTempDirectory();
         var path = Path.Combine(directory, "rows.csv");
         try
         {
-            var longNote = $"line 1\n{new string('x', 5_000)}\nline 2";
+            var longNote = $"line 1{newLine}{new string('x', 5_000)}{newLine}line 2";
             await File.WriteAllTextAsync(
                 path,
                 $$""""
@@ -140,7 +142,7 @@ public sealed class AsyncExportRowSourceTests
                 42,"Ψυγείο 東京, ""A""",true,4.125,,customer-1,2026-09-28T12:34:56Z,"line 1
                 {{new string('x', 5_000)}}
                 line 2"
-                """",
+                """".ReplaceLineEndings(newLine),
                 new UTF8Encoding(false));
             var source = new HttpAsyncExportRowSource(
                 new HttpClient(new RecordingHandler())
