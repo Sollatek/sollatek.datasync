@@ -419,8 +419,10 @@ public sealed class AsyncExportRowSourceTests
         }
     }
 
-    [Fact]
-    public async Task PrepareAsync_LimitsNewSubmissionsByConfiguredWindow()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PrepareAsync_LimitsNewSubmissionsByConfiguredWindow(bool waitForSecondSubmission)
     {
         var directory = CreateTempDirectory();
         try
@@ -430,7 +432,10 @@ public sealed class AsyncExportRowSourceTests
             var firstDownloadId = Guid.Parse("33333333-3333-3333-3333-333333333333");
             var secondDownloadId = Guid.Parse("44444444-4444-4444-4444-444444444444");
             var parquet = await ParquetAsync();
-            HttpResponseMessage RouteResponse(HttpRequestMessage request)
+            var secondSubmitted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            async Task<HttpResponseMessage> RouteResponse(
+                HttpRequestMessage request,
+                CancellationToken cancellationToken)
             {
                 var pathAndQuery = request.RequestUri!.PathAndQuery;
                 if (pathAndQuery.Contains("%24exportAsync=true", StringComparison.Ordinal))
@@ -444,6 +449,7 @@ public sealed class AsyncExportRowSourceTests
 
                     if (pathAndQuery.Contains("2026-06-02", StringComparison.Ordinal))
                     {
+                        secondSubmitted.TrySetResult();
                         return Json(HttpStatusCode.Accepted, $$"""
                             { "exportId": "{{secondExportId}}", "createdAtUtc": "2026-06-22T00:00:00Z" }
                             """);
@@ -452,32 +458,35 @@ public sealed class AsyncExportRowSourceTests
 
                 if (request.RequestUri.AbsolutePath == $"/api/exports/{firstExportId}")
                 {
+                    if (waitForSecondSubmission)
+                    {
+                        await secondSubmitted.Task.WaitAsync(cancellationToken);
+                    }
+
                     return Json(HttpStatusCode.OK, $$"""
-                        {
-                          "exportId": "{{firstExportId}}",
-                          "status": "succeeded",
-                          "downloadId": "{{firstDownloadId}}",
-                          "expiresAtUtc": "2099-06-23T00:00:00Z"
-                        }
-                        """);
+                    {
+                      "exportId": "{{firstExportId}}",
+                      "status": "succeeded",
+                      "downloadId": "{{firstDownloadId}}",
+                      "expiresAtUtc": "2099-06-23T00:00:00Z"
+                    }
+                    """);
                 }
 
                 if (request.RequestUri.AbsolutePath == $"/api/exports/{secondExportId}")
                 {
                     return Json(HttpStatusCode.OK, $$"""
-                        {
-                          "exportId": "{{secondExportId}}",
-                          "status": "succeeded",
-                          "downloadId": "{{secondDownloadId}}",
-                          "expiresAtUtc": "2099-06-23T00:00:00Z"
-                        }
-                        """);
+                    {
+                      "exportId": "{{secondExportId}}",
+                      "status": "succeeded",
+                      "downloadId": "{{secondDownloadId}}",
+                      "expiresAtUtc": "2099-06-23T00:00:00Z"
+                    }
+                    """);
                 }
 
-                if (request.RequestUri.AbsolutePath ==
-                        $"/api/exports/{firstExportId}/download/{firstDownloadId}" ||
-                    request.RequestUri.AbsolutePath ==
-                        $"/api/exports/{secondExportId}/download/{secondDownloadId}")
+                if (request.RequestUri.AbsolutePath == $"/api/exports/{firstExportId}/download/{firstDownloadId}" ||
+                    request.RequestUri.AbsolutePath == $"/api/exports/{secondExportId}/download/{secondDownloadId}")
                 {
                     return Binary(parquet, "application/vnd.apache.parquet");
                 }
@@ -485,8 +494,7 @@ public sealed class AsyncExportRowSourceTests
                 throw new InvalidOperationException($"Unexpected async export request: {pathAndQuery}");
             }
 
-            var handler = new RecordingHandler(
-                Enumerable.Repeat<Func<HttpRequestMessage, HttpResponseMessage>>(RouteResponse, 6).ToArray());
+            var handler = new RoutedRecordingHandler(RouteResponse);
             var source = new HttpAsyncExportRowSource(
                 new HttpClient(handler)
                 {
@@ -514,12 +522,15 @@ public sealed class AsyncExportRowSourceTests
                     new DateTimeOffset(2026, 6, 3, 0, 0, 0, TimeSpan.Zero)),
                 SyncTransferMode.AsyncExport);
 
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             var files = await source.PrepareAsync(
                 [
                     new AsyncExportRequest(0, firstJob, firstJob.Metadata, firstJob.Range),
                     new AsyncExportRequest(1, secondJob, secondJob.Metadata, secondJob.Range)
                 ],
-                CancellationToken.None);
+                timeout.Token);
+
+            Assert.Equal(2, files.Count);
 
             foreach (var file in files)
             {
@@ -538,6 +549,12 @@ public sealed class AsyncExportRowSourceTests
             Assert.True(
                 gap >= TimeSpan.FromMilliseconds(50),
                 $"Expected submit gap to honor the configured window, but it was {gap}.");
+            if (waitForSecondSubmission)
+            {
+                var firstDownloadIndex = handler.Requests.FindIndex(request =>
+                    request.RequestUri!.AbsolutePath == $"/api/exports/{firstExportId}/download/{firstDownloadId}");
+                Assert.True(firstDownloadIndex > createRequestIndexes[1]);
+            }
         }
         finally
         {
@@ -734,6 +751,29 @@ public sealed class AsyncExportRowSourceTests
                 "Accept",
                 request.Headers.Accept.Select(value => value.ToString()));
             return clone;
+        }
+    }
+
+    private sealed class RoutedRecordingHandler(
+        Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> routeResponse) : HttpMessageHandler
+    {
+        private readonly object _lock = new();
+
+        public List<HttpRequestMessage> Requests { get; } = [];
+
+        public List<DateTimeOffset> RequestTimestamps { get; } = [];
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            lock (_lock)
+            {
+                Requests.Add(new HttpRequestMessage(request.Method, request.RequestUri));
+                RequestTimestamps.Add(DateTimeOffset.UtcNow);
+            }
+
+            return routeResponse(request, cancellationToken);
         }
     }
 
