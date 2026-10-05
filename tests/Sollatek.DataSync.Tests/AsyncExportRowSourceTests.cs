@@ -101,7 +101,15 @@ public sealed class AsyncExportRowSourceTests
             Assert.Contains("%24exportAsync=true", createRequest.RequestUri.PathAndQuery);
             Assert.Contains("%24filter=", createRequest.RequestUri.PathAndQuery);
             Assert.Contains("%24top=-1", createRequest.RequestUri.PathAndQuery);
-            Assert.Equal("customer-1", rows.Single().GetProperty("ownerCustomer").GetProperty("id").GetString());
+            var actualRow = rows.Single();
+            Assert.Equal(1, actualRow.GetProperty("id").GetInt32());
+            Assert.Equal("customer-1", actualRow.GetProperty("ownerCustomer").GetProperty("id").GetString());
+            Assert.Equal(
+                "2026-06-22T12:00:00Z",
+                actualRow.GetProperty("modification").GetProperty("dateTime").GetString());
+            Assert.Equal(
+                "legacy-dynamic",
+                actualRow.GetProperty("dynamic").GetProperty("note").GetString());
             Assert.EndsWith(".parquet", files.Single().Path);
             Assert.False(File.Exists(files.Single().Path));
             Assert.Empty(Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories));
@@ -110,6 +118,70 @@ public sealed class AsyncExportRowSourceTests
             Assert.Equal(
                 ["application/vnd.apache.parquet", "application/problem+json"],
                 handler.Requests[3].Headers.Accept.Select(value => value.MediaType!).ToArray());
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Theory]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    public async Task ReadRowsAsync_CsvPreservesScalarNestedUnicodeAndQuotedValues(string newLine)
+    {
+        var directory = CreateTempDirectory();
+        var path = Path.Combine(directory, "rows.csv");
+        try
+        {
+            var longNote = $"line 1{newLine}{new string('x', 5_000)}{newLine}line 2";
+            await File.WriteAllTextAsync(
+                path,
+                $$""""
+                id,name,enabled,temperature,missing,ownerCustomer_id,modification_dateTime,dynamic_note
+                42,"Ψυγείο 東京, ""A""",true,4.125,,customer-1,2026-09-28T12:34:56Z,"line 1
+                {{new string('x', 5_000)}}
+                line 2"
+                """".ReplaceLineEndings(newLine),
+                new UTF8Encoding(false));
+            var source = new HttpAsyncExportRowSource(
+                new HttpClient(new RecordingHandler())
+                {
+                    BaseAddress = new Uri("https://api.test/")
+                },
+                new AsyncExportOptions
+                {
+                    StatePath = directory
+                },
+                NullLogger<HttpAsyncExportRowSource>.Instance);
+            var job = new SyncJob(
+                AssetMetadata(),
+                new SyncDateRange(
+                    new DateTimeOffset(2026, 9, 28, 0, 0, 0, TimeSpan.Zero),
+                    new DateTimeOffset(2026, 9, 29, 0, 0, 0, TimeSpan.Zero)),
+                SyncTransferMode.AsyncExport);
+            var request = new AsyncExportRequest(0, job, job.Metadata, job.Range);
+            var file = new AsyncExportDownloadedFile(request, path, "csv-contract");
+
+            var rows = new List<System.Text.Json.JsonElement>();
+            await foreach (var row in source.ReadRowsAsync(file, CancellationToken.None))
+            {
+                rows.Add(row);
+            }
+
+            var actual = rows.Single();
+            Assert.Equal(42, actual.GetProperty("id").GetInt64());
+            Assert.Equal("Ψυγείο 東京, \"A\"", actual.GetProperty("name").GetString());
+            Assert.True(actual.GetProperty("enabled").GetBoolean());
+            Assert.Equal(4.125m, actual.GetProperty("temperature").GetDecimal());
+            Assert.Equal(System.Text.Json.JsonValueKind.Null, actual.GetProperty("missing").ValueKind);
+            Assert.Equal("customer-1", actual.GetProperty("ownerCustomer").GetProperty("id").GetString());
+            Assert.Equal(
+                "2026-09-28T12:34:56Z",
+                actual.GetProperty("modification").GetProperty("dateTime").GetString());
+            Assert.Equal(longNote, actual.GetProperty("dynamic").GetProperty("note").GetString());
+
+            await source.CompleteAsync(file, CancellationToken.None);
         }
         finally
         {
@@ -349,8 +421,10 @@ public sealed class AsyncExportRowSourceTests
         }
     }
 
-    [Fact]
-    public async Task PrepareAsync_LimitsNewSubmissionsByConfiguredWindow()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PrepareAsync_LimitsNewSubmissionsByConfiguredWindow(bool waitForSecondSubmission)
     {
         var directory = CreateTempDirectory();
         try
@@ -360,7 +434,10 @@ public sealed class AsyncExportRowSourceTests
             var firstDownloadId = Guid.Parse("33333333-3333-3333-3333-333333333333");
             var secondDownloadId = Guid.Parse("44444444-4444-4444-4444-444444444444");
             var parquet = await ParquetAsync();
-            HttpResponseMessage RouteResponse(HttpRequestMessage request)
+            var secondSubmitted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            async Task<HttpResponseMessage> RouteResponse(
+                HttpRequestMessage request,
+                CancellationToken cancellationToken)
             {
                 var pathAndQuery = request.RequestUri!.PathAndQuery;
                 if (pathAndQuery.Contains("%24exportAsync=true", StringComparison.Ordinal))
@@ -374,6 +451,7 @@ public sealed class AsyncExportRowSourceTests
 
                     if (pathAndQuery.Contains("2026-06-02", StringComparison.Ordinal))
                     {
+                        secondSubmitted.TrySetResult();
                         return Json(HttpStatusCode.Accepted, $$"""
                             { "exportId": "{{secondExportId}}", "createdAtUtc": "2026-06-22T00:00:00Z" }
                             """);
@@ -382,32 +460,35 @@ public sealed class AsyncExportRowSourceTests
 
                 if (request.RequestUri.AbsolutePath == $"/api/exports/{firstExportId}")
                 {
+                    if (waitForSecondSubmission)
+                    {
+                        await secondSubmitted.Task.WaitAsync(cancellationToken);
+                    }
+
                     return Json(HttpStatusCode.OK, $$"""
-                        {
-                          "exportId": "{{firstExportId}}",
-                          "status": "succeeded",
-                          "downloadId": "{{firstDownloadId}}",
-                          "expiresAtUtc": "2099-06-23T00:00:00Z"
-                        }
-                        """);
+                    {
+                      "exportId": "{{firstExportId}}",
+                      "status": "succeeded",
+                      "downloadId": "{{firstDownloadId}}",
+                      "expiresAtUtc": "2099-06-23T00:00:00Z"
+                    }
+                    """);
                 }
 
                 if (request.RequestUri.AbsolutePath == $"/api/exports/{secondExportId}")
                 {
                     return Json(HttpStatusCode.OK, $$"""
-                        {
-                          "exportId": "{{secondExportId}}",
-                          "status": "succeeded",
-                          "downloadId": "{{secondDownloadId}}",
-                          "expiresAtUtc": "2099-06-23T00:00:00Z"
-                        }
-                        """);
+                    {
+                      "exportId": "{{secondExportId}}",
+                      "status": "succeeded",
+                      "downloadId": "{{secondDownloadId}}",
+                      "expiresAtUtc": "2099-06-23T00:00:00Z"
+                    }
+                    """);
                 }
 
-                if (request.RequestUri.AbsolutePath ==
-                        $"/api/exports/{firstExportId}/download/{firstDownloadId}" ||
-                    request.RequestUri.AbsolutePath ==
-                        $"/api/exports/{secondExportId}/download/{secondDownloadId}")
+                if (request.RequestUri.AbsolutePath == $"/api/exports/{firstExportId}/download/{firstDownloadId}" ||
+                    request.RequestUri.AbsolutePath == $"/api/exports/{secondExportId}/download/{secondDownloadId}")
                 {
                     return Binary(parquet, "application/vnd.apache.parquet");
                 }
@@ -415,8 +496,7 @@ public sealed class AsyncExportRowSourceTests
                 throw new InvalidOperationException($"Unexpected async export request: {pathAndQuery}");
             }
 
-            var handler = new RecordingHandler(
-                Enumerable.Repeat<Func<HttpRequestMessage, HttpResponseMessage>>(RouteResponse, 6).ToArray());
+            var handler = new RoutedRecordingHandler(RouteResponse);
             var source = new HttpAsyncExportRowSource(
                 new HttpClient(handler)
                 {
@@ -444,12 +524,15 @@ public sealed class AsyncExportRowSourceTests
                     new DateTimeOffset(2026, 6, 3, 0, 0, 0, TimeSpan.Zero)),
                 SyncTransferMode.AsyncExport);
 
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             var files = await source.PrepareAsync(
                 [
                     new AsyncExportRequest(0, firstJob, firstJob.Metadata, firstJob.Range),
                     new AsyncExportRequest(1, secondJob, secondJob.Metadata, secondJob.Range)
                 ],
-                CancellationToken.None);
+                timeout.Token);
+
+            Assert.Equal(2, files.Count);
 
             foreach (var file in files)
             {
@@ -468,6 +551,12 @@ public sealed class AsyncExportRowSourceTests
             Assert.True(
                 gap >= TimeSpan.FromMilliseconds(50),
                 $"Expected submit gap to honor the configured window, but it was {gap}.");
+            if (waitForSecondSubmission)
+            {
+                var firstDownloadIndex = handler.Requests.FindIndex(request =>
+                    request.RequestUri!.AbsolutePath == $"/api/exports/{firstExportId}/download/{firstDownloadId}");
+                Assert.True(firstDownloadIndex > createRequestIndexes[1]);
+            }
         }
         finally
         {
@@ -550,7 +639,8 @@ public sealed class AsyncExportRowSourceTests
         var schema = new ParquetSchema(
             new DataField("id", typeof(int), isNullable: true, isArray: false, propertyName: null),
             new DataField("ownerCustomer_id", typeof(string), isNullable: true, isArray: false, propertyName: null),
-            new DataField("modification_dateTime", typeof(DateTime), isNullable: true, isArray: false, propertyName: null));
+            new DataField("modification_dateTime", typeof(DateTime), isNullable: true, isArray: false, propertyName: null),
+            new DataField("dynamic_note", typeof(string), isNullable: true, isArray: false, propertyName: null));
         await using var stream = new MemoryStream();
         await using (var writer = await ParquetWriter.CreateAsync(schema, stream))
         {
@@ -564,6 +654,7 @@ public sealed class AsyncExportRowSourceTests
                 {
                     new(2026, 6, 22, 12, 0, 0, DateTimeKind.Utc)
                 }.AsMemory());
+            await rowGroup.WriteAsync(fields[3], new[] { "legacy-dynamic" });
         }
 
         return stream.ToArray();
@@ -662,6 +753,29 @@ public sealed class AsyncExportRowSourceTests
                 "Accept",
                 request.Headers.Accept.Select(value => value.ToString()));
             return clone;
+        }
+    }
+
+    private sealed class RoutedRecordingHandler(
+        Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> routeResponse) : HttpMessageHandler
+    {
+        private readonly object _lock = new();
+
+        public List<HttpRequestMessage> Requests { get; } = [];
+
+        public List<DateTimeOffset> RequestTimestamps { get; } = [];
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            lock (_lock)
+            {
+                Requests.Add(new HttpRequestMessage(request.Method, request.RequestUri));
+                RequestTimestamps.Add(DateTimeOffset.UtcNow);
+            }
+
+            return routeResponse(request, cancellationToken);
         }
     }
 
