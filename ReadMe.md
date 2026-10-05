@@ -2,6 +2,8 @@
 
 # Sollatek.DataSync
 
+For local setup, file creation, builds and tests, start with [developer maintenance](docs/developer-maintenance.md). Instance-specific configuration values are intentionally omitted from this guide.
+
 Sollatek.DataSync is a .NET worker application that reads selected Sollatek Platform API entities and writes them to a configured target:
 
 - SQL Server, PostgreSQL, or MySQL relational tables.
@@ -30,21 +32,15 @@ Set `Storage:provider` to one of:
 
 The default executable includes every storage provider and no optional monitoring provider. Provider-specific published builds are described in [Publish For Deployment](#publish-for-deployment).
 
-### 2. Configure Credentials
+### 2. Create Local Configuration
 
-For local development, use .NET user secrets. The project already has `UserSecretsId` set to `Sollatek_datasync`, so `dotnet user-secrets init` is not needed.
+Copy `Sollatek.DataSync/appsettings.Development.example.json` to the ignored `Sollatek.DataSync/appsettings.Development.json`. Complete it using the designated test-environment configuration and select the Development environment when running locally. The example supplies the setting structure without instance-specific values.
 
-```powershell
-dotnet user-secrets set "Settings:clientKey" "YourClientKey" --project .\Sollatek.DataSync\Sollatek.DataSync.csproj
-dotnet user-secrets set "Settings:clientSecret" "{client-secret}" --project .\Sollatek.DataSync\Sollatek.DataSync.csproj
-```
+Use [developer maintenance](docs/developer-maintenance.md) for local container fixtures and test file creation.
 
 For deployment, use `appsettings.json`, command-line arguments, or environment variables:
 
-```powershell
-$env:SOL_Settings__clientKey="YourClientKey"
-$env:SOL_Settings__clientSecret="{client-secret}"
-```
+Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
 
 `Settings:oauthUrl` defaults to `https://id.sollatek.io/` in `appsettings.json`.
 DataSync requests tokens from the Keycloak realm endpoint
@@ -56,13 +52,9 @@ configurable.
 
 Choose one storage target. Full provider examples are in [Storage](#storage).
 
-SQL Server example:
+For SQL Server, select its provider in the local file and complete the corresponding storage section:
 
-```powershell
-dotnet user-secrets set "Storage:provider" "sqlserver" --project .\Sollatek.DataSync\Sollatek.DataSync.csproj
-dotnet user-secrets set "Storage:connectionString" "Server=localhost;Database=sollatek_datasync;User Id=sa;Password=YourStrongPassword;Encrypt=False;TrustServerCertificate=True;" --project .\Sollatek.DataSync\Sollatek.DataSync.csproj
-dotnet user-secrets set "Storage:schemaMode" "applySafeChanges" --project .\Sollatek.DataSync\Sollatek.DataSync.csproj
-```
+Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
 
 Filesystem example:
 
@@ -84,27 +76,7 @@ Filesystem example:
 
 Azure Blob uses the same `FileExport` layout as filesystem storage:
 
-```json
-{
-  "Storage": {
-    "provider": "azureBlobStorage",
-    "connectionString": "DefaultEndpointsProtocol=https;AccountName=...;AccountKey=...;EndpointSuffix=core.windows.net",
-    "containerName": "exports"
-  },
-  "FileExport": {
-    "rootPath": "exports",
-    "statePath": "_state/sync-state.json",
-    "format": "parquet",
-    "folderFormat": "yyyyMM",
-    "fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}",
-    "replaceExisting": true
-  },
-  "State": {
-    "provider": "azureBlobStorage",
-    "rootPath": "_state"
-  }
-}
-```
+Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
 
 ### 4. Configure What To Sync
 
@@ -163,13 +135,7 @@ dotnet run --project .\Sollatek.DataSync\Sollatek.DataSync.csproj
 
 For a deployed executable:
 
-```powershell
-$env:SOL_Storage__provider="sqlserver"
-$env:SOL_Storage__connectionString="Server=localhost;Database=sollatek_datasync;User Id=sa;Password=YourStrongPassword;Encrypt=False;TrustServerCertificate=True;"
-$env:SOL_Settings__clientKey="YourClientKey"
-$env:SOL_Settings__clientSecret="{client-secret}"
-.\Sollatek.DataSync
-```
+Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
 
 ## Configuration Reference
 
@@ -198,44 +164,13 @@ Azure Blob authentication options:
 
 Connection string examples:
 
-```json
-{
-  "Storage": {
-    "provider": "sqlserver",
-    "connectionString": "Server=localhost;Database=sollatek_datasync;User Id=sa;Password=YourStrongPassword;Encrypt=False;TrustServerCertificate=True;",
-    "schemaMode": "validate"
-  }
-}
-```
+Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
 
-```json
-{
-  "Storage": {
-    "provider": "postgres",
-    "connectionString": "Host=localhost;Port=5432;Database=sollatek_datasync;Username=postgres;Password=YourPassword;SSL Mode=Prefer;Trust Server Certificate=true;",
-    "schemaMode": "validate"
-  }
-}
-```
+Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
 
-```json
-{
-  "Storage": {
-    "provider": "mysql",
-    "connectionString": "Server=localhost;Port=3306;Database=sollatek_datasync;User Id=root;Password=YourPassword;SslMode=Preferred;",
-    "schemaMode": "validate"
-  }
-}
-```
+Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
 
-```json
-{
-  "Storage": {
-    "provider": "mongo",
-    "connectionString": "mongodb://localhost:27017/sollatek_datasync"
-  }
-}
-```
+Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
 
 ```json
 {
@@ -253,23 +188,7 @@ Connection string examples:
 }
 ```
 
-```json
-{
-  "Storage": {
-    "provider": "azureBlobStorage",
-    "connectionString": "DefaultEndpointsProtocol=https;AccountName=...;AccountKey=...;EndpointSuffix=core.windows.net",
-    "containerName": "exports"
-  },
-  "FileExport": {
-    "rootPath": "exports",
-    "statePath": "_state/sync-state.json",
-    "format": "parquet",
-    "folderFormat": "yyyyMM",
-    "fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}",
-    "replaceExisting": true
-  }
-}
-```
+Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
 
 Azure Blob SAS container URI example:
 
@@ -551,27 +470,7 @@ Complete daily filesystem export example:
 
 For Azure Blob Storage, keep the same `Sync`, `SyncPlan`, and `FileExport` layout and replace only the storage target. The example below writes blobs under the `daily/` prefix in the `exports` container:
 
-```json
-{
-  "Storage": {
-    "provider": "azureBlobStorage",
-    "connectionString": "DefaultEndpointsProtocol=https;AccountName=...;AccountKey=...;EndpointSuffix=core.windows.net",
-    "containerName": "exports"
-  },
-  "FileExport": {
-    "rootPath": "daily",
-    "statePath": "_state/sync-state.json",
-    "format": "parquet",
-    "folderFormat": "yyyyMM",
-    "fileNameFormat": "{entity}_{date:yyyyMMdd}.{format}",
-    "replaceExisting": true
-  },
-  "State": {
-    "provider": "azureBlobStorage",
-    "rootPath": "_state"
-  }
-}
-```
+Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
 
 ### State Storage
 
@@ -635,34 +534,11 @@ For relational and MongoDB targets with existing data, DataSync reads the latest
 
 Failure email is optional. If `Notifications:failureEmail` is absent or disabled, DataSync does not send mail. When enabled, one SMTP email is sent only after a sync run exhausts `Retry:maxTries`; transient failures that are still waiting for another retry do not send email.
 
-```json
-{
-  "Notifications": {
-    "failureEmail": {
-      "enabled": true,
-      "smtpHost": "smtp.example.com",
-      "smtpPort": 587,
-      "enableSsl": true,
-      "username": "datasync-smtp-user",
-      "password": "{set-at-runtime}",
-      "from": "datasync@example.com",
-      "to": "ops@example.com;dev@example.com",
-      "subjectPrefix": "[DataSync]"
-    }
-  }
-}
-```
+Complete the notification settings in the ignored local configuration file; no instance-specific values are supplied here.
 
 `to` can be a comma/semicolon/newline separated string or a configuration array. For deployment, keep `username` and `password` out of source-controlled files and set them through user secrets, environment variables, or the hosting platform secret store:
 
-```powershell
-$env:SOL_Notifications__failureEmail__enabled="true"
-$env:SOL_Notifications__failureEmail__smtpHost="smtp.example.com"
-$env:SOL_Notifications__failureEmail__from="datasync@example.com"
-$env:SOL_Notifications__failureEmail__to="ops@example.com"
-$env:SOL_Notifications__failureEmail__username="datasync-smtp-user"
-$env:SOL_Notifications__failureEmail__password="..."
-```
+Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
 
 If SMTP sending fails, DataSync logs that notification failure and continues its normal exhausted-retry behavior, including stopping when `Sync:stopWhenFinished=true` or scheduling the next run otherwise.
 

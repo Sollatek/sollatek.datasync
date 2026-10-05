@@ -69,7 +69,7 @@ public sealed class MongoDataSyncStorageProvider : IDataSyncStorageProvider
         if (string.IsNullOrWhiteSpace(mongoUrl.DatabaseName))
         {
             throw new InvalidOperationException(
-                "MongoDB Storage:connectionString must include a database name, for example mongodb://localhost:27017/sollatek_datasync.");
+                "Storage:connectionString must identify the configured MongoDB database.");
         }
 
         var client = new MongoClient(mongoUrl);
