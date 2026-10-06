@@ -40,7 +40,7 @@ Use [developer maintenance](docs/developer-maintenance.md) for local container f
 
 For deployment, use `appsettings.json`, command-line arguments, or environment variables:
 
-Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
+Set credentials and connection configuration through the deployment secret store or the worker's SOL_ environment variables. The configuration tables below list the supported setting names.
 
 `Settings:oauthUrl` defaults to `https://id.sollatek.io/` in `appsettings.json`.
 DataSync requests tokens from the Keycloak realm endpoint
@@ -54,7 +54,7 @@ Choose one storage target. Full provider examples are in [Storage](#storage).
 
 For SQL Server, select its provider in the local file and complete the corresponding storage section:
 
-Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
+Set Storage:provider to sqlserver and supply Storage:connectionString in the ignored local file or the secret store. Select the schema mode explicitly before running against a test database.
 
 Filesystem example:
 
@@ -76,7 +76,7 @@ Filesystem example:
 
 Azure Blob uses the same `FileExport` layout as filesystem storage:
 
-Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
+Select azureBlobStorage and complete the authentication fields described under [Storage](#storage). Keep FileExport settings consistent with the filesystem layout.
 
 ### 4. Configure What To Sync
 
@@ -135,7 +135,7 @@ dotnet run --project .\Sollatek.DataSync\Sollatek.DataSync.csproj
 
 For a deployed executable:
 
-Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
+Run the published executable from its configuration directory with the intended environment. Review [Publish for deployment](#publish-for-deployment) for platform-specific artifacts.
 
 ## Configuration Reference
 
@@ -162,15 +162,7 @@ Azure Blob authentication options:
 | `containerUri` | `containerUri` | Use a container URI that includes SAS permissions for read, write, create, list, and delete when blob-backed state is enabled. |
 | `defaultAzureCredential` | `containerUri`, or `accountName` plus `containerName`, or `blobServiceUri` plus `containerName` | Uses Azure Identity. `managedIdentity` is accepted as an alias; set `managedIdentityClientId` for a user-assigned managed identity. |
 
-Connection string examples:
-
-Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
-
-Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
-
-Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
-
-Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
+Supply connection configuration using the selected provider and the private local file.
 
 ```json
 {
@@ -188,7 +180,7 @@ Create and complete the ignored local configuration file described in the projec
 }
 ```
 
-Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
+Obtain the provider connection configuration from the environment maintainer; keep it in the ignored local file or the hosting secret store.
 
 Azure Blob SAS container URI example:
 
@@ -470,7 +462,7 @@ Complete daily filesystem export example:
 
 For Azure Blob Storage, keep the same `Sync`, `SyncPlan`, and `FileExport` layout and replace only the storage target. The example below writes blobs under the `daily/` prefix in the `exports` container:
 
-Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
+Select azureBlobStorage, supply the destination and credentials through private configuration, then configure the folder/blob layout using FileExport.
 
 ### State Storage
 
@@ -538,7 +530,7 @@ Complete the notification settings in the ignored local configuration file; no i
 
 `to` can be a comma/semicolon/newline separated string or a configuration array. For deployment, keep `username` and `password` out of source-controlled files and set them through user secrets, environment variables, or the hosting platform secret store:
 
-Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
+Supply SMTP credentials through private configuration. Refer to the email settings above for the remaining SMTP options.
 
 If SMTP sending fails, DataSync logs that notification failure and continues its normal exhausted-retry behavior, including stopping when `Sync:stopWhenFinished=true` or scheduling the next run otherwise.
 
