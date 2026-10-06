@@ -213,7 +213,7 @@ If `network.skipSetup=false`, the script can create the Container Apps Environme
 
 The sample config reads API credentials from environment variables:
 
-Create and complete the ignored local configuration file described in the project README. Instance-specific values are omitted.
+Supply API credentials through the secret references and complete the worker settings using the documented environment variables. Keep credential values out of deployment commands and tracked configuration.
 
 Do not put client secrets in source-controlled JSON files.
 

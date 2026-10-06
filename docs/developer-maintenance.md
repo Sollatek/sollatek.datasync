@@ -8,7 +8,7 @@ Select the Development environment when using the local file. Before starting th
 
 ## Build and tests
 
-`global.json` on this branch selects SDK `10.0.301` with `latestFeature` roll-forward. Main projects target `net10.0`.
+`global.json` selects SDK `10.0.301` with `latestFeature` roll-forward. Main projects target `net10.0`.
 
 ```powershell
 $env:DOTNET_ENVIRONMENT = "Development"
@@ -39,4 +39,4 @@ Keep provider-specific behaviour in its provider. Preserve incremental state, wa
 
 Use `scripts/generate-platform-api-client.ps1` with the pinned generator and intended local Swagger revision. Review the client diff and run worker/provider tests.
 
-The current source builds its modules together. External package consumption requires explicit package/version definitions and verified feed restore. For worker releases, record source revision, included providers, runtime identifier and configuration contract. Validate the intended provider in its designated environment and keep compatible preceding artifacts/state for rollback.
+The public build restores from public NuGet and builds the modules in this solution; company package credentials are not required. For worker releases, record source revision, included providers, runtime identifier and configuration contract. Validate the intended provider in its designated environment and keep compatible preceding artifacts/state for rollback.
