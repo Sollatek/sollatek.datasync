@@ -37,6 +37,7 @@ if ($EventName -eq 'pull_request' -and $BaseRef -eq $CanonicalBranch -and $HeadR
         '^\.github/',
         '^deployment/',
         '^readme\.md$',
+        '^contributing\.md$',
         '^licen[cs]e\.md$'
     )
     $runtimePaths = @(

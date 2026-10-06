@@ -1,0 +1,37 @@
+name: Build DataSync
+
+on:
+  pull_request:
+    branches: [main, master, develop, release, 'release/**']
+  push:
+    branches: [master, develop, release, 'release/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - name: Build and test the complete solution
+        run: dotnet test Sollatek.DataSync.sln --configuration Release --disable-build-servers -m:1 --verbosity minimal
+
+  required-build:
+    name: Project build
+    if: always()
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Require a successful build and test run
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+        run: test "$BUILD_RESULT" = success
