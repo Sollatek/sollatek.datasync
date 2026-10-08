@@ -5,7 +5,7 @@ services:
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: ${DATASYNC_SQLSERVER_PASSWORD:-DataSync_Local_12345}
+      MSSQL_SA_PASSWORD: ${DATASYNC_MSSQL_SA_PASSWORD:?Complete the ignored local environment file}
     ports:
       - "${DATASYNC_SQLSERVER_PORT:-14333}:1433"
     volumes:
@@ -14,9 +14,9 @@ services:
   postgres:
     image: postgres:16
     environment:
-      POSTGRES_DB: ${DATASYNC_POSTGRES_DB:-sollatek_datasync}
-      POSTGRES_USER: ${DATASYNC_POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${DATASYNC_POSTGRES_PASSWORD:-datasync}
+      POSTGRES_DB: ${DATASYNC_POSTGRES_DB:?Complete the ignored local environment file}
+      POSTGRES_USER: ${DATASYNC_POSTGRES_USER:?Complete the ignored local environment file}
+      POSTGRES_PASSWORD: ${DATASYNC_POSTGRES_PASSWORD:?Complete the ignored local environment file}
     ports:
       - "${DATASYNC_POSTGRES_PORT:-5433}:5432"
     volumes:
@@ -25,10 +25,10 @@ services:
   mysql:
     image: mysql:8.4
     environment:
-      MYSQL_DATABASE: ${DATASYNC_MYSQL_DATABASE:-sollatek_datasync}
-      MYSQL_USER: ${DATASYNC_MYSQL_USER:-datasync}
-      MYSQL_PASSWORD: ${DATASYNC_MYSQL_PASSWORD:-datasync}
-      MYSQL_ROOT_PASSWORD: ${DATASYNC_MYSQL_ROOT_PASSWORD:-datasync_root}
+      MYSQL_DATABASE: ${DATASYNC_MYSQL_DATABASE:?Complete the ignored local environment file}
+      MYSQL_USER: ${DATASYNC_MYSQL_USER:?Complete the ignored local environment file}
+      MYSQL_PASSWORD: ${DATASYNC_MYSQL_PASSWORD:?Complete the ignored local environment file}
+      MYSQL_ROOT_PASSWORD: ${DATASYNC_MYSQL_ROOT_PASSWORD:?Complete the ignored local environment file}
     ports:
       - "${DATASYNC_MYSQL_PORT:-3307}:3306"
     volumes:
@@ -37,9 +37,9 @@ services:
   mongo:
     image: mongo:8
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${DATASYNC_MONGO_ROOT_USER:-root}
-      MONGO_INITDB_ROOT_PASSWORD: ${DATASYNC_MONGO_ROOT_PASSWORD:-datasync_root}
-      MONGO_INITDB_DATABASE: ${DATASYNC_MONGO_DATABASE:-sollatek_datasync}
+      MONGO_INITDB_ROOT_USERNAME: ${DATASYNC_MONGO_INITDB_ROOT_USERNAME:?Complete the ignored local environment file}
+      MONGO_INITDB_ROOT_PASSWORD: ${DATASYNC_MONGO_INITDB_ROOT_PASSWORD:?Complete the ignored local environment file}
+      MONGO_INITDB_DATABASE: ${DATASYNC_MONGO_INITDB_DATABASE:?Complete the ignored local environment file}
     ports:
       - "${DATASYNC_MONGO_PORT:-27018}:27017"
     volumes:

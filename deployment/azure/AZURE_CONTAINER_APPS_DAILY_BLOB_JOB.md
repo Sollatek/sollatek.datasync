@@ -213,10 +213,7 @@ If `network.skipSetup=false`, the script can create the Container Apps Environme
 
 The sample config reads API credentials from environment variables:
 
-```powershell
-$env:DATASYNC_PLATFORM_CLIENT_KEY = "<client-key>"
-$env:DATASYNC_PLATFORM_CLIENT_SECRET = "{client-secret}"
-```
+Supply API credentials through the secret references and complete the worker settings using the documented environment variables. Keep credential values out of deployment commands and tracked configuration.
 
 Do not put client secrets in source-controlled JSON files.
 
