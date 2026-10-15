@@ -30,7 +30,7 @@ env:
 jobs:
   validate:
     name: Validate source and release policy
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
 
@@ -131,7 +131,7 @@ jobs:
       github.ref_type == 'branch' &&
       startsWith(github.ref, 'refs/heads/release/')
     needs: validate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment:
       name: ${{ github.actor == vars.PUBLIC_RELEASE_OWNER && github.triggering_actor == vars.PUBLIC_RELEASE_OWNER && 'public-release-owner' || 'public-release' }}
       url: https://github.com/${{ github.repository }}/releases
