@@ -85,6 +85,36 @@ public sealed class LocalProviderIntegrationTests
         Assert.Equal("B", stored["serial"].AsString);
     }
 
+    [Theory]
+    [InlineData(StorageProvider.Postgres, "DATASYNC_POSTGRES_CONNECTION")]
+    [InlineData(StorageProvider.MySql, "DATASYNC_MYSQL_CONNECTION")]
+    [InlineData(StorageProvider.SqlServer, "DATASYNC_SQLSERVER_CONNECTION")]
+    [InlineData(StorageProvider.Mongo, "DATASYNC_MONGO_CONNECTION")]
+    public async Task EnabledProviderTests_RequireConfigurationBeforeOpeningDatabase(
+        StorageProvider provider,
+        string settingName)
+    {
+        var previousFlag = Environment.GetEnvironmentVariable(RunFlag);
+        var previousConnection = Environment.GetEnvironmentVariable(settingName);
+        try
+        {
+            Environment.SetEnvironmentVariable(RunFlag, "1");
+            Environment.SetEnvironmentVariable(settingName, null);
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                provider == StorageProvider.Mongo
+                    ? MongoSyncSink_ReplacesDocumentAgainstLocalDockerProvider()
+                    : RelationalSink_UpsertsRowsAgainstLocalDockerProvider(provider));
+
+            Assert.Contains(settingName, exception.Message, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(settingName, previousConnection);
+            Environment.SetEnvironmentVariable(RunFlag, previousFlag);
+        }
+    }
+
     private static bool ShouldRun()
     {
         return string.Equals(
@@ -109,20 +139,24 @@ public sealed class LocalProviderIntegrationTests
     {
         return provider switch
         {
-            StorageProvider.Postgres => Environment.GetEnvironmentVariable("DATASYNC_POSTGRES_CONNECTION")
-                                        ?? "Host=localhost;Port=5433;Database=sollatek_datasync;Username=postgres;Password=datasync;Ssl Mode=Disable",
-            StorageProvider.MySql => Environment.GetEnvironmentVariable("DATASYNC_MYSQL_CONNECTION")
-                                     ?? "Server=localhost;Port=3307;Database=sollatek_datasync;User ID=datasync;Password=datasync;SslMode=Disabled",
-            StorageProvider.SqlServer => Environment.GetEnvironmentVariable("DATASYNC_SQLSERVER_CONNECTION")
-                                         ?? "Server=localhost,14333;Database=sollatek_datasync;User Id=sa;Password=DataSync_Local_12345;Encrypt=False;TrustServerCertificate=True",
+            StorageProvider.Postgres => RequiredConnection("DATASYNC_POSTGRES_CONNECTION"),
+            StorageProvider.MySql => RequiredConnection("DATASYNC_MYSQL_CONNECTION"),
+            StorageProvider.SqlServer => RequiredConnection("DATASYNC_SQLSERVER_CONNECTION"),
             _ => throw new InvalidOperationException($"Provider '{provider}' is not relational.")
         };
     }
 
     private static string GetMongoConnectionString()
     {
-        return Environment.GetEnvironmentVariable("DATASYNC_MONGO_CONNECTION")
-               ?? "mongodb://root:datasync_root@localhost:27018/sollatek_datasync?authSource=admin";
+        return RequiredConnection("DATASYNC_MONGO_CONNECTION");
+    }
+
+    private static string RequiredConnection(string settingName)
+    {
+        var value = Environment.GetEnvironmentVariable(settingName);
+        return string.IsNullOrWhiteSpace(value)
+            ? throw new InvalidOperationException($"{settingName} must be supplied for the enabled local provider test.")
+            : value;
     }
 
     private static async Task EnsureSqlServerDatabaseAsync(string connectionString)

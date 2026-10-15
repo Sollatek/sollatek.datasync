@@ -8,65 +8,71 @@ public sealed class StorageOptionsTests
     [Fact]
     public void StorageOptions_DefaultsToSqlServerAndLegacyConnection()
     {
+        var legacyConnection = Guid.NewGuid().ToString("N");
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Settings:dbConnection"] = "Server=localhost;Database=legacy;"
+                ["Settings:dbConnection"] = legacyConnection
             })
             .Build();
 
         var options = StorageOptions.FromConfiguration(configuration);
 
         Assert.Equal(StorageProvider.SqlServer, options.Provider);
-        Assert.Equal("Server=localhost;Database=legacy;", options.ConnectionString);
+        Assert.Equal(legacyConnection, options.ConnectionString);
         Assert.Equal(StorageSchemaMode.Validate, options.SchemaMode);
     }
 
     [Fact]
     public void StorageOptions_PrefersStorageConnectionOverLegacyConnection()
     {
+        var storageConnection = Guid.NewGuid().ToString("N");
+        var legacyConnection = Guid.NewGuid().ToString("N");
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Storage:connectionString"] = "Server=localhost;Database=storage;",
-                ["Settings:dbConnection"] = "Server=localhost;Database=legacy;"
+                ["Storage:connectionString"] = storageConnection,
+                ["Settings:dbConnection"] = legacyConnection
             })
             .Build();
 
         var options = StorageOptions.FromConfiguration(configuration);
 
-        Assert.Equal("Server=localhost;Database=storage;", options.ConnectionString);
+        Assert.Equal(storageConnection, options.ConnectionString);
     }
 
     [Fact]
     public void StorageOptions_ReadsNamedDataSyncConnectionString()
     {
+        var namedConnection = Guid.NewGuid().ToString("N");
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:DataSync"] = "Host=postgres.example.com;Database=datasync;Username=user;Password=pass;Ssl Mode=Require"
+                ["ConnectionStrings:DataSync"] = namedConnection
             })
             .Build();
 
         var options = StorageOptions.FromConfiguration(configuration);
 
-        Assert.Equal("Host=postgres.example.com;Database=datasync;Username=user;Password=pass;Ssl Mode=Require", options.ConnectionString);
+        Assert.Equal(namedConnection, options.ConnectionString);
     }
 
     [Fact]
     public void StorageOptions_PrefersStorageConnectionOverNamedConnectionString()
     {
+        var storageConnection = Guid.NewGuid().ToString("N");
+        var namedConnection = Guid.NewGuid().ToString("N");
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Storage:connectionString"] = "Server=sql.example.com;Database=storage;",
-                ["ConnectionStrings:DataSync"] = "Server=sql.example.com;Database=named;"
+                ["Storage:connectionString"] = storageConnection,
+                ["ConnectionStrings:DataSync"] = namedConnection
             })
             .Build();
 
         var options = StorageOptions.FromConfiguration(configuration);
 
-        Assert.Equal("Server=sql.example.com;Database=storage;", options.ConnectionString);
+        Assert.Equal(storageConnection, options.ConnectionString);
     }
 
     [Theory]
