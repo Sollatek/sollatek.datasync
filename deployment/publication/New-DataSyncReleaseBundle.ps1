@@ -96,7 +96,7 @@ foreach ($target in $targets) {
     if ($target.Windows) {
         Compress-Archive -Path (Join-Path $targetRoot '*') -DestinationPath $archivePath -CompressionLevel Optimal -Force
     } else {
-        chmod +x -- (Join-Path $targetRoot 'Sollatek.DataSync')
+        chmod +x (Join-Path $targetRoot 'Sollatek.DataSync')
         if ($LASTEXITCODE -ne 0) {
             throw "Could not mark the $($target.Rid) entry point as executable."
         }

@@ -816,3 +816,11 @@ fabric.properties
 
 # Repository-local generated or internal documentation.
 docs/
+!docs/
+docs/*
+!docs/developer-maintenance.md
+
+# Per-machine development configuration.
+**/appsettings.Development.json
+!**/appsettings.Development.example.json
+scripts/local-provider-tests.local.ps1

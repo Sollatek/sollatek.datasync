@@ -11,7 +11,7 @@ public sealed class RelationalCommandBinderTests
     {
         using var connection = RelationalConnectionFactory.Create(
             StorageProvider.SqlServer,
-            "Server=localhost;Database=datasync;User ID=user;Password=pass;Encrypt=True;Trust Server Certificate=True");
+            RelationalFixtureConnectionSettings.Create(StorageProvider.SqlServer));
         var command = CreateCommand("@p0");
 
         using var dbCommand = RelationalCommandBinder.CreateCommand(
@@ -31,7 +31,7 @@ public sealed class RelationalCommandBinderTests
     {
         using var connection = RelationalConnectionFactory.Create(
             StorageProvider.Postgres,
-            "Host=localhost;Database=datasync;Username=postgres;Password=pass");
+            RelationalFixtureConnectionSettings.Create(StorageProvider.Postgres));
         var command = CreateCommand("$1");
 
         using var dbCommand = RelationalCommandBinder.CreateCommand(
@@ -51,7 +51,7 @@ public sealed class RelationalCommandBinderTests
     {
         using var connection = RelationalConnectionFactory.Create(
             StorageProvider.MySql,
-            "Server=localhost;Database=datasync;User ID=mysql;Password=pass");
+            RelationalFixtureConnectionSettings.Create(StorageProvider.MySql));
         var command = CreateCommand("@p0");
 
         using var dbCommand = RelationalCommandBinder.CreateCommand(
