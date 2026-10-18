@@ -69,7 +69,14 @@ public sealed class StatusHttpHostedServiceTests
             Assert.Equal(3, document.RootElement.GetProperty("asyncExportsDownloaded").GetInt32());
             Assert.True(document.RootElement.GetProperty("workingSetBytes").GetInt64() > 0);
             Assert.True(document.RootElement.GetProperty("managedHeapBytes").GetInt64() >= 0);
-            Assert.True(document.RootElement.GetProperty("peakWorkingSetBytes").GetInt64() > 0);
+            if (OperatingSystem.IsMacOS())
+            {
+                Assert.Equal(0L, document.RootElement.GetProperty("peakWorkingSetBytes").GetInt64());
+            }
+            else
+            {
+                Assert.True(document.RootElement.GetProperty("peakWorkingSetBytes").GetInt64() > 0);
+            }
 
             var health = await client.GetStringAsync(
                 $"http://127.0.0.1:{port}/health",
