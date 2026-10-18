@@ -8,7 +8,7 @@ Select the Development environment when using the local file. Before starting th
 
 ## Build and tests
 
-`global.json` selects SDK `10.0.301` with `latestFeature` roll-forward. Main projects target `net10.0`.
+`global.json` selects SDK `10.0.402` with `latestFeature` roll-forward. Main projects target `net10.0`.
 
 ```powershell
 $env:DOTNET_ENVIRONMENT = "Development"
