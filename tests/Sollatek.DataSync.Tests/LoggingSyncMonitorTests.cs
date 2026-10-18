@@ -90,8 +90,16 @@ public sealed class LoggingSyncMonitorTests
         Assert.True(status.ManagedHeapBytes >= 0);
         Assert.True(status.TotalAllocatedBytes >= 0);
         Assert.True(status.WorkingSetBytes > 0);
-        Assert.True(status.PrivateMemoryBytes > 0);
-        Assert.True(status.PeakWorkingSetBytes > 0);
+        if (OperatingSystem.IsMacOS())
+        {
+            Assert.Equal(0L, status.PrivateMemoryBytes);
+            Assert.Equal(0L, status.PeakWorkingSetBytes);
+        }
+        else
+        {
+            Assert.True(status.PrivateMemoryBytes > 0);
+            Assert.True(status.PeakWorkingSetBytes > 0);
+        }
     }
 
     [Fact]
