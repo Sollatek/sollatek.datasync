@@ -637,6 +637,9 @@ Default paths:
 The status payload includes the current entity, counters, last error, retry timing, and memory fields:
 `managedHeapBytes`, `totalAllocatedBytes`, `workingSetBytes`, `privateMemoryBytes`, and `peakWorkingSetBytes`.
 
+On macOS, the .NET 10 process API reports `privateMemoryBytes` and `peakWorkingSetBytes` as zero.
+The working-set and managed-memory counters remain available.
+
 Backlog/status fields:
 
 - `scheduleMode`: `fixeddelay`, `hourly`, `daily`, `weekly`, or `monthly`.
