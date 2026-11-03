@@ -1009,8 +1009,10 @@ internal static class AsyncExportParquetRowReader
         SwaggerSyncEntityMetadata metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        // Own the stream even when Parquet initialization rejects a truncated file.
+        await using var stream = File.OpenRead(path);
         await using var reader = await ParquetReader.CreateAsync(
-            path,
+            stream,
             cancellationToken: cancellationToken);
         var fields = reader.Schema.GetDataFields().ToArray();
         var pathMap = BuildPathMap(metadata);
@@ -1206,8 +1208,10 @@ internal static class AsyncExportCsvRowReader
 
         var pathMap = BuildPathMap(metadata);
         var columnPaths = headers
-            .Select(header => string.IsNullOrWhiteSpace(header) ? null : ResolvePath(header, pathMap))
+            .Select(header => string.IsNullOrWhiteSpace(header.Value) ? null : ResolvePath(header.Value, pathMap))
             .ToArray();
+        var textColumns = metadata.ScalarFields.Where(field => field.Type == "string")
+            .Select(field => field.Source.Replace(".", "_", StringComparison.Ordinal)).ToHashSet(StringComparer.OrdinalIgnoreCase);
         while (await recordReader.ReadRecordAsync(cancellationToken) is { } row)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -1220,7 +1224,9 @@ internal static class AsyncExportCsvRowReader
                     continue;
                 }
 
-                var value = ConvertValue(row[index]);
+                var field = row[index];
+                var value = field.IsQuoted || field.Value.Length > 0 && textColumns.Contains(headers[index].Value)
+                    ? field.Value : ConvertValue(field.Value);
                 SetValue(root, pathSegments, value);
             }
 
@@ -1323,13 +1329,15 @@ internal static class AsyncExportCsvRowReader
         private readonly char[] _buffer = new char[BufferSize];
         private int _bufferOffset;
         private int _bufferLength;
+        private int? _pendingCharacter;
 
-        public async Task<IReadOnlyList<string>?> ReadRecordAsync(
+        public async Task<IReadOnlyList<CsvField>?> ReadRecordAsync(
             CancellationToken cancellationToken)
         {
-            var fields = new List<string>();
+            var fields = new List<CsvField>();
             var field = new StringBuilder();
             var inQuotes = false;
+            var wasQuoted = false;
             var sawAny = false;
 
             while (true)
@@ -1348,7 +1356,7 @@ internal static class AsyncExportCsvRowReader
                         return null;
                     }
 
-                    fields.Add(field.ToString());
+                    fields.Add(new CsvField(field.ToString(), wasQuoted));
                     return fields;
                 }
 
@@ -1361,7 +1369,7 @@ internal static class AsyncExportCsvRowReader
                         var next = await ReadCharacterAsync(cancellationToken);
                         if (next < 0)
                         {
-                            fields.Add(field.ToString());
+                            fields.Add(new CsvField(field.ToString(), wasQuoted));
                             return fields;
                         }
 
@@ -1373,6 +1381,8 @@ internal static class AsyncExportCsvRowReader
 
                         inQuotes = false;
                         ch = (char)next;
+                        if (ch is not (',' or '\r' or '\n'))
+                            throw new InvalidOperationException("CSV export contains characters after a closing quote.");
                     }
                     else
                     {
@@ -1382,14 +1392,18 @@ internal static class AsyncExportCsvRowReader
                 }
                 else if (ch == '"')
                 {
+                    if (field.Length != 0)
+                        throw new InvalidOperationException("CSV export contains a quote inside an unquoted field.");
                     inQuotes = true;
+                    wasQuoted = true;
                     continue;
                 }
 
                 if (ch == ',')
                 {
-                    fields.Add(field.ToString());
+                    fields.Add(new CsvField(field.ToString(), wasQuoted));
                     field.Clear();
+                    wasQuoted = false;
                     continue;
                 }
 
@@ -1398,17 +1412,16 @@ internal static class AsyncExportCsvRowReader
                     var next = await ReadCharacterAsync(cancellationToken);
                     if (next >= 0 && (char)next != '\n')
                     {
-                        field.Append((char)next);
-                        continue;
+                        _pendingCharacter = next;
                     }
 
-                    fields.Add(field.ToString());
+                    fields.Add(new CsvField(field.ToString(), wasQuoted));
                     return fields;
                 }
 
                 if (ch == '\n')
                 {
-                    fields.Add(field.ToString());
+                    fields.Add(new CsvField(field.ToString(), wasQuoted));
                     return fields;
                 }
 
@@ -1418,6 +1431,11 @@ internal static class AsyncExportCsvRowReader
 
         private ValueTask<int> ReadCharacterAsync(CancellationToken cancellationToken)
         {
+            if (_pendingCharacter is { } pending)
+            {
+                _pendingCharacter = null;
+                return ValueTask.FromResult(pending);
+            }
             if (_bufferOffset < _bufferLength)
             {
                 return ValueTask.FromResult((int)_buffer[_bufferOffset++]);
@@ -1439,4 +1457,6 @@ internal static class AsyncExportCsvRowReader
             return _buffer[_bufferOffset++];
         }
     }
+
+    private readonly record struct CsvField(string Value, bool IsQuoted);
 }

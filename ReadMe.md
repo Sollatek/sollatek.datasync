@@ -380,11 +380,16 @@ $env:SOL_SyncPlan__entities="customers;devices;pointsOfInterest;assets;rawdata/l
 Filesystem and Azure Blob storage use `FileExport` to decide where portal export files are saved.
 
 - `FileExport:format`: portal export format for filesystem or Azure Blob async export. Supported values: `csv`, `xml`, `xlsx`, and `parquet`. Paged API local writing supports `csv` and `parquet`.
+
 - `FileExport:folderFormat`: folder path under `FileExport:rootPath`. Defaults to `{entityKey}/year={date:yyyy}/month={date:MM}/day={date:dd}`. A value without `{...}` tokens is treated as a `DateOnly` format, so `yyyyMM` renders `202602`.
 - `FileExport:fileNameFormat`: file name under the rendered folder. Defaults to `part-{part:000000}.{format}`.
 - `FileExport:replaceExisting`: whether a rendered export file/blob can replace an existing object with the same name. Defaults to `true`. Set to `false` to keep existing files/blobs; async export skips existing daily outputs, and paged/copy exports fail before overwriting.
 - `FileExport:statePath`: local DataSync checkpoint state path. Defaults to `_state/sync-state.json` under the running app base directory. Relative paths are resolved from the running app base directory, not from `FileExport:rootPath`. When `State:provider` is `azureBlobStorage`, checkpoints are stored in blob state instead.
 - Supported path tokens: `{entity}`, `{entityKey}`, `{date}`, `{date:<format>}`, `{yyyy}`, `{MM}`, `{dd}`, `{part}`, `{part:<format>}`, and `{format}`.
+
+Empty portal CSV/Parquet files produce zero sync rows; native file exports copy valid empty files without changing their bytes. An empty Parquet file still requires a valid schema/footer. Zero-byte or truncated Parquet downloads fail instead of being reported as an empty successful result, and the reader closes the input stream when initialization fails. Paged filesystem writing returns no file when the input contains no rows.
+
+The CSV row reader preserves quoted text, including leading-zero identifiers, boolean-looking strings and empty strings; an unquoted empty field remains null. It also honors declared string metadata and accepts CR, LF and CRLF record endings. Parquet retains native column types and remains the preferred bulk format.
 
 Filesystem and Azure Blob async export preserve the portal export schema for the selected `FileExport:format`. They do not rename, remove, or coerce columns to match historical sample files. If a downstream consumer requires a legacy/sample schema, add an explicit projection/translation layer for that contract instead of relying on direct portal-file copy.
 
