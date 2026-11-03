@@ -14,6 +14,163 @@ namespace Sollatek.DataSync.Tests;
 
 public sealed class AsyncExportRowSourceTests
 {
+    [Theory]
+    [InlineData("csv", "zero-bytes")]
+    [InlineData("csv", "bom-only")]
+    [InlineData("csv", "header-only")]
+    [InlineData("csv", "header-cr")]
+    [InlineData("csv", "header-lf")]
+    [InlineData("csv", "header-crlf")]
+    [InlineData("parquet", "no-groups")]
+    [InlineData("parquet", "empty-group")]
+    public async Task ReadRowsAsync_ValidEmptyFilesDoNotCreatePhantomRows(string format, string fixture)
+    {
+        var directory = CreateTempDirectory();
+        try
+        {
+            var path = Path.Combine(directory, "empty." + format);
+            if (format == "csv")
+            {
+                var content = fixture switch
+                {
+                    "zero-bytes" => "", "bom-only" => "\uFEFF", "header-cr" => "id,erpCode\r",
+                    "header-lf" => "id,erpCode\n", "header-crlf" => "id,erpCode\r\n", _ => "id,erpCode"
+                };
+                await File.WriteAllTextAsync(path, content, new UTF8Encoding(false));
+            }
+            else
+            {
+                var schema = new ParquetSchema(new DataField<string>("id"), new DataField<string>("erpCode"));
+                await using var stream = File.Create(path);
+                await using var writer = await ParquetWriter.CreateAsync(schema, stream);
+                if (fixture == "empty-group")
+                {
+                    using var group = writer.CreateRowGroup();
+                    foreach (var field in schema.GetDataFields())
+                        await group.WriteAsync(field, Array.Empty<string>());
+                }
+            }
+            var source = new HttpAsyncExportRowSource(new HttpClient(new RecordingHandler()),
+                new AsyncExportOptions { Format = format, StatePath = directory }, NullLogger<HttpAsyncExportRowSource>.Instance);
+            var range = new SyncDateRange(DateTimeOffset.UnixEpoch, DateTimeOffset.UtcNow);
+            var job = new SyncJob(AssetMetadata(), range, SyncTransferMode.AsyncExport);
+            var file = new AsyncExportDownloadedFile(new AsyncExportRequest(0, job, job.Metadata, range), path);
+            var count = 0;
+            await foreach (var _ in source.ReadRowsAsync(file, CancellationToken.None)) count++;
+            Assert.Equal(0, count);
+        }
+        finally { Directory.Delete(directory, recursive: true); }
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("PAR1")]
+    public async Task ReadRowsAsync_TruncatedParquetIsRejectedAsCorruptRatherThanReportedEmpty(string content)
+    {
+        var directory = CreateTempDirectory();
+        try
+        {
+            var path = Path.Combine(directory, "broken.parquet");
+            await File.WriteAllTextAsync(path, content);
+            var source = new HttpAsyncExportRowSource(new HttpClient(new RecordingHandler()),
+                new AsyncExportOptions { Format = "parquet", StatePath = directory }, NullLogger<HttpAsyncExportRowSource>.Instance);
+            var range = new SyncDateRange(DateTimeOffset.UnixEpoch, DateTimeOffset.UtcNow);
+            var job = new SyncJob(AssetMetadata(), range, SyncTransferMode.AsyncExport);
+            var file = new AsyncExportDownloadedFile(new AsyncExportRequest(0, job, job.Metadata, range), path);
+            var failure = await Record.ExceptionAsync(async () =>
+            {
+                await foreach (var _ in source.ReadRowsAsync(file, CancellationToken.None)) { }
+            });
+            Assert.NotNull(failure);
+        }
+        finally { Directory.Delete(directory, recursive: true); }
+    }
+
+    [Theory]
+    [InlineData("000042")]
+    [InlineData("42")]
+    [InlineData("false")]
+    [InlineData("true")]
+    [InlineData("")]
+    [InlineData(" 12 ")]
+    [InlineData("1.2500")]
+    [InlineData("1,234")]
+    [InlineData("9223372036854775808")]
+    [InlineData("line 1\nline 2")]
+    public async Task ReadRowsAsync_QuotedCsvTextRetainsItsValueAndStringType(string value)
+    {
+        var directory = CreateTempDirectory();
+        try
+        {
+            var path = Path.Combine(directory, "identifiers.csv");
+            await File.WriteAllTextAsync(path, "id,erpCode\r\n1,\"" + value.Replace("\"", "\"\"") + "\"\r\n");
+            var source = new HttpAsyncExportRowSource(new HttpClient(new RecordingHandler()),
+                new AsyncExportOptions { Format = "csv", StatePath = directory }, NullLogger<HttpAsyncExportRowSource>.Instance);
+            var range = new SyncDateRange(DateTimeOffset.UnixEpoch, DateTimeOffset.UtcNow);
+            var job = new SyncJob(AssetMetadata(), range, SyncTransferMode.AsyncExport);
+            var file = new AsyncExportDownloadedFile(new AsyncExportRequest(0, job, job.Metadata, range), path);
+            var count = 0;
+            await foreach (var row in source.ReadRowsAsync(file, CancellationToken.None))
+            {
+                Assert.Equal(System.Text.Json.JsonValueKind.String, row.GetProperty("erpCode").ValueKind);
+                Assert.Equal(value, row.GetProperty("erpCode").GetString());
+                count++;
+            }
+            Assert.Equal(1, count);
+        }
+        finally { Directory.Delete(directory, recursive: true); }
+    }
+
+    [Theory]
+    [InlineData("\r")]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    public async Task ReadRowsAsync_CsvLineEndingsKeepRowsAndDistinguishEmptyTextFromNull(string ending)
+    {
+        var directory = CreateTempDirectory();
+        try
+        {
+            var path = Path.Combine(directory, "empty.csv");
+            await File.WriteAllTextAsync(path, string.Join(ending, ["id,erpCode", "1,\"\"", "2,", "3,\"000042\"", ""]));
+            var source = new HttpAsyncExportRowSource(new HttpClient(new RecordingHandler()),
+                new AsyncExportOptions { Format = "csv", StatePath = directory }, NullLogger<HttpAsyncExportRowSource>.Instance);
+            var range = new SyncDateRange(DateTimeOffset.UnixEpoch, DateTimeOffset.UtcNow);
+            var job = new SyncJob(AssetMetadata(), range, SyncTransferMode.AsyncExport);
+            var file = new AsyncExportDownloadedFile(new AsyncExportRequest(0, job, job.Metadata, range), path);
+            var rows = new List<System.Text.Json.JsonElement>();
+            await foreach (var row in source.ReadRowsAsync(file, CancellationToken.None)) rows.Add(row.Clone());
+            Assert.Equal(3, rows.Count);
+            Assert.Equal("", rows[0].GetProperty("erpCode").GetString());
+            Assert.Equal(System.Text.Json.JsonValueKind.Null, rows[1].GetProperty("erpCode").ValueKind);
+            Assert.Equal("000042", rows[2].GetProperty("erpCode").GetString());
+        }
+        finally { Directory.Delete(directory, recursive: true); }
+    }
+
+    [Theory]
+    [InlineData("1,\"unfinished")]
+    [InlineData("1,\"closed\"suffix")]
+    [InlineData("1,unquoted\"value")]
+    public async Task ReadRowsAsync_MalformedCsvIsRejectedInsteadOfChangingValues(string record)
+    {
+        var directory = CreateTempDirectory();
+        try
+        {
+            var path = Path.Combine(directory, "invalid.csv");
+            await File.WriteAllTextAsync(path, "id,erpCode\r\n" + record);
+            var source = new HttpAsyncExportRowSource(new HttpClient(new RecordingHandler()),
+                new AsyncExportOptions { Format = "csv", StatePath = directory }, NullLogger<HttpAsyncExportRowSource>.Instance);
+            var range = new SyncDateRange(DateTimeOffset.UnixEpoch, DateTimeOffset.UtcNow);
+            var job = new SyncJob(AssetMetadata(), range, SyncTransferMode.AsyncExport);
+            var file = new AsyncExportDownloadedFile(new AsyncExportRequest(0, job, job.Metadata, range), path);
+            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            {
+                await foreach (var _ in source.ReadRowsAsync(file, CancellationToken.None)) { }
+            });
+        }
+        finally { Directory.Delete(directory, recursive: true); }
+    }
+
     [Fact]
     public void HttpClientFactory_ResolvesRowSourceWithStateStoreAndMonitor()
     {
