@@ -170,13 +170,15 @@ public sealed class ParquetFileExportSinkTests
         }
     }
 
-    [Fact]
-    public async Task WriteAsync_DoesNotCreateFileForEmptyRows()
+    [Theory]
+    [InlineData("parquet")]
+    [InlineData("csv")]
+    public async Task WriteAsync_DoesNotCreateFileForEmptyRows(string format)
     {
         var directory = CreateTempDirectory();
         try
         {
-            var sink = new ParquetFileExportSink(new FileExportOptions { RootPath = directory });
+            var sink = new ParquetFileExportSink(new FileExportOptions { RootPath = directory, Format = format });
 
             var path = await sink.WriteAsync(
                 "assets",
@@ -186,7 +188,7 @@ public sealed class ParquetFileExportSinkTests
                 CancellationToken.None);
 
             Assert.Null(path);
-            Assert.Empty(Directory.GetFiles(directory, "*.parquet", SearchOption.AllDirectories));
+            Assert.Empty(Directory.GetFiles(directory, "*", SearchOption.AllDirectories));
         }
         finally
         {
