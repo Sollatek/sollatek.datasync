@@ -291,24 +291,27 @@ public sealed class ParquetFileExportSink : IFileExportObjectSink
         await using var stream = File.Create(path);
         await using var writer = new StreamWriter(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
-        await writer.WriteLineAsync(string.Join(",", columns.Select(EscapeCsv)));
+        await writer.WriteLineAsync(string.Join(",", columns.Select(column => EscapeCsv(column))));
         foreach (var row in rows)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var values = columns.Select(column =>
-                row.TryGetValue(column, out var value) ? EscapeCsv(ConvertToString(value)) : string.Empty);
+                row.TryGetValue(column, out var value) ? EscapeCsv(ConvertToString(value), value is string) : string.Empty);
             await writer.WriteLineAsync(string.Join(",", values));
         }
     }
 
-    private static string EscapeCsv(string? value)
+    private static string EscapeCsv(string? value, bool isText = false)
     {
-        if (string.IsNullOrEmpty(value))
+        if (value == null)
         {
             return string.Empty;
         }
 
-        var mustQuote = value.Contains(',', StringComparison.Ordinal) ||
+        var ambiguousText = isText && (value.Length == 0 || bool.TryParse(value, out _) ||
+            long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out _) ||
+            decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out _));
+        var mustQuote = ambiguousText || value.Contains(',', StringComparison.Ordinal) ||
             value.Contains('"', StringComparison.Ordinal) ||
             value.Contains('\r', StringComparison.Ordinal) ||
             value.Contains('\n', StringComparison.Ordinal);
