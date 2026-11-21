@@ -157,13 +157,20 @@ jobs:
 
           $version = "$($Matches.major).$($Matches.minor).$($Matches.patch)"
           $releaseTag = "v$version"
-          $majorMinor = "$($Matches.major).$($Matches.minor)"
-          $major = $Matches.major
+
+          # Sollatek.DataSync.csproj <Version> is the single project version source.
+          [xml] $project = Get-Content -LiteralPath 'Sollatek.DataSync/Sollatek.DataSync.csproj' -Raw
+          $projectVersions = @($project.Project.PropertyGroup | ForEach-Object { $_.SelectSingleNode('Version') } | Where-Object { $_ } | ForEach-Object { $_.InnerText.Trim() })
+          if ($projectVersions.Count -ne 1 -or $projectVersions[0] -ne $version) {
+            throw "Sollatek.DataSync.csproj must hold Version $version for $env:GITHUB_REF_NAME; found '$($projectVersions -join ', ')'."
+          }
+
+          # Release date: the UTC date of this publication run, which also creates the vMAJOR.MINOR.PATCH tag.
+          $releaseDate = [DateTime]::UtcNow.ToString('yyyyMMdd', [Globalization.CultureInfo]::InvariantCulture)
 
           "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           "release_tag=$releaseTag" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          "major_minor=$majorMinor" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          "major=$major" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "release_date=$releaseDate" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Install .NET SDK
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -226,6 +233,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Confirm image tags do not exist
+        shell: bash
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+          RELEASE_DATE: ${{ steps.release.outputs.release_date }}
+        run: |
+          set -euo pipefail
+          # Published tags are never replaced; this also refuses a second release on the same UTC date.
+          for tag in "$VERSION" "$RELEASE_DATE" "sha-$GITHUB_SHA"; do
+            if docker manifest inspect "$IMAGE_REPOSITORY:$tag" > /dev/null 2>&1; then
+              echo "$IMAGE_REPOSITORY:$tag already exists; published tags are not replaced"; exit 1
+            fi
+          done
+
       - name: Build release image
         id: image
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
@@ -236,15 +257,14 @@ jobs:
           push: true
           provenance: false
           tags: |
-            ${{ env.IMAGE_REPOSITORY }}:sha-${{ github.sha }}
             ${{ env.IMAGE_REPOSITORY }}:${{ steps.release.outputs.version }}
-            ${{ env.IMAGE_REPOSITORY }}:${{ steps.release.outputs.major_minor }}
-            ${{ env.IMAGE_REPOSITORY }}:${{ steps.release.outputs.major }}
-            ${{ env.IMAGE_REPOSITORY }}:latest
+            ${{ env.IMAGE_REPOSITORY }}:${{ steps.release.outputs.release_date }}
+            ${{ env.IMAGE_REPOSITORY }}:sha-${{ github.sha }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=${{ steps.release.outputs.version }}
+            io.sollatek.release.date=${{ steps.release.outputs.release_date }}
 
       - name: Publish versioned GitHub release
         shell: pwsh
@@ -259,6 +279,7 @@ jobs:
           $checksumsPath = Join-Path $artifactRoot 'SHA256SUMS'
           $releaseTag = '${{ steps.release.outputs.release_tag }}'
           $releaseVersion = '${{ steps.release.outputs.version }}'
+          $releaseDate = '${{ steps.release.outputs.release_date }}'
           $imageDigest = '${{ steps.image.outputs.digest }}'
 
           if ($imageDigest -notmatch '^sha256:[0-9a-f]{64}$') {
@@ -298,9 +319,11 @@ jobs:
             commit = $env:GITHUB_SHA
             version = $releaseVersion
             release = $releaseTag
+            releaseDate = $releaseDate
             image = [ordered]@{
               repository = $env:IMAGE_REPOSITORY
               tag = $releaseVersion
+              dateTag = $releaseDate
               immutableTag = "sha-$env:GITHUB_SHA"
               digest = $imageDigest
               platforms = @('linux/amd64', 'linux/arm64')
@@ -347,7 +370,7 @@ jobs:
             --target $env:GITHUB_SHA `
             --latest `
             --title "DataSync $releaseVersion" `
-            --notes "DataSync $releaseVersion, built and tested from approved release commit $env:GITHUB_SHA. The container image supports Linux x64 and arm64. Self-contained downloads are provided for Linux, Windows, and macOS on x64 and arm64."
+            --notes "DataSync $releaseVersion, released $releaseDate (UTC), built and tested from approved release commit $env:GITHUB_SHA. Image $($env:IMAGE_REPOSITORY)@$imageDigest, tagged $releaseVersion, $releaseDate and sha-$env:GITHUB_SHA. The container image supports Linux x64 and arm64. Self-contained downloads are provided for Linux, Windows, and macOS on x64 and arm64."
           if ($LASTEXITCODE -ne 0) {
             throw "GitHub release publication failed with exit code $LASTEXITCODE."
           }

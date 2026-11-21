@@ -34,7 +34,10 @@ the immutable `vMAJOR.MINOR.PATCH` tag and image digest identify what customers 
 ## Promotion Rules
 
 1. Merge ordinary work to `develop` through a pull request.
-2. Create `release/vMAJOR.MINOR.PATCH` from the intended `develop` commit.
+2. Create `release/vMAJOR.MINOR.PATCH` from the intended `develop` commit and set
+   `<Version>` in `Sollatek.DataSync/Sollatek.DataSync.csproj`, the single project
+   version, to `MAJOR.MINOR.PATCH` through a reviewed change on that branch.
+   Publication fails when the branch name and the project version differ.
 3. Run QA against that release branch. Pushes validate source and tests only; they
    do not build or upload release bundles and do not push an image. Apply any QA
    fixes to the release branch through review.
@@ -56,9 +59,9 @@ the immutable `vMAJOR.MINOR.PATCH` tag and image digest identify what customers 
 6. After publication succeeds, open and merge the pull request from the unchanged
    release branch to `master`. Do not squash or rebase: the released commit must
    remain in `master` history with the same identity.
-7. Merge `master` back to `develop` so all release fixes are retained, then remove
-   the temporary release branch according to the repository retention policy. Keep
-   the protected tag and published release immutable.
+7. Merge `master` back to `develop` so all release fixes are retained. Keep the
+   release branch, the protected tag and the published release unchanged: the
+   organization rulesets block deleting or force-pushing branches and changing tags.
 
 The workflow fails closed when:
 
@@ -67,8 +70,10 @@ The workflow fails closed when:
   non-runtime-only maintenance pull request;
 - a publication dispatch does not use a valid `release/vMAJOR.MINOR.PATCH` branch;
 - the source or packaged-content exclusion scan fails;
-- tests, cross-platform publishing, or the multi-platform image build fails; or
-- a Git tag or GitHub Release with the same version already exists.
+- tests, cross-platform publishing, or the multi-platform image build fails;
+- `Sollatek.DataSync.csproj` does not hold the branch's version;
+- a Git tag or GitHub Release with the same version already exists; or
+- any of the three image tags already exists in GHCR.
 
 Manual workflow dispatch publishes only when the selected ref is a correctly named
 release branch. Dispatching the workflow from any other branch validates only. The
@@ -116,12 +121,15 @@ rulesets, select the Sollatek team, or configure environment reviewers automatic
 An approved manual publication run from a release branch publishes:
 
 - a multi-platform GHCR image for Linux amd64 and arm64;
-- an immutable `sha-<commit>` image tag;
-- semantic-version, major/minor, major, and `latest` image aliases;
+- three image tags on one digest: the version `MAJOR.MINOR.PATCH` (primary), the
+  publication run's UTC date `YYYYMMDD`, and `sha-<commit>`;
 - a framework-dependent .NET 10 archive;
 - self-contained Linux, Windows, and macOS downloads for x64 and arm64;
 - `SHA256SUMS`, the release manifest, Dockerfile, and license.
 
-Use the immutable image digest or exact semantic version for deployments. Floating
-aliases such as `latest` are convenience pointers and do not update an existing
-customer deployment by themselves.
+Use the image digest or exact version for deployments. The moving `MAJOR.MINOR`,
+`MAJOR` and `latest` aliases are no longer published; tags pushed by earlier
+releases remain in GHCR but do not advance. Publication refuses to run if any of
+the three tags already exists, so a published tag is never replaced and a second
+release on the same UTC date is refused. The release manifest records the version,
+`releaseDate`, the three tags and the image digest, and the release notes repeat them.
