@@ -2,7 +2,7 @@ name: sollatek-datasync-tests
 
 services:
   sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    image: mcr.microsoft.com/mssql/server:2025-latest
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: ${DATASYNC_MSSQL_SA_PASSWORD:?Complete the ignored local environment file}
@@ -23,7 +23,7 @@ services:
       - datasync-postgres:/var/lib/postgresql/data
 
   mysql:
-    image: mysql:8.4
+    image: mysql:26.10
     environment:
       MYSQL_DATABASE: ${DATASYNC_MYSQL_DATABASE:?Complete the ignored local environment file}
       MYSQL_USER: ${DATASYNC_MYSQL_USER:?Complete the ignored local environment file}
@@ -35,7 +35,7 @@ services:
       - datasync-mysql:/var/lib/mysql
 
   mongo:
-    image: mongo:8
+    image: mongo:9
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${DATASYNC_MONGO_INITDB_ROOT_USERNAME:?Complete the ignored local environment file}
       MONGO_INITDB_ROOT_PASSWORD: ${DATASYNC_MONGO_INITDB_ROOT_PASSWORD:?Complete the ignored local environment file}
