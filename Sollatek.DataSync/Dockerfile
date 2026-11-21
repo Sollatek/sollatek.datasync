@@ -2,7 +2,7 @@ ARG DOTNET_RUNTIME_IMAGE=runtime
 FROM mcr.microsoft.com/dotnet/${DOTNET_RUNTIME_IMAGE}:10.0 AS base
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS build
 WORKDIR /src
 ARG DATASYNC_PROVIDER=all
 ARG DATASYNC_MONITORING_PROVIDER=none
