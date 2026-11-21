@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: docker
+    directories:
+      - "/Sollatek.DataSync"
+      - "/deployment/publication"
+      - "/scripts"
+    schedule:
+      interval: monthly
+    groups:
+      docker-images:
+        patterns:
+          - "*"
+  - package-ecosystem: docker-compose
+    directories:
+      - "/"
+    schedule:
+      interval: monthly
+    groups:
+      compose-images:
+        patterns:
+          - "*"
