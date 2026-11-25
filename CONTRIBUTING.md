@@ -5,8 +5,10 @@ Create a topic branch and open a pull request against the maintained target bran
 Install the stable .NET SDK declared in `global.json`, then run:
 
 ```shell
-dotnet test Sollatek.DataSync.sln --configuration Release --disable-build-servers -m:1 --verbosity minimal
+dotnet test Sollatek.DataSync.sln --configuration Release --disable-build-servers -m:1 --verbosity minimal -p:RestoreLockedMode=true
 ```
+
+Every project has a `packages.lock.json`, and CI and release builds restore in locked mode. After changing a package or project reference, update the lock files with `dotnet restore Sollatek.DataSync.sln --force-evaluate` and commit them with the change. The lock files cover the release runtimes listed in `Directory.Build.props`.
 
 The public build workflow needs no repository secrets or publication credentials. Test fixtures own their temporary data. Review the existing project README for application configuration and provider-specific usage. Never commit credentials, private connection configuration or customer data.
 

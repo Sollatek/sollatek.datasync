@@ -22,7 +22,7 @@ jobs:
         with:
           global-json-file: global.json
       - name: Build and test the complete solution
-        run: dotnet test Sollatek.DataSync.sln --configuration Release --disable-build-servers -m:1 --verbosity minimal
+        run: dotnet test Sollatek.DataSync.sln --configuration Release --disable-build-servers -m:1 --verbosity minimal -p:RestoreLockedMode=true
 
   required-build:
     name: Project build
