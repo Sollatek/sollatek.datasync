@@ -1,8 +1,10 @@
 ARG DOTNET_RUNTIME_IMAGE=runtime
-FROM mcr.microsoft.com/dotnet/${DOTNET_RUNTIME_IMAGE}:10.0 AS base
+FROM mcr.microsoft.com/dotnet/runtime:10.0.15-azurelinux3.0@sha256:24f597bdad41a0c942b01b312004f4ed80ffd61da1dbaee8db80b9418ef54f5b AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.15-azurelinux3.0@sha256:89570e7bfd580a74dd99b72498f01fc1a7a56f815b51eba57f2444a0e3b7d9fc AS aspnet
+FROM ${DOTNET_RUNTIME_IMAGE} AS base
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.404-noble@sha256:fe0fd4e93bd2fbb47c883b7a6369e5c8d3db8bf01cdc5981f6ee35fbdf3ff4fb AS build
 WORKDIR /src
 ARG DATASYNC_PROVIDER=all
 ARG DATASYNC_MONITORING_PROVIDER=none
