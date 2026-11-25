@@ -1055,14 +1055,16 @@ internal static class AsyncExportParquetRowReader
         int rowCount,
         CancellationToken cancellationToken)
     {
-        if (field.ClrType == typeof(string))
+        // Parquet.Net 6.1 reports BYTE_ARRAY columns as ReadOnlyMemory<char>/ReadOnlyMemory<byte>;
+        // reading them into string/byte[] buffers is still supported and keeps the JSON shape.
+        if (field.ClrType == typeof(string) || field.ClrType == typeof(ReadOnlyMemory<char>))
         {
             var values = new string?[rowCount];
             await rowGroup.ReadAsync(field, values.AsMemory(), cancellationToken: cancellationToken);
             return values.Cast<object?>().ToArray();
         }
 
-        if (field.ClrType == typeof(byte[]))
+        if (field.ClrType == typeof(byte[]) || field.ClrType == typeof(ReadOnlyMemory<byte>))
         {
             var values = new byte[]?[rowCount];
             await rowGroup.ReadAsync(field, values.AsMemory(), cancellationToken: cancellationToken);
