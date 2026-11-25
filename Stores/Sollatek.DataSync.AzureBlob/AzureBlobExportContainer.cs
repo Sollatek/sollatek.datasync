@@ -66,6 +66,8 @@ public sealed class AzureBlobExportContainer : IBlobExportContainer
     {
         await EnsureContainerAsync(cancellationToken);
         await foreach (var blob in _container.GetBlobsAsync(
+                           traits: BlobTraits.None,
+                           states: BlobStates.None,
                            prefix: string.IsNullOrWhiteSpace(prefix) ? null : prefix,
                            cancellationToken: cancellationToken))
         {
