@@ -1,6 +1,7 @@
 #nullable enable
 
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 
 namespace Sollatek.DataSync.AzureBlob;
 
@@ -63,6 +64,8 @@ public sealed class AzureBlobStateContainer : IBlobStateContainer
     {
         await EnsureContainerAsync(cancellationToken);
         await foreach (var blob in _container.GetBlobsAsync(
+                           traits: BlobTraits.None,
+                           states: BlobStates.None,
                            prefix: string.IsNullOrWhiteSpace(prefix) ? null : prefix,
                            cancellationToken: cancellationToken))
         {
