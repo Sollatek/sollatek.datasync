@@ -32,12 +32,12 @@
       },
       "MySqlConnector": {
         "type": "Direct",
-        "requested": "[2.6.2, )",
-        "resolved": "2.6.2",
-        "contentHash": "dlTc/tsBa42szdvpj4nrHvQVUb0gsMwR9HT6J0Zz2OSqfP0CdYlGw+qQPqCpbnO97idfvclSjKYtM6y5QaBQaQ==",
+        "requested": "[3.0.0, )",
+        "resolved": "3.0.0",
+        "contentHash": "ioYpdWl4xa9iVNsnWzIsYUuSr5MJ3KRZJ69QvzQdfDd1ax6s6GDXs65gCTt/eY/fzG4IiYxCgiu5urWUfk3AwQ==",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.2"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.15",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.15"
         }
       },
       "Npgsql": {
@@ -51,9 +51,9 @@
       },
       "System.Security.Cryptography.Pkcs": {
         "type": "Direct",
-        "requested": "[9.0.23, )",
-        "resolved": "9.0.23",
-        "contentHash": "vy2OL0rGdetAaY1437d0VFrdc2yau4i5ZtUmnq5bO5QYfwbtrr2toTtL9UKIKhOI4FNWyTQHchvAUcemFSDeVg=="
+        "requested": "[10.0.15, )",
+        "resolved": "10.0.15",
+        "contentHash": "4jEv/lXDuQkh60lPU3hlwASErXdv1ZMKmsxVuBfZWiVKT5Q2QGo58kTa6rN519+PU+m4Hsj1m3yT8fN+Xw0XZw=="
       },
       "Microsoft.Bcl.Cryptography": {
         "type": "Transitive",
@@ -259,9 +259,9 @@
       },
       "System.Security.Cryptography.Pkcs": {
         "type": "Direct",
-        "requested": "[9.0.23, )",
-        "resolved": "9.0.23",
-        "contentHash": "vy2OL0rGdetAaY1437d0VFrdc2yau4i5ZtUmnq5bO5QYfwbtrr2toTtL9UKIKhOI4FNWyTQHchvAUcemFSDeVg=="
+        "requested": "[10.0.15, )",
+        "resolved": "10.0.15",
+        "contentHash": "4jEv/lXDuQkh60lPU3hlwASErXdv1ZMKmsxVuBfZWiVKT5Q2QGo58kTa6rN519+PU+m4Hsj1m3yT8fN+Xw0XZw=="
       },
       "Microsoft.Data.SqlClient.SNI.runtime": {
         "type": "Transitive",
@@ -296,9 +296,9 @@
       },
       "System.Security.Cryptography.Pkcs": {
         "type": "Direct",
-        "requested": "[9.0.23, )",
-        "resolved": "9.0.23",
-        "contentHash": "vy2OL0rGdetAaY1437d0VFrdc2yau4i5ZtUmnq5bO5QYfwbtrr2toTtL9UKIKhOI4FNWyTQHchvAUcemFSDeVg=="
+        "requested": "[10.0.15, )",
+        "resolved": "10.0.15",
+        "contentHash": "4jEv/lXDuQkh60lPU3hlwASErXdv1ZMKmsxVuBfZWiVKT5Q2QGo58kTa6rN519+PU+m4Hsj1m3yT8fN+Xw0XZw=="
       },
       "Microsoft.Data.SqlClient.SNI.runtime": {
         "type": "Transitive",
@@ -333,9 +333,9 @@
       },
       "System.Security.Cryptography.Pkcs": {
         "type": "Direct",
-        "requested": "[9.0.23, )",
-        "resolved": "9.0.23",
-        "contentHash": "vy2OL0rGdetAaY1437d0VFrdc2yau4i5ZtUmnq5bO5QYfwbtrr2toTtL9UKIKhOI4FNWyTQHchvAUcemFSDeVg=="
+        "requested": "[10.0.15, )",
+        "resolved": "10.0.15",
+        "contentHash": "4jEv/lXDuQkh60lPU3hlwASErXdv1ZMKmsxVuBfZWiVKT5Q2QGo58kTa6rN519+PU+m4Hsj1m3yT8fN+Xw0XZw=="
       },
       "Microsoft.Data.SqlClient.SNI.runtime": {
         "type": "Transitive",
@@ -370,9 +370,9 @@
       },
       "System.Security.Cryptography.Pkcs": {
         "type": "Direct",
-        "requested": "[9.0.23, )",
-        "resolved": "9.0.23",
-        "contentHash": "vy2OL0rGdetAaY1437d0VFrdc2yau4i5ZtUmnq5bO5QYfwbtrr2toTtL9UKIKhOI4FNWyTQHchvAUcemFSDeVg=="
+        "requested": "[10.0.15, )",
+        "resolved": "10.0.15",
+        "contentHash": "4jEv/lXDuQkh60lPU3hlwASErXdv1ZMKmsxVuBfZWiVKT5Q2QGo58kTa6rN519+PU+m4Hsj1m3yT8fN+Xw0XZw=="
       },
       "Microsoft.Data.SqlClient.SNI.runtime": {
         "type": "Transitive",
@@ -407,9 +407,9 @@
       },
       "System.Security.Cryptography.Pkcs": {
         "type": "Direct",
-        "requested": "[9.0.23, )",
-        "resolved": "9.0.23",
-        "contentHash": "vy2OL0rGdetAaY1437d0VFrdc2yau4i5ZtUmnq5bO5QYfwbtrr2toTtL9UKIKhOI4FNWyTQHchvAUcemFSDeVg=="
+        "requested": "[10.0.15, )",
+        "resolved": "10.0.15",
+        "contentHash": "4jEv/lXDuQkh60lPU3hlwASErXdv1ZMKmsxVuBfZWiVKT5Q2QGo58kTa6rN519+PU+m4Hsj1m3yT8fN+Xw0XZw=="
       },
       "Microsoft.Data.SqlClient.SNI.runtime": {
         "type": "Transitive",
@@ -444,9 +444,9 @@
       },
       "System.Security.Cryptography.Pkcs": {
         "type": "Direct",
-        "requested": "[9.0.23, )",
-        "resolved": "9.0.23",
-        "contentHash": "vy2OL0rGdetAaY1437d0VFrdc2yau4i5ZtUmnq5bO5QYfwbtrr2toTtL9UKIKhOI4FNWyTQHchvAUcemFSDeVg=="
+        "requested": "[10.0.15, )",
+        "resolved": "10.0.15",
+        "contentHash": "4jEv/lXDuQkh60lPU3hlwASErXdv1ZMKmsxVuBfZWiVKT5Q2QGo58kTa6rN519+PU+m4Hsj1m3yT8fN+Xw0XZw=="
       },
       "Microsoft.Data.SqlClient.SNI.runtime": {
         "type": "Transitive",

@@ -25,9 +25,9 @@
       },
       "xunit.runner.visualstudio": {
         "type": "Direct",
-        "requested": "[3.1.5, )",
-        "resolved": "3.1.5",
-        "contentHash": "tKi7dSTwP4m5m9eXPM2Ime4Kn7xNf4x4zT9sdLO/G4hZVnQCRiMTWoSZqI/pYTVeI27oPPqHBKYI/DjJ9GsYgA=="
+        "requested": "[4.0.1, )",
+        "resolved": "4.0.1",
+        "contentHash": "8CoAaZkniVekR1ycJyxn+hOz+6ZQCDPcoIsIs6ujd4WyFcBMlxGNU15Qb8Uxd4iO4UmOuETb0M6vzBbwX/mfLA=="
       },
       "Apache.Arrow": {
         "type": "Transitive",
@@ -570,11 +570,11 @@
       },
       "MySqlConnector": {
         "type": "Transitive",
-        "resolved": "2.6.2",
-        "contentHash": "dlTc/tsBa42szdvpj4nrHvQVUb0gsMwR9HT6J0Zz2OSqfP0CdYlGw+qQPqCpbnO97idfvclSjKYtM6y5QaBQaQ==",
+        "resolved": "3.0.0",
+        "contentHash": "ioYpdWl4xa9iVNsnWzIsYUuSr5MJ3KRZJ69QvzQdfDd1ax6s6GDXs65gCTt/eY/fzG4IiYxCgiu5urWUfk3AwQ==",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.2"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.15",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.15"
         }
       },
       "Newtonsoft.Json": {
@@ -721,8 +721,8 @@
       },
       "System.Security.Cryptography.Pkcs": {
         "type": "Transitive",
-        "resolved": "9.0.23",
-        "contentHash": "vy2OL0rGdetAaY1437d0VFrdc2yau4i5ZtUmnq5bO5QYfwbtrr2toTtL9UKIKhOI4FNWyTQHchvAUcemFSDeVg=="
+        "resolved": "10.0.15",
+        "contentHash": "4jEv/lXDuQkh60lPU3hlwASErXdv1ZMKmsxVuBfZWiVKT5Q2QGo58kTa6rN519+PU+m4Hsj1m3yT8fN+Xw0XZw=="
       },
       "System.Security.Cryptography.ProtectedData": {
         "type": "Transitive",
@@ -880,10 +880,10 @@
         "dependencies": {
           "Microsoft.Data.SqlClient": "[7.1.2, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.15, )",
-          "MySqlConnector": "[2.6.2, )",
+          "MySqlConnector": "[3.0.0, )",
           "Npgsql": "[10.0.4, )",
           "Sollatek.DataSync.Abstractions": "[1.0.0, )",
-          "System.Security.Cryptography.Pkcs": "[9.0.23, )"
+          "System.Security.Cryptography.Pkcs": "[10.0.15, )"
         }
       }
     },
@@ -918,8 +918,8 @@
       },
       "System.Security.Cryptography.Pkcs": {
         "type": "Transitive",
-        "resolved": "9.0.23",
-        "contentHash": "vy2OL0rGdetAaY1437d0VFrdc2yau4i5ZtUmnq5bO5QYfwbtrr2toTtL9UKIKhOI4FNWyTQHchvAUcemFSDeVg=="
+        "resolved": "10.0.15",
+        "contentHash": "4jEv/lXDuQkh60lPU3hlwASErXdv1ZMKmsxVuBfZWiVKT5Q2QGo58kTa6rN519+PU+m4Hsj1m3yT8fN+Xw0XZw=="
       }
     },
     "net10.0/linux-x64": {
@@ -953,8 +953,8 @@
       },
       "System.Security.Cryptography.Pkcs": {
         "type": "Transitive",
-        "resolved": "9.0.23",
-        "contentHash": "vy2OL0rGdetAaY1437d0VFrdc2yau4i5ZtUmnq5bO5QYfwbtrr2toTtL9UKIKhOI4FNWyTQHchvAUcemFSDeVg=="
+        "resolved": "10.0.15",
+        "contentHash": "4jEv/lXDuQkh60lPU3hlwASErXdv1ZMKmsxVuBfZWiVKT5Q2QGo58kTa6rN519+PU+m4Hsj1m3yT8fN+Xw0XZw=="
       }
     },
     "net10.0/osx-arm64": {
@@ -988,8 +988,8 @@
       },
       "System.Security.Cryptography.Pkcs": {
         "type": "Transitive",
-        "resolved": "9.0.23",
-        "contentHash": "vy2OL0rGdetAaY1437d0VFrdc2yau4i5ZtUmnq5bO5QYfwbtrr2toTtL9UKIKhOI4FNWyTQHchvAUcemFSDeVg=="
+        "resolved": "10.0.15",
+        "contentHash": "4jEv/lXDuQkh60lPU3hlwASErXdv1ZMKmsxVuBfZWiVKT5Q2QGo58kTa6rN519+PU+m4Hsj1m3yT8fN+Xw0XZw=="
       }
     },
     "net10.0/osx-x64": {
@@ -1023,8 +1023,8 @@
       },
       "System.Security.Cryptography.Pkcs": {
         "type": "Transitive",
-        "resolved": "9.0.23",
-        "contentHash": "vy2OL0rGdetAaY1437d0VFrdc2yau4i5ZtUmnq5bO5QYfwbtrr2toTtL9UKIKhOI4FNWyTQHchvAUcemFSDeVg=="
+        "resolved": "10.0.15",
+        "contentHash": "4jEv/lXDuQkh60lPU3hlwASErXdv1ZMKmsxVuBfZWiVKT5Q2QGo58kTa6rN519+PU+m4Hsj1m3yT8fN+Xw0XZw=="
       }
     },
     "net10.0/win-arm64": {
@@ -1058,8 +1058,8 @@
       },
       "System.Security.Cryptography.Pkcs": {
         "type": "Transitive",
-        "resolved": "9.0.23",
-        "contentHash": "vy2OL0rGdetAaY1437d0VFrdc2yau4i5ZtUmnq5bO5QYfwbtrr2toTtL9UKIKhOI4FNWyTQHchvAUcemFSDeVg=="
+        "resolved": "10.0.15",
+        "contentHash": "4jEv/lXDuQkh60lPU3hlwASErXdv1ZMKmsxVuBfZWiVKT5Q2QGo58kTa6rN519+PU+m4Hsj1m3yT8fN+Xw0XZw=="
       }
     },
     "net10.0/win-x64": {
@@ -1093,8 +1093,8 @@
       },
       "System.Security.Cryptography.Pkcs": {
         "type": "Transitive",
-        "resolved": "9.0.23",
-        "contentHash": "vy2OL0rGdetAaY1437d0VFrdc2yau4i5ZtUmnq5bO5QYfwbtrr2toTtL9UKIKhOI4FNWyTQHchvAUcemFSDeVg=="
+        "resolved": "10.0.15",
+        "contentHash": "4jEv/lXDuQkh60lPU3hlwASErXdv1ZMKmsxVuBfZWiVKT5Q2QGo58kTa6rN519+PU+m4Hsj1m3yT8fN+Xw0XZw=="
       }
     }
   }
