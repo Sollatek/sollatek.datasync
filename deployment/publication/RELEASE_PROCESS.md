@@ -35,9 +35,21 @@ the immutable `vMAJOR.MINOR.PATCH` tag and image digest identify what customers 
 
 1. Merge ordinary work to `develop` through a pull request.
 2. Create `release/vMAJOR.MINOR.PATCH` from the intended `develop` commit.
-3. Run QA against that release branch. Pushes validate source and tests only; they
-   do not build or upload release bundles and do not push an image. Apply any QA
-   fixes to the release branch through review.
+3. Run QA against the release branch. Pushes validate source and tests. Manually
+   run **Build DataSync** on that exact branch to build and verify both the
+   AMD64 and ARM64 images without registry publication:
+
+   ```powershell
+   gh workflow run build.yml --repo Sollatek/sollatek.datasync --ref release/v1.0.4
+   ```
+
+   The binary release uses the digest-pinned Azure Linux 3.0 .NET runtime. The
+   source-build option for HTTP status monitoring uses ASP.NET Core on Azure
+   Linux 3.0. Check each release image's source commit, image config digest,
+   full zero-finding OS and .NET scan, and isolated startup with the Swagger
+   fixture. Record both verification results with the release. Rerun the
+   checks after any change to the release commit and hold publication until
+   both images pass.
 4. After QA approval, open **Actions**, select **Validate or publish DataSync
    release**, choose **Run workflow**, select the exact `release/vMAJOR.MINOR.PATCH`
    branch, and run it. Selecting that release branch is the explicit publication

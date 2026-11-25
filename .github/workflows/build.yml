@@ -35,3 +35,76 @@ jobs:
         env:
           BUILD_RESULT: ${{ needs.build.result }}
         run: test "$BUILD_RESULT" = success
+
+  verify-release-image:
+    name: Verify release image (${{ matrix.architecture }})
+    if: github.event_name == 'workflow_dispatch' && github.ref_type == 'branch' && startsWith(github.ref, 'refs/heads/release/v')
+    needs: required-build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            architecture: amd64
+          - runner: ubuntu-24.04-arm
+            architecture: arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    env:
+      PLATFORM: linux/${{ matrix.architecture }}
+      TRIVY_IMAGE: aquasec/trivy@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Confirm release source
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF_NAME" =~ ^release/v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          [ "$(git rev-parse HEAD)" = "$GITHUB_SHA" ]
+          [ -z "$(git status --porcelain --untracked-files=all --ignored)" ]
+          version=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' Sollatek.DataSync/Sollatek.DataSync.csproj)
+          [ "$version" = "${GITHUB_REF_NAME#release/v}" ]
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - name: Build the approved release container inputs
+        shell: pwsh
+        run: ./deployment/publication/New-DataSyncReleaseBundle.ps1 -ContainerOnly
+      - name: Assemble, scan and smoke-test the image
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/container"
+          image="datasync-validation:sha-$GITHUB_SHA"
+          mkdir -p "$out"
+          docker build --pull --no-cache --platform "$PLATFORM" --tag "$image" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --file .artifacts/release/Dockerfile.binary .artifacts/release
+          docker save --output "$out/image.tar" "$image"
+          config=$(tar -xOf "$out/image.tar" manifest.json | jq -er 'map(.Config) | unique | select(length == 1) | .[0]')
+          image_id="sha256:$(tar -xOf "$out/image.tar" -- "$config" | sha256sum | cut -c1-64)"
+          jq -n --arg sha "$GITHUB_SHA" --arg platform "$PLATFORM" --arg id "$image_id" \
+            '{source_commit:$sha,platform:$platform,image_config_id:$id}' > "$out/build-record.json"
+          docker run --rm --volume "$out:/work" "$TRIVY_IMAGE" image --input /work/image.tar \
+            --scanners vuln --list-all-pkgs --format json --output /work/trivy.json
+          bash deployment/publication/check-container.sh "$image" | tee "$out/smoke.txt"
+          jq -e --arg id "$image_id" '
+            .SchemaVersion == 2 and .ArtifactType == "container_image" and .Metadata.ImageID == $id
+            and any(.Results[]; .Class == "os-pkgs" and (.Packages | length > 0))
+            and any(.Results[]; .Type == "dotnet-core" and (.Packages | length > 0))
+            and all(.Results[]; (.Vulnerabilities // []) | length == 0)
+          ' "$out/trivy.json" >/dev/null
+          echo "$PLATFORM image passed with zero vulnerability findings ($image_id)."
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: datasync-image-${{ matrix.architecture }}
+          path: |
+            ${{ runner.temp }}/container/build-record.json
+            ${{ runner.temp }}/container/smoke.txt
+            ${{ runner.temp }}/container/trivy.json
+          if-no-files-found: ignore
+          retention-days: 30

@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=mcr.microsoft.com/dotnet/runtime:10.0
+ARG BASE_IMAGE=mcr.microsoft.com/dotnet/runtime:10.0.15-azurelinux3.0@sha256:24f597bdad41a0c942b01b312004f4ed80ffd61da1dbaee8db80b9418ef54f5b
 FROM ${BASE_IMAGE}
 WORKDIR /app
 COPY datasync/ .

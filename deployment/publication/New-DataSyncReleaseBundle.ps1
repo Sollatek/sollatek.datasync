@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-    [string] $ArtifactRoot = (Join-Path (Get-Location) '.artifacts/release')
+    [string] $ArtifactRoot = (Join-Path (Get-Location) '.artifacts/release'),
+    [switch] $ContainerOnly
 )
 
 Set-StrictMode -Version Latest
@@ -53,6 +54,11 @@ Get-ChildItem -LiteralPath $portableRoot -Filter '*.pdb' -File -Recurse | Remove
 Copy-Item -LiteralPath 'deployment/publication/appsettings.public.json' -Destination (Join-Path $portableRoot 'appsettings.json') -Force
 Copy-Item -LiteralPath $licensePath -Destination (Join-Path $portableRoot 'LICENCE.md') -Force
 Copy-Item -LiteralPath 'deployment/publication/Dockerfile.binary' -Destination (Join-Path $artifactRootPath 'Dockerfile.binary') -Force
+
+if ($ContainerOnly) {
+    Write-Host "DataSync container build inputs created at $artifactRootPath"
+    return
+}
 
 tar --create --gzip --file (Join-Path $artifactRootPath 'sollatek-datasync-net10.tar.gz') --directory $portableRoot .
 if ($LASTEXITCODE -ne 0) {
