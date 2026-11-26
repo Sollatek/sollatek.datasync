@@ -122,7 +122,7 @@ jobs:
             -Path $trackedFiles
 
       - name: Test solution
-        run: dotnet test Sollatek.DataSync.sln -c Release --disable-build-servers -m:1 --verbosity minimal
+        run: dotnet test Sollatek.DataSync.sln -c Release --disable-build-servers -m:1 --verbosity minimal -p:RestoreLockedMode=true
 
   publish-release:
     name: Publish approved public release

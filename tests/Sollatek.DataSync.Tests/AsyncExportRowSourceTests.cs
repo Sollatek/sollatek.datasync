@@ -62,6 +62,42 @@ public sealed class AsyncExportRowSourceTests
         finally { Directory.Delete(directory, recursive: true); }
     }
 
+    [Fact]
+    public async Task ReadRowsAsync_ParquetTextAndBinaryColumnsKeepTheirJsonShape()
+    {
+        var directory = CreateTempDirectory();
+        try
+        {
+            var path = Path.Combine(directory, "text-binary.parquet");
+            var schema = new ParquetSchema(
+                new DataField("ownerCustomer_id", typeof(string), isNullable: true, isArray: false, propertyName: null),
+                new DataField("payload", typeof(byte[]), isNullable: true, isArray: false, propertyName: null));
+            await using (var stream = File.Create(path))
+            await using (var writer = await ParquetWriter.CreateAsync(schema, stream))
+            {
+                using var group = writer.CreateRowGroup();
+                var fields = schema.GetDataFields();
+                await group.WriteAsync(fields[0], new string?[] { "customer-1", null });
+                await group.WriteAsync(fields[1], new byte[]?[] { [1, 2, 3], null });
+            }
+
+            var source = new HttpAsyncExportRowSource(new HttpClient(new RecordingHandler()),
+                new AsyncExportOptions { Format = "parquet", StatePath = directory }, NullLogger<HttpAsyncExportRowSource>.Instance);
+            var range = new SyncDateRange(DateTimeOffset.UnixEpoch, DateTimeOffset.UtcNow);
+            var job = new SyncJob(AssetMetadata(), range, SyncTransferMode.AsyncExport);
+            var file = new AsyncExportDownloadedFile(new AsyncExportRequest(0, job, job.Metadata, range), path);
+            var rows = new List<System.Text.Json.JsonElement>();
+            await foreach (var row in source.ReadRowsAsync(file, CancellationToken.None)) rows.Add(row);
+
+            Assert.Equal(2, rows.Count);
+            Assert.Equal("customer-1", rows[0].GetProperty("ownerCustomer").GetProperty("id").GetString());
+            Assert.Equal("AQID", rows[0].GetProperty("payload").GetString());
+            Assert.Equal(System.Text.Json.JsonValueKind.Null, rows[1].GetProperty("ownerCustomer").GetProperty("id").ValueKind);
+            Assert.Equal(System.Text.Json.JsonValueKind.Null, rows[1].GetProperty("payload").ValueKind);
+        }
+        finally { Directory.Delete(directory, recursive: true); }
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("PAR1")]

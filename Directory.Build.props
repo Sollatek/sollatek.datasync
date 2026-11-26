@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <!-- Every project records its resolved NuGet graph in packages.lock.json.
+         CI and release builds restore with RestoreLockedMode=true. -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <!-- Release runtimes. A runtime-specific publish restores the whole project
+         graph for that runtime, so every lock file records them. -->
+    <RuntimeIdentifiers>linux-x64;linux-arm64;win-x64;win-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
+  </PropertyGroup>
+</Project>

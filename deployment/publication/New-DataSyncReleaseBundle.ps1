@@ -42,6 +42,7 @@ dotnet publish 'Sollatek.DataSync/Sollatek.DataSync.csproj' `
     -m:1 `
     -p:DataSyncProvider=all `
     -p:DataSyncMonitoringProvider=none `
+    -p:RestoreLockedMode=true `
     -p:DebugType=None `
     -p:DebugSymbols=false
 if ($LASTEXITCODE -ne 0) {
@@ -81,6 +82,7 @@ foreach ($target in $targets) {
         -p:UseAppHost=true `
         -p:DataSyncProvider=all `
         -p:DataSyncMonitoringProvider=none `
+        -p:RestoreLockedMode=true `
         -p:DebugType=None `
         -p:DebugSymbols=false
     if ($LASTEXITCODE -ne 0) {
